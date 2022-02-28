@@ -1,26 +1,9 @@
 import _ from 'lodash';
-import PieceVue from './components/Piece.vue';
-
-export const enum PIECE_TYPE {
-    ROOK = "r",
-    KNIGHT = "n",
-    BISHOP = "b",
-    KING = "k",
-    QUEEN = "q",
-    PAWN = "p",
-}
-
-export const enum PIECE_COLOR {
-    WHITE = "w",
-    BLACK = "b",
-}
-
-export const enum CASTLING_SIDE {
-    KINGSIDE = 'k',
-    QUEENSIDE = 'q',
-}
 
 export class Chessboard {
+    /**
+     * Method for creating a board from FEN
+     */
     public static create(fen: string, isPlayingWhite: boolean) {
         //Validate if FEN is correct
         const regex = /\s*^(((?:[rnbqkpRNBQKP1-8]+\/){7})[rnbqkpRNBQKP1-8]+)\s([b|w])\s([K|Q|k|q]{1,4})\s(-|[a-h][1-8])\s(\d+\s\d+)$/;
@@ -31,11 +14,10 @@ export class Chessboard {
             }
         }
 
-        let board: any[][] = new Array(8).fill(0).map(_row => new Array(8));
+        let board: Board = new Array(8).fill(0).map(_row => new Array(8));
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
                 board[i][j] = {
-                    piece: null,
                     dragged: false,
                     active: false,
                     legalMove: false,
@@ -58,7 +40,7 @@ export class Chessboard {
                 let c = row[0];
                 row = row.substring(1);
                 if (["k", "q", "b", "n", "p", "r"].includes(c.toLowerCase())) {
-                    board[i][j].piece = { type: c.toLowerCase(), color: c === c.toLowerCase() ? 'b' : 'w', square: [i, j] };
+                    board[i][j].piece = { type: c.toLowerCase() as PIECE_TYPE, color: (c === c.toLowerCase() ? 'b' : 'w') as PIECE_COLOR, square: [i, j] };
                 } else {
                     j += parseInt(c) - 1;
                 }
@@ -71,7 +53,10 @@ export class Chessboard {
         };
     }
 
-    public static getPieces(board: any[][], color: PIECE_COLOR) {
+    /**
+     * Method for getting the all pieces of given color
+     */
+    public static getPieces(board: Board, color: PIECE_COLOR) {
         let pieces: Piece[] = [];
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
@@ -83,6 +68,10 @@ export class Chessboard {
         return pieces;
     }
 
+    /**
+     * Method for converting algebraic notation of a square into 
+     * board notation
+     */
     public static algebraicToBoard(algebraicSquare: string) : Square {
         const file = algebraicSquare.charCodeAt(0) - 'a'.charCodeAt(0);
         const rank = 7 - (parseInt(algebraicSquare[1]) - 1);
@@ -93,7 +82,7 @@ export class Chessboard {
     /**
      * Method for converting board to FEN string
      */
-    public static getFen(board: any[][], castlingRights: any, halfmoves: number, fullmoves: number, turnColor: PIECE_COLOR, lastMove: any) {
+    public static getFen(board: Board, castlingRights: any, halfmoves: number, fullmoves: number, turnColor: PIECE_COLOR, lastMove: any) {
         let ranks = [];
         for (let i = 0; i < 8; i++) {
             let rank = '';
@@ -190,7 +179,9 @@ export class Chessboard {
         }
 
         for (const [i, j] of checks) {
+            console.log(`canCastle(), side ${side}, check if [${i}, ${j}] is empty...`);
             if (board[i][j].piece) {
+                console.log(`[${i}, ${j}] not empty, can't castle`);
                 //Square is not empty, can't castle
                 return false;
             }
@@ -345,7 +336,8 @@ export class Chessboard {
                             if (this.canCastle(board, piece.color, side)) {
                                 const d = side === CASTLING_SIDE.KINGSIDE ? 2 : -2;
                                 //Add additional king pseudo-legal move for kingside castling
-                                checks[PIECE_TYPE.KING].push([i, j + d]);
+                                //checks[PIECE_TYPE.KING].push([i, j + d]);
+                                pseudoLegalMoves.push([i, j + d]);
                             }
                         }
                     }
@@ -384,7 +376,7 @@ export class Chessboard {
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
                 if (board[i][j].active) {
-                    return [i, j];
+                    return [i, j] as Square;
                 }
             }
         }
