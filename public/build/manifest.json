@@ -1,0 +1,16 @@
+{
+  "resources/scripts/main.ts": {
+    "file": "assets/main.f95ae837.js",
+    "src": "resources/scripts/main.ts",
+    "isEntry": true,
+    "imports": [
+      "_vendor.55f92e7b.js"
+    ],
+    "css": [
+      "assets/main.eef32938.css"
+    ]
+  },
+  "_vendor.55f92e7b.js": {
+    "file": "assets/vendor.55f92e7b.js"
+  }
+}
