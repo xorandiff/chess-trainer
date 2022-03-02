@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\Process\Process; 
 use Symfony\Component\Process\InputStream; 
-use Symfony\Component\Process\Exception\ProcessFailedException; 
+use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,8 +36,5 @@ Route::get('/bestmove/{fen}', function ($fen) {
     $process->run();
 
     preg_match('/bestmove ([\w+\d+]+)/', $process->getOutput(), $matches);
-
     return response()->json(['bestmove' => $matches[1]]);
-
-    //return $output;
 })->where('fen', '.*');;

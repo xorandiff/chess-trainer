@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useBoardStore } from "@/stores/board";
-import { def } from "@vue/shared";
 import Piece from "./Piece.vue";
 
 const store = useBoardStore();

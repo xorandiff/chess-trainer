@@ -150,7 +150,7 @@ export class Chessboard {
     /**
      * Method for updating castling rights for given color 
      */
-    public static updateCastlingRights(board: any[][], color: PIECE_COLOR, currentRights: any[]) {
+    public static updateCastlingRights(board: any[][], color: PIECE_COLOR, currentRights: CASTLING_SIDE[]) {
         //Determine castling rank
         const r = color === PIECE_COLOR.WHITE ? 7 : 0;
 
@@ -202,7 +202,7 @@ export class Chessboard {
     /**
      * Method for computing legal moves and captures of a piece
      */
-    public static computeLegalMoves(board: any[][], [i, j]: Square, castlingRights: any, lastMove: any) {
+    public static computeLegalMoves(board: any[][], [i, j]: Square, castlingRights: CASTLING_SIDE[], lastMove: any) {
         let legalMoves: Square[] = [];
         const piece = board[i][j].piece;
         if (!piece) {
@@ -249,7 +249,7 @@ export class Chessboard {
     /**
      * Method for computing pseudo-legal moves and captures of a piece
      */
-    private static computePseudoLegalMoves(board: any[][], [i, j]: Square, castlingRights: any, lastMove: any) : Square[] {
+    private static computePseudoLegalMoves(board: any[][], [i, j]: Square, castlingRights: CASTLING_SIDE[], lastMove: any) : Square[] {
         const piece = board[i][j].piece;
         const isWhite = piece.color === PIECE_COLOR.WHITE
         const oppositeColor = piece.color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
@@ -335,12 +335,12 @@ export class Chessboard {
                 * If current color has castling rights, then there must be king 
                 * either on square [0, 4] or on square [7, 4]
                 */
-                if (castlingRights[piece.color] && (i === 7 || i === 0) && j === 4) {
+                if (castlingRights && (i === 7 || i === 0) && j === 4) {
                     const sides = [CASTLING_SIDE.KINGSIDE, CASTLING_SIDE.QUEENSIDE];
 
                     for (const side of sides) {
                         //Check if color has castling rights on current side
-                        if (castlingRights[piece.color].includes(side)) {
+                        if (castlingRights.includes(side)) {
                             //Check if castling is possible
                             if (this.canCastle(board, piece.color, side)) {
                                 const d = side === CASTLING_SIDE.KINGSIDE ? 2 : -2;
@@ -384,7 +384,7 @@ export class Chessboard {
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
                 if (board[i][j].active) {
-                    return [i, j];
+                    return [i, j] as Square;
                 }
             }
         }

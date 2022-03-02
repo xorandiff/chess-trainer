@@ -14,7 +14,6 @@ export default {
     startDrag(e : any) {
       e.dataTransfer.dropEffect = 'move'
       e.dataTransfer.effectAllowed = 'move'
-      //e.dataTransfer.setData('itemID', item.id)
     }
   }
 }

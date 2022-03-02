@@ -22,7 +22,7 @@ export const useBoardStore = defineStore({
       to: [0, 0],
     };
 
-    const legalMoves = whitePieces.map(piece => Chessboard.computeLegalMoves(board, piece.square, castlingRights, lastMove));
+    const legalMoves = whitePieces.map(piece => Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], lastMove));
 
     return ({
       board,
@@ -75,18 +75,19 @@ export const useBoardStore = defineStore({
       const from = move.substring(0, 2);
       const to = move.substring(2);
 
-      console.log(`${move} => ${Chessboard.algebraicToBoard(from)} -> ${Chessboard.algebraicToBoard(to)}`);
-
       this.pieceMove(Chessboard.algebraicToBoard(from), Chessboard.algebraicToBoard(to));
     },
     pieceMoveFromActive(toSquare: Square) {
       const fromSquare = Chessboard.getActiveSquare(this.board);
-      if (toSquare) {
+      if (fromSquare) {
         this.pieceMove(fromSquare, toSquare);
       }
     },
     pieceMove([r, f]: Square, [i, j]: Square) {
       const squareIndex = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === r && piece.square[1] === f);
+      if (squareIndex < 0) {
+        console.log('ERROR: this.pieces is not synchronized with board')
+      }
       if (squareIndex >= 0 && this.legalMoves[squareIndex].find(s => s[0] === i && s[1] === j)) {
         const oppositeColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
@@ -97,16 +98,22 @@ export const useBoardStore = defineStore({
           const rookFileTo = j === 6 ? 5 : 3;
 
           //Move rook to castled square
-          this.board[i][rookFileTo].piece = this.board[i][rookFileFrom].piece;
-          this.board[i][rookFileFrom].piece = null;
+          const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === i && piece.square[1] === rookFileFrom);
+          if (x >= 0) {
+            this.pieces[this.currentTurnColor][x].square = [i, rookFileTo];
+            this.board[i][rookFileTo].piece = this.board[i][rookFileFrom].piece;
+            this.board[i][rookFileFrom].piece = null;
+          }
         }
 
         if (this.board[r][f].piece.type === PIECE_TYPE.PAWN && !this.board[i][j].piece && j != f) {
           //En passant capture
           if (this.currentTurnColor === this.color) {
             this.board[i + 1][j].piece = null;
+            _.remove(this.pieces[oppositeColor], piece => piece.square[0] === i + 1 && piece.square[1] === j);
           } else {
             this.board[i - 1][j].piece = null;
+            _.remove(this.pieces[oppositeColor], piece => piece.square[0] === i - 1 && piece.square[1] === j);
           }
         }
 
@@ -157,8 +164,9 @@ export const useBoardStore = defineStore({
           alert('Checkmate!');
         } else {
           if (this.currentTurnColor != this.color) {
-            axios('/api/bestmove/' + Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove))
-            .then(response => this.stockfishMove(response.data.bestmove));
+            const fen = Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove);
+            //axios('/api/bestmove/' + fen)
+            //.then(response => this.stockfishMove(response.data.bestmove));
           }
         }
       } else {
