@@ -1,7 +1,8 @@
-import { CASTLING_SIDE, Chessboard, PIECE_COLOR, PIECE_TYPE } from '@/chessboard';
+import { Chessboard, PIECE_COLOR, PIECE_TYPE } from "@/chessboard";
 import { defineStore } from "pinia";
-import _ from 'lodash';
-import axios from 'axios';
+import { Howl, Howler } from "howler";
+import _ from "lodash";
+import axios from "axios";
 
 //'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 //'r3k2r/p1p2ppp/2p1bn2/2Q5/5Bq1/2N5/PPP1NPPP/R3K2R b KQkq - 0 14'
@@ -9,7 +10,7 @@ import axios from 'axios';
 export const useBoardStore = defineStore({
   id: "board",
   state: () => {
-    const chessboard = Chessboard.create('2k5/8/pP1K4/6P1/1P6/8/8/8 b - - 0 53');
+    const chessboard = Chessboard.create('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     const { board, castlingRights, halfmoves, fullmoves, color } = chessboard;
     const whitePieces = Chessboard.getPieces(board, PIECE_COLOR.WHITE);
     const blackPieces = Chessboard.getPieces(board, PIECE_COLOR.BLACK);
@@ -70,6 +71,13 @@ export const useBoardStore = defineStore({
         }
       }
     },
+    clearHighlights() {
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          this.board[i][j].highlight = false;
+        }
+      }
+    },
     stockfishMove(move: string) {
       const from = move.substring(0, 2);
       const to = move.substring(2, 4);
@@ -80,18 +88,23 @@ export const useBoardStore = defineStore({
       if (move.length > 4) {
         this.promotionType = move[4] as PIECE_TYPE;
       }
+      
+      this.clearHighlights();
 
       this.pieceMove([r, f], [i, j]);
     },
     pieceMoveFromActive(toSquare: Square) {
       const fromSquare = Chessboard.getActiveSquare(this.board);
       if (fromSquare) {
+        this.clearHighlights();
+
         this.pieceMove(fromSquare, toSquare);
       }
     },
     pieceMove([r, f]: Square, [i, j]: Square) {
       const squareIndex = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === r && piece.square[1] === f);
       if (squareIndex >= 0 && this.legalMoves[squareIndex].find(s => s[0] === i && s[1] === j)) {
+        let sound = '';
         const oppositeColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
         //Castling
@@ -103,6 +116,7 @@ export const useBoardStore = defineStore({
           //Move rook to castled square
           const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === i && piece.square[1] === rookFileFrom);
           if (x >= 0) {
+            sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'castle1.mp3' : 'castle2.mp3';
             this.pieces[this.currentTurnColor][x].square = [i, rookFileTo];
             this.board[i][rookFileTo].piece = this.board[i][rookFileFrom].piece;
             this.board[i][rookFileFrom].piece = null;
@@ -138,12 +152,23 @@ export const useBoardStore = defineStore({
           to: [i, j],
         };
 
+        //Highlight last move
+        this.board[r][f].highlight = true;
+        this.board[i][j].highlight = true;
+
         //Perform a move
         const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === r && piece.square[1] === f);
         if (x >= 0) {
           this.pieces[this.currentTurnColor][x].square = [i, j];
           if (this.board[i][j].piece) {
             _.remove(this.pieces[oppositeColor], piece => piece.square[0] === i && piece.square[1] === j);
+            if (!sound) {
+              sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'capture1.mp3' : 'capture2.mp3';
+            }
+          } else {
+            if (!sound) {
+              sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'move1.mp3' : 'move2.mp3';
+            }         
           }
           this.board[i][j].piece = this.board[r][f].piece;
           this.board[r][f].piece = null;
@@ -171,18 +196,35 @@ export const useBoardStore = defineStore({
 
         this.pieceMouseUp();
 
+        //Detect if check occured
+        if (Chessboard.detectCheck(this.board, this.currentTurnColor)) {
+          sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'check1.mp3' : 'check2.mp3';
+        }
+
         //Detect if checkmate occured
         if (this.halfmoves >= 50 || !this.legalMoves.find(moves => moves.length)) {
           const opponentColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
           const opponentLegalMoves = this.pieces[opponentColor].map(piece => Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[opponentColor], this.lastMove));
           if (this.halfmoves >= 50) {
             console.log('50 move rule reached, draw');
+            new Howl({
+              src: ['sounds/endgame.mp3']
+            }).play();
           } else if (!opponentLegalMoves.find(moves => moves.length)) {
             console.log('Stalemate');
+            new Howl({
+              src: ['sounds/stalemate.mp3']
+            }).play();
           } else {
             console.log('Checkmate');
+            new Howl({
+              src: ['sounds/checkmate.mp3']
+            }).play();
           }
         } else {
+          new Howl({
+            src: ['sounds/' + sound]
+          }).play();
           if (this.currentTurnColor != this.color || true) {
             const fen = Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove);
             console.log(`FEN: ${fen}`);

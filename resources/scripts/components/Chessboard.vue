@@ -12,7 +12,7 @@ const { board, color, pieceMouseUp, pieceMouseDown, pieceMoveFromActive } = stor
       <template v-for="j in 8">
         <div 
           class="square"
-          :class="board[i-1][j-1].active ? 'active' : ''"
+          :class="[board[i-1][j-1].active ? 'active highlight' : '', board[i-1][j-1].highlight ? 'highlight' : '']"
           @drop="pieceMoveFromActive([i-1, j-1])"
           @dragover.prevent
           @dragenter.prevent

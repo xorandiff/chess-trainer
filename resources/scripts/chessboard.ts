@@ -45,6 +45,7 @@ export class Chessboard {
                     dragged: false,
                     active: false,
                     legalMove: false,
+                    highlight: false,
                 };
             }
         }
@@ -235,6 +236,30 @@ export class Chessboard {
         return true;
     }
 
+    public static detectCheck(board: any[][], color: PIECE_COLOR) {
+        const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+        if (this.isSquareAttacked(board, oppositeColor, this.getKingSquare(board, color))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static getKingSquare(board: any[][], color: PIECE_COLOR) {
+        let kingSquare: Square = [0, 0];
+        for (let r = 0; r < 8; r++) {
+            for (let f = 0; f < 8; f++) {
+                if (board[r][f].piece && board[r][f].piece.type === PIECE_TYPE.KING) {
+                    if (board[r][f].piece.color === color) {
+                        kingSquare = [r, f];
+                        break;
+                    }
+                }
+            }
+        }
+        return kingSquare;
+    }
+
     /**
      * Method for computing legal moves and captures of a piece
      */
@@ -251,17 +276,7 @@ export class Chessboard {
             let x = JSON.parse(JSON.stringify(board));
             x = this.makeMove(x, [i, j], [a, b]);
 
-            let kingSquare: Square = [0, 0];
-            for (let r = 0; r < 8; r++) {
-                for (let f = 0; f < 8; f++) {
-                    if (x[r][f].piece && x[r][f].piece.type === PIECE_TYPE.KING) {
-                        if (x[r][f].piece.color === piece.color) {
-                            kingSquare = [r, f];
-                            break;
-                        }
-                    }
-                }
-            }
+            let kingSquare: Square = Chessboard.getKingSquare(x, piece.color);
 
             if (!this.isSquareAttacked(x, oppositeColor, kingSquare)) {
                 legalMoves.push([a, b]);

@@ -84,6 +84,8 @@ body {
 }
 
 #chessboard {
+  width: 600px;
+  height: 600px;
   user-select: none;
 }
 
@@ -95,14 +97,16 @@ body {
   background-color: #f0d9b5;
 }
 
-.row .active:nth-of-type(even) {
-  background-color: #dac431 !important;
+.active {
   border: #fcf8c5 solid 5px;
 }
 
-.row .active:nth-of-type(odd) {
+.row .highlight:nth-of-type(even) {
+  background-color: #dac431 !important;
+}
+
+.row .highlight:nth-of-type(odd) {
   background-color: #F7EC59 !important;
-  border: #fcf8c5 solid 5px;
 }
 
 .row:nth-of-type(even) .square:nth-of-type(even) {
@@ -113,14 +117,12 @@ body {
   background-color: #b58863;
 }
 
-.row:nth-of-type(even) .active:nth-of-type(even) {
+.row:nth-of-type(even) .highlight:nth-of-type(even) {
   background-color: #F7EC59 !important;
-  border: #fcf8c5 solid 5px;
 }
 
-.row:nth-of-type(even) .active:nth-of-type(odd) {
+.row:nth-of-type(even) .highlight:nth-of-type(odd) {
   background-color: #dac431 !important;
-  border: #fcf8c5 solid 5px;
 }
 
 .square, .piece {
