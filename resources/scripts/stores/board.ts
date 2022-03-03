@@ -9,12 +9,13 @@ import axios from 'axios';
 export const useBoardStore = defineStore({
   id: "board",
   state: () => {
-    const { board } = Chessboard.create('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', true);
+    const chessboard = Chessboard.create('2k5/8/pP1K4/6P1/1P6/8/8/8 b - - 0 53');
+    const { board, castlingRights, halfmoves, fullmoves, color } = chessboard;
     const whitePieces = Chessboard.getPieces(board, PIECE_COLOR.WHITE);
     const blackPieces = Chessboard.getPieces(board, PIECE_COLOR.BLACK);
-    const castlingRights = {
-      [PIECE_COLOR.WHITE]: [CASTLING_SIDE.KINGSIDE, CASTLING_SIDE.QUEENSIDE],
-      [PIECE_COLOR.BLACK]: [CASTLING_SIDE.KINGSIDE, CASTLING_SIDE.QUEENSIDE],
+    const pieces = {
+      [PIECE_COLOR.WHITE]: whitePieces,
+      [PIECE_COLOR.BLACK]: blackPieces,
     };
     const lastMove = {
       piece: null,
@@ -22,30 +23,28 @@ export const useBoardStore = defineStore({
       to: [0, 0],
     };
 
-    const legalMoves = whitePieces.map(piece => Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], lastMove));
+    const legalMoves = pieces[color].map(piece => Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], lastMove));
 
     return ({
       board,
-      color: PIECE_COLOR.WHITE,
-      currentTurnColor: PIECE_COLOR.WHITE,
-      inCheck: false as any,
+      color,
+      currentTurnColor: color,
       castlingRights,
-      pieces: {
-        [PIECE_COLOR.WHITE]: whitePieces,
-        [PIECE_COLOR.BLACK]: blackPieces,
-      },
+      pieces,
       legalMoves,
-      halfmoves: 0,
-      fullmoves: 0,
+      halfmoves,
+      fullmoves,
       lastMove,
+      promotionType: PIECE_TYPE.PAWN,
+      stockfish: false,
     });
   },
   actions: {
     newGame(isPlayingWhite: boolean) {
-      const { board, activeColor } = Chessboard.create('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', isPlayingWhite);
+      const { board, color } = Chessboard.create('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
       this.color = isPlayingWhite ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
       this.board = board;
-      this.currentTurnColor = activeColor;
+      this.currentTurnColor = color;
       this.pieces = {
         [PIECE_COLOR.WHITE]: Chessboard.getPieces(board, PIECE_COLOR.WHITE),
         [PIECE_COLOR.BLACK]: Chessboard.getPieces(board, PIECE_COLOR.BLACK),
@@ -73,9 +72,16 @@ export const useBoardStore = defineStore({
     },
     stockfishMove(move: string) {
       const from = move.substring(0, 2);
-      const to = move.substring(2);
+      const to = move.substring(2, 4);
 
-      this.pieceMove(Chessboard.algebraicToBoard(from), Chessboard.algebraicToBoard(to));
+      const [r, f] = Chessboard.algebraicToBoard(from);
+      const [i, j] = Chessboard.algebraicToBoard(to);
+
+      if (move.length > 4) {
+        this.promotionType = move[4] as PIECE_TYPE;
+      }
+
+      this.pieceMove([r, f], [i, j]);
     },
     pieceMoveFromActive(toSquare: Square) {
       const fromSquare = Chessboard.getActiveSquare(this.board);
@@ -85,9 +91,6 @@ export const useBoardStore = defineStore({
     },
     pieceMove([r, f]: Square, [i, j]: Square) {
       const squareIndex = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === r && piece.square[1] === f);
-      if (squareIndex < 0) {
-        console.log('ERROR: this.pieces is not synchronized with board')
-      }
       if (squareIndex >= 0 && this.legalMoves[squareIndex].find(s => s[0] === i && s[1] === j)) {
         const oppositeColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
@@ -146,6 +149,15 @@ export const useBoardStore = defineStore({
           this.board[r][f].piece = null;
         }
 
+        //Check wheter move triggers promotion
+        if (this.board[i][j].piece.type === PIECE_TYPE.PAWN && ((this.board[i][j].piece.color === PIECE_COLOR.WHITE && i === 0) || (this.board[i][j].piece.color === PIECE_COLOR.BLACK && i === 7))) {
+          const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === i && piece.square[1] === j);
+          if (x >= 0) {
+            this.pieces[this.currentTurnColor][x].type = this.promotionType;
+            this.board[i][j].piece.type = this.promotionType;
+          }
+        }
+
         //Update castling rights before switching turn
         if (this.castlingRights[this.currentTurnColor]) {
           this.castlingRights[this.currentTurnColor] = Chessboard.updateCastlingRights(this.board, this.currentTurnColor, this.castlingRights[this.currentTurnColor]);
@@ -160,13 +172,22 @@ export const useBoardStore = defineStore({
         this.pieceMouseUp();
 
         //Detect if checkmate occured
-        if (!this.legalMoves.find(moves => moves.length)) {
-          alert('Checkmate!');
+        if (this.halfmoves >= 50 || !this.legalMoves.find(moves => moves.length)) {
+          const opponentColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+          const opponentLegalMoves = this.pieces[opponentColor].map(piece => Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[opponentColor], this.lastMove));
+          if (this.halfmoves >= 50) {
+            console.log('50 move rule reached, draw');
+          } else if (!opponentLegalMoves.find(moves => moves.length)) {
+            console.log('Stalemate');
+          } else {
+            console.log('Checkmate');
+          }
         } else {
-          if (this.currentTurnColor != this.color) {
+          if (this.currentTurnColor != this.color || true) {
             const fen = Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove);
-            //axios('/api/bestmove/' + fen)
-            //.then(response => this.stockfishMove(response.data.bestmove));
+            console.log(`FEN: ${fen}`);
+            axios('/api/bestmove/' + fen)
+            .then(response => this.stockfishMove(response.data.bestmove));
           }
         }
       } else {

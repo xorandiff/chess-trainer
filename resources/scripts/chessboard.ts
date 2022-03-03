@@ -21,15 +21,21 @@ export const enum CASTLING_SIDE {
 }
 
 export class Chessboard {
-    public static create(fen: string, isPlayingWhite: boolean) {
-        //Validate if FEN is correct
+    public static create(fen: string) {
+        /* //Validate if FEN is correct
         const regex = /\s*^(((?:[rnbqkpRNBQKP1-8]+\/){7})[rnbqkpRNBQKP1-8]+)\s([b|w])\s([K|Q|k|q]{1,4})\s(-|[a-h][1-8])\s(\d+\s\d+)$/;
         if (!fen.match(regex)) {
             return {
                 board: [],
-                activeColor: PIECE_COLOR.WHITE,
+                castlingRights: {
+                    [PIECE_COLOR.WHITE]: [] as CASTLING_SIDE[],
+                    [PIECE_COLOR.BLACK]: [] as CASTLING_SIDE[],
+                },
+                color: PIECE_COLOR.WHITE,
+                fullmoves: 0,
+                halfmoves: 0,
             }
-        }
+        } */
 
         let board: any[][] = new Array(8).fill(0).map(_row => new Array(8));
         for (let i = 0; i < 8; i++) {
@@ -44,11 +50,33 @@ export class Chessboard {
         }
 
         let fields = fen.split(' ');
-        let activeColor = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
-        let castlingAvailability = fields[2];
+        const color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
+        const castlingRightsString = fields[2];
         let enPassantTargetSquare = fields[3];
-        let halfmoveClock = fields[4];
-        let fullmoveNumber = fields[5];
+        const halfmoves = parseInt(fields[4]);
+        const fullmoves = parseInt(fields[5]);
+
+        let castlingRights = {
+            [PIECE_COLOR.WHITE]: [] as CASTLING_SIDE[],
+            [PIECE_COLOR.BLACK]: [] as CASTLING_SIDE[],
+        };
+        for (let i = 0; i < castlingRightsString.length; i++) {
+            let l = castlingRightsString[i].toLowerCase();
+            if (l === CASTLING_SIDE.KINGSIDE) {
+                if (l === castlingRightsString[i]) {
+                    castlingRights[PIECE_COLOR.BLACK].push(CASTLING_SIDE.KINGSIDE);
+                } else {
+                    castlingRights[PIECE_COLOR.WHITE].push(CASTLING_SIDE.KINGSIDE);
+                }
+            }
+            if (l === CASTLING_SIDE.QUEENSIDE) {
+                if (l === castlingRightsString[i]) {
+                    castlingRights[PIECE_COLOR.BLACK].push(CASTLING_SIDE.QUEENSIDE);
+                } else {
+                    castlingRights[PIECE_COLOR.WHITE].push(CASTLING_SIDE.QUEENSIDE);
+                }
+            }
+        }
 
         let rows = fields[0].split('/');
         
@@ -67,7 +95,10 @@ export class Chessboard {
         
         return {
             board,
-            activeColor
+            color,
+            castlingRights,
+            halfmoves,
+            fullmoves
         };
     }
 
@@ -81,6 +112,13 @@ export class Chessboard {
             }
         }
         return pieces;
+    }
+
+    public static boardToAlgebraic([i, j]: Square) : string {
+        const algebraicRank = (7 - i) + 1;
+        const algebraicFile = String.fromCharCode('a'.charCodeAt(0) + j);
+
+        return `${algebraicFile}${algebraicRank}`;
     }
 
     public static algebraicToBoard(algebraicSquare: string) : Square {
@@ -137,9 +175,7 @@ export class Chessboard {
         let enPassantTargetSquare = '-';
         if (lastMove.piece.type === PIECE_TYPE.PAWN && Math.abs(lastMove.from[0] - lastMove.to[0]) === 2) {
             const d = lastMove.piece.color === PIECE_COLOR.WHITE ? 1 : -1;
-            const algebraicRank = (7 - lastMove.to[0]) + 1 + d;
-            const algebraicFile = String.fromCharCode('a'.charCodeAt(0) + lastMove.to[1]);
-            enPassantTargetSquare = `${algebraicFile}${algebraicRank}`;
+            enPassantTargetSquare = Chessboard.boardToAlgebraic([lastMove.to[0] + d, lastMove.to[1]]);
         }
 
         const fen = [position, turnColor, castling, enPassantTargetSquare, halfmoves, fullmoves].join(' ');
@@ -391,14 +427,22 @@ export class Chessboard {
         return null;
     }
 
+    public static promoteTo(board: any[][], [i, j]: Square, type: PIECE_TYPE) {
+        if (board[i][j].piece && board[i][j].piece.type === PIECE_TYPE.PAWN) {
+            board[i][j].piece.type = type;
+        }
+        return board;
+    }
+
     /**
      * Method for detecting any attack by given color on given square
      */
     private static isSquareAttacked(board: any[][], color: PIECE_COLOR, [i, j]: Square) : boolean {
-        for (let k = 0; k < 2; k++) {
+        for (let k = 0; k < 3; k++) {
             const shortRangeChecks: any = [
                 [[i - 1, j - 1], [i - 1, j + 1]], //pawn
                 [[i-2, j-1], [i-2, j+1], [i+2, j-1], [i+2, j+1], [i-1, j-2], [i-1, j+2], [i+1, j-2], [i+1, j+2]], //knight
+                [[i-1, j-1], [i-1, j+1], [i+1, j-1], [i+1, j+1], [i, j-1], [i, j+1], [i-1, j], [i+1, j]], //king
             ];
             for (let n = 0; n < shortRangeChecks[k].length; n++) {
                 const [a, b] = shortRangeChecks[k][n];
@@ -408,6 +452,9 @@ export class Chessboard {
                             return true;
                         }
                         if (k === 1 && board[a][b].piece.type === PIECE_TYPE.KNIGHT) {
+                            return true;
+                        }
+                        if (k === 2 && board[a][b].piece.type === PIECE_TYPE.KING) {
                             return true;
                         }
                     }
