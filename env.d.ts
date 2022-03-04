@@ -16,4 +16,19 @@ type Piece = {
     type: Rook | Bishop | Knight | King | Queen | Pawn;
     color: White | Black;
     square: Square;
+    legalMoves: Square[];
 };
+
+type Move = {
+    piece: Piece,
+    from: Square,
+    to: Square
+}
+
+type Board = {
+    piece?: Piece;
+    dragged: boolean,
+    active: boolean,
+    legalMove: boolean,
+    highlight: boolean,
+}[][];

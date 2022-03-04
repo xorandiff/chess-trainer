@@ -1,6 +1,6 @@
 import { Chessboard, PIECE_COLOR, PIECE_TYPE } from "@/chessboard";
 import { defineStore } from "pinia";
-import { Howl, Howler } from "howler";
+import { Howl } from "howler";
 import _ from "lodash";
 import axios from "axios";
 
@@ -12,17 +12,13 @@ export const useBoardStore = defineStore({
   state: () => {
     const chessboard = Chessboard.create('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     const { board, castlingRights, halfmoves, fullmoves, color } = chessboard;
-    const whitePieces = Chessboard.getPieces(board, PIECE_COLOR.WHITE);
-    const blackPieces = Chessboard.getPieces(board, PIECE_COLOR.BLACK);
-    const pieces = {
+    let whitePieces = Chessboard.getPieces(board, PIECE_COLOR.WHITE);
+    let blackPieces = Chessboard.getPieces(board, PIECE_COLOR.BLACK);
+    let pieces = {
       [PIECE_COLOR.WHITE]: whitePieces,
       [PIECE_COLOR.BLACK]: blackPieces,
     };
-    const lastMove = {
-      piece: null,
-      from: [0, 0],
-      to: [0, 0],
-    };
+    const lastMove = {} as Move;
 
     const legalMoves = pieces[color].map(piece => Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], lastMove));
 
@@ -40,6 +36,7 @@ export const useBoardStore = defineStore({
       stockfish: false,
     });
   },
+
   actions: {
     newGame(isPlayingWhite: boolean) {
       const { board, color } = Chessboard.create('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
@@ -52,7 +49,7 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMouseDown([i, j]: Square) {
-      if (this.board[i][j].piece && this.board[i][j].piece.color == this.currentTurnColor) {
+      if (this.board[i][j].piece && this.board[i][j].piece!.color == this.currentTurnColor) {
         this.board[i][j].active = true;
         const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === i && piece.square[1] === j);
         if (x >= 0) {
@@ -119,17 +116,17 @@ export const useBoardStore = defineStore({
             sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'castle1.mp3' : 'castle2.mp3';
             this.pieces[this.currentTurnColor][x].square = [i, rookFileTo];
             this.board[i][rookFileTo].piece = this.board[i][rookFileFrom].piece;
-            this.board[i][rookFileFrom].piece = null;
+            this.board[i][rookFileFrom].piece = undefined;
           }
         }
 
-        if (this.board[r][f].piece.type === PIECE_TYPE.PAWN && !this.board[i][j].piece && j != f) {
+        if (this.board[r][f].piece!.type === PIECE_TYPE.PAWN && !this.board[i][j].piece && j != f) {
           //En passant capture
           if (this.currentTurnColor === this.color) {
-            this.board[i + 1][j].piece = null;
+            this.board[i + 1][j].piece = undefined;
             _.remove(this.pieces[oppositeColor], piece => piece.square[0] === i + 1 && piece.square[1] === j);
           } else {
-            this.board[i - 1][j].piece = null;
+            this.board[i - 1][j].piece = undefined;
             _.remove(this.pieces[oppositeColor], piece => piece.square[0] === i - 1 && piece.square[1] === j);
           }
         }
@@ -141,13 +138,13 @@ export const useBoardStore = defineStore({
         }
 
         //Reset halfmoves counter if pawn is moving or piece is being captured
-        if (this.board[r][f].piece.type === PIECE_TYPE.PAWN || this.board[i][j].piece) {
+        if (this.board[r][f].piece!.type === PIECE_TYPE.PAWN || this.board[i][j].piece) {
           this.halfmoves = 0;
         }
 
         //Update last move
         this.lastMove = {
-          piece: this.board[r][f].piece,
+          piece: this.board[r][f].piece!,
           from: [r, f],
           to: [i, j],
         };
@@ -171,15 +168,15 @@ export const useBoardStore = defineStore({
             }         
           }
           this.board[i][j].piece = this.board[r][f].piece;
-          this.board[r][f].piece = null;
+          this.board[r][f].piece = undefined;
         }
 
         //Check wheter move triggers promotion
-        if (this.board[i][j].piece.type === PIECE_TYPE.PAWN && ((this.board[i][j].piece.color === PIECE_COLOR.WHITE && i === 0) || (this.board[i][j].piece.color === PIECE_COLOR.BLACK && i === 7))) {
+        if (this.board[i][j].piece!.type === PIECE_TYPE.PAWN && ((this.board[i][j].piece!.color === PIECE_COLOR.WHITE && i === 0) || (this.board[i][j].piece!.color === PIECE_COLOR.BLACK && i === 7))) {
           const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === i && piece.square[1] === j);
           if (x >= 0) {
             this.pieces[this.currentTurnColor][x].type = this.promotionType;
-            this.board[i][j].piece.type = this.promotionType;
+            this.board[i][j].piece!.type = this.promotionType;
           }
         }
 
