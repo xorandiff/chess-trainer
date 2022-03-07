@@ -6,15 +6,6 @@
         @vite
     </head>
     <body class="antialiased">
-        <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
-    
-            <main class="px-3">
-                <div id="app" class="d-flex justify-content-center"></div>
-            </main>
-    
-            <footer class="mt-auto text-white-50">
-                <p>Laravel v{{ Illuminate\Foundation\Application::VERSION }} (PHP v{{ PHP_VERSION }})</p>
-            </footer>
-        </div>
+        <div id="app"></div>
     </body>
 </html>

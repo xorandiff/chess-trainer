@@ -34,9 +34,13 @@ export const useBoardStore = defineStore({
       lastMove,
       promotionType: PIECE_TYPE.PAWN,
       stockfish: false,
+      promotionModalVisible: false,
+      promotionMove: {
+        from: [0, 0] as Square,
+        to: [0, 0] as Square
+      }
     });
   },
-
   actions: {
     newGame(isPlayingWhite: boolean) {
       const { board, color } = Chessboard.create('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
@@ -54,7 +58,7 @@ export const useBoardStore = defineStore({
         const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === i && piece.square[1] === j);
         if (x >= 0) {
           for (const [a, b] of this.legalMoves[x]) {
-            this.board[a as any][b as any].legalMove = true;
+            this.board[a][b].legalMove = true;
           }
         }
       }
@@ -95,7 +99,21 @@ export const useBoardStore = defineStore({
       if (fromSquare) {
         this.clearHighlights();
 
-        this.pieceMove(fromSquare, toSquare);
+        const [r, f] = fromSquare;
+        const [i, j] = toSquare;
+
+        if (this.promotionType === PIECE_TYPE.PAWN && this.board[r][f].piece!.type === PIECE_TYPE.PAWN && ((this.board[r][f].piece!.color === PIECE_COLOR.WHITE && i === 0) || (this.board[r][f].piece!.color === PIECE_COLOR.BLACK && i === 7))) {
+          console.log('promotion detected, showing modal...')
+          /**
+           * Promotion move detected, instead of performing this move, first show
+           * popover for user in order to select promotion piece
+           */
+          this.promotionMove.from = fromSquare;
+          this.promotionMove.to = toSquare;
+          this.promotionModalVisible = true;
+        } else {
+          this.pieceMove(fromSquare, toSquare);
+        }
       }
     },
     pieceMove([r, f]: Square, [i, j]: Square) {
@@ -222,7 +240,7 @@ export const useBoardStore = defineStore({
           new Howl({
             src: ['sounds/' + sound]
           }).play();
-          if (this.currentTurnColor != this.color || true) {
+          if (this.currentTurnColor != this.color && false) {
             const fen = Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove);
             console.log(`FEN: ${fen}`);
             axios('/api/bestmove/' + fen)
@@ -232,6 +250,13 @@ export const useBoardStore = defineStore({
       } else {
         this.pieceMouseUp();
       }
+    },
+    setPromotionPiece(pieceType : PIECE_TYPE) {
+      console.log(pieceType);
+      this.promotionType = pieceType;
+      this.promotionModalVisible = false;
+      this.pieceMove(this.promotionMove.from, this.promotionMove.to);
+      this.promotionType = PIECE_TYPE.PAWN;
     }
   },
 });

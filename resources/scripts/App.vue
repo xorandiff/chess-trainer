@@ -1,72 +1,77 @@
 <script setup lang="ts">
+import { UserOutlined, VideoCameraOutlined, UploadOutlined } from '@ant-design/icons-vue';
+import { ref } from 'vue';
 import Chessboard from "./components/Chessboard.vue";
+
+const onCollapse = (collapsed: boolean, type: string) => {
+  //console.log(collapsed, type);
+};
+
+const onBreakpoint = (broken: boolean) => {
+  //console.log(broken);
+};
+
+const selectedKeys = ref<string[]>(['4']);
 </script>
 
 <template>
-  <main>
-    <Chessboard />
-  </main>
+  <a-layout>
+    <a-layout-sider
+      breakpoint="lg"
+      collapsed-width="0"
+      @collapse="onCollapse"
+      @breakpoint="onBreakpoint"
+    >
+      <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline">
+        <a-menu-item key="1">
+          <user-outlined />
+          <span class="nav-text">nav 1</span>
+        </a-menu-item>
+        <a-menu-item key="2">
+          <video-camera-outlined />
+          <span class="nav-text">nav 2</span>
+        </a-menu-item>
+        <a-menu-item key="3">
+          <upload-outlined />
+          <span class="nav-text">nav 3</span>
+        </a-menu-item>
+        <a-menu-item key="4">
+          <user-outlined />
+          <span class="nav-text">nav 4</span>
+        </a-menu-item>
+      </a-menu>
+    </a-layout-sider>
+    <a-layout>
+      <a-layout-content :style="{ margin: '24px 16px 0' }">
+        <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
+          <Chessboard />
+        </div>
+      </a-layout-content>
+      <a-layout-footer style="text-align: center">
+        Chess Trainer ©2022
+      </a-layout-footer>
+    </a-layout>
+  </a-layout>
 </template>
 
 <style>
-@import "./assets/base.css";
+@import "./assets/base.scss";
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-
-  font-weight: normal;
+#components-layout-demo-responsive .logo {
+  height: 32px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 16px;
 }
 
-header {
-  line-height: 1.5;
+.site-layout-sub-header-background {
+  background: #fff;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.site-layout-background {
+  background: #fff;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
-
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
+[data-theme='dark'] .site-layout-sub-header-background {
+  background: #141414;
 }
 </style>
