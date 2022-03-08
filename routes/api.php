@@ -21,11 +21,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/bestmove/{fen}', function ($fen) {
+Route::get('/bestmove/{level}/{fen}', function ($level, $fen) {
     $input = new InputStream();
     $input->write("uci\n");
     $input->write("ucinewgame\n");
     $input->write("position fen " . $fen . "\n");
+    //$input->write("setoption name Skill Level value " . $level . "\n");
     $input->write("go movetime 2000\n");
     $input->write("quit\n");
     $input->close();
@@ -37,4 +38,22 @@ Route::get('/bestmove/{fen}', function ($fen) {
 
     preg_match('/bestmove ([\w+\d+]+)/', $process->getOutput(), $matches);
     return response()->json(['bestmove' => $matches[1]]);
-})->where('fen', '.*');;
+})->where('fen', '.*');
+
+Route::get('/eval/{fen}', function ($fen) {
+    $input = new InputStream();
+    $input->write("uci\n");
+    $input->write("ucinewgame\n");
+    $input->write("position fen " . $fen . "\n");
+    $input->write("eval\n");
+    $input->write("quit\n");
+    $input->close();
+    
+    $process = new Process([dirname(__DIR__) . '\stockfish_14.1_win_x64_avx2.exe']);
+    $process->setInput($input);
+
+    $process->run();
+
+    preg_match('/Final evaluation\s+([-\.\d]+)/', $process->getOutput(), $matches);
+    return response()->json(['eval' => floatval($matches[1])]);
+})->where('fen', '.*');

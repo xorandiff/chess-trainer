@@ -10,7 +10,8 @@ import axios from "axios";
 export const useBoardStore = defineStore({
   id: "board",
   state: () => {
-    const chessboard = Chessboard.create('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const chessboard = Chessboard.create(fen);
     const { board, castlingRights, halfmoves, fullmoves, color } = chessboard;
     let whitePieces = Chessboard.getPieces(board, PIECE_COLOR.WHITE);
     let blackPieces = Chessboard.getPieces(board, PIECE_COLOR.BLACK);
@@ -39,6 +40,10 @@ export const useBoardStore = defineStore({
       moves: [] as Fullmove[],
       promotionType: PIECE_TYPE.PAWN,
       stockfish: false,
+      alwaysStockfish: false,
+      stockfishSkillLevel: 8,
+      fen,
+      eval: 0.0,
       promotionModalVisible: false,
       promotionMove: {
         from: [0, 0] as Square,
@@ -46,16 +51,47 @@ export const useBoardStore = defineStore({
       }
     });
   },
+  getters: {
+    evalPercent: (state) => {
+      let percent = 50;
+      let evalMultiplied = state.eval * 3;
+      if (evalMultiplied < -50) {
+        evalMultiplied = -50;
+      }
+      if (evalMultiplied > 50) {
+        evalMultiplied = 50;
+      }
+      percent -= Math.round(evalMultiplied);
+      return percent;
+    }
+  },
   actions: {
-    newGame(isPlayingWhite: boolean) {
-      const { board, color } = Chessboard.create('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-      this.color = isPlayingWhite ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
+    newGame(fen: string) {
+      const chessboard = Chessboard.create(fen);
+      const { board, castlingRights, halfmoves, fullmoves, color } = chessboard;
+      this.color = PIECE_COLOR.WHITE;
       this.board = board;
       this.currentTurnColor = color;
       this.pieces = {
         [PIECE_COLOR.WHITE]: Chessboard.getPieces(board, PIECE_COLOR.WHITE),
         [PIECE_COLOR.BLACK]: Chessboard.getPieces(board, PIECE_COLOR.BLACK),
       }
+      this.lastMove = {} as Move; //TODO set last move to en passant target square if present
+      this.legalMoves = this.pieces[color].map(piece => Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], this.lastMove));
+      this.halfmoves = halfmoves;
+      this.fullmoves = fullmoves;
+      this.move = {
+        [PIECE_COLOR.WHITE]: {} as Move,
+        [PIECE_COLOR.BLACK]: {} as Move,
+      } as Fullmove;
+      this.moves = [] as Fullmove[];
+      this.promotionType = PIECE_TYPE.PAWN;
+      this.promotionModalVisible = false;
+      this.promotionMove = {
+        from: [0, 0] as Square,
+        to: [0, 0] as Square
+      };
+      this.fen = fen;
     },
     pieceMouseDown([i, j]: Square) {
       if (this.board[i][j].piece && this.board[i][j].piece!.color == this.currentTurnColor) {
@@ -275,6 +311,15 @@ export const useBoardStore = defineStore({
           sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'check1.mp3' : 'check2.mp3';
         }
 
+        //Update FEN
+        this.fen = Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove);
+
+        //Update eval
+        axios('/api/eval/' + this.fen)
+        .then(response => {
+          this.eval = response.data.eval as number;
+        });
+
         //Detect if checkmate/stalemate/50 move rule occured
         if (this.halfmoves >= 50 || !this.legalMoves.find(moves => moves.length)) {
           const opponentLegalMoves = this.pieces[opponentColor].map(piece => Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[opponentColor], this.lastMove));
@@ -307,10 +352,8 @@ export const useBoardStore = defineStore({
           new Howl({
             src: ['sounds/' + sound]
           }).play();
-          if (this.currentTurnColor != this.color || true) {
-            const fen = Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove);
-            console.log(`FEN: ${fen}`);
-            axios('/api/bestmove/' + fen)
+          if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
+            axios(`/api/bestmove/${this.stockfishSkillLevel}/${this.fen}`)
             .then(response => this.stockfishMove(response.data.bestmove));
           }
         }
@@ -323,6 +366,23 @@ export const useBoardStore = defineStore({
       this.promotionModalVisible = false;
       this.pieceMove(this.promotionMove.from, this.promotionMove.to);
       this.promotionType = PIECE_TYPE.PAWN;
+    },
+    switchAlwaysStockfish() {
+      this.alwaysStockfish = !this.alwaysStockfish;
+      if (this.alwaysStockfish) {
+        axios(`/api/bestmove/${this.stockfishSkillLevel}/${this.fen}`)
+        .then(response => this.stockfishMove(response.data.bestmove));
+      }
+    },
+    switchStockfish() {
+      this.stockfish = !this.stockfish;
+      if (this.stockfish && this.currentTurnColor === PIECE_COLOR.BLACK) {
+        axios(`/api/bestmove/${this.stockfishSkillLevel}/${this.fen}`)
+        .then(response => this.stockfishMove(response.data.bestmove));
+      }
+    },
+    setStockfishSkillLevel(level: number) {
+      this.stockfishSkillLevel = level;
     }
   },
 });
