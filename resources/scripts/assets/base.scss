@@ -59,6 +59,12 @@
   font-weight: normal;
 }
 
+$light-square-color: #f0d9b5;
+$dark-square-color: #b58863;
+$light-square-active-color: #f7ec59;
+$dark-square-active-color: #dac431;
+$square-active-border-color: #fcf8c5;
+
 body {
   min-height: 100vh;
   color: var(--color-text);
@@ -89,50 +95,70 @@ body {
   user-select: none;
 }
 
-.row .square:nth-of-type(even) {
-  background-color: #b58863;
+.row {
+  .square:nth-of-type(even) {
+    background-color: $dark-square-color;
+
+    .rankLabel, .fileLabel {
+      color: $light-square-color;
+    }
+  }
+
+  .square:nth-of-type(odd) {
+    background-color: $light-square-color;
+
+    .rankLabel, .fileLabel {
+      color: $dark-square-color;
+    }
+  }
+
+  .highlight:nth-of-type(even) {
+    background-color: $dark-square-active-color !important;
+  }
+
+  .highlight:nth-of-type(odd) {
+    background-color: $light-square-active-color !important;
+  }
 }
 
-.row .square:nth-of-type(odd) {
-  background-color: #f0d9b5;
+.row:nth-of-type(even) {
+  .square:nth-of-type(even) {
+    background-color: $light-square-color;
+
+    .rankLabel, .fileLabel {
+      color: $dark-square-color;
+    }
+  }
+
+  .square:nth-of-type(odd) {
+    background-color: $dark-square-color;
+
+    .rankLabel, .fileLabel {
+      color: $light-square-color;
+    }
+  }
+  
+  .highlight:nth-of-type(even) {
+    background-color: $light-square-active-color !important;
+  }
+
+  .highlight:nth-of-type(odd) {
+    background-color: $dark-square-active-color !important;
+  }
 }
 
 .active {
-  border: #fcf8c5 solid 5px;
-}
+  border: $square-active-border-color solid 5px;
 
-.row .highlight:nth-of-type(even) {
-  background-color: #dac431 !important;
-}
-
-.row .highlight:nth-of-type(odd) {
-  background-color: #F7EC59 !important;
-}
-
-.row:nth-of-type(even) .square:nth-of-type(even) {
-  background-color: #f0d9b5;
-}
-
-.row:nth-of-type(even) .square:nth-of-type(odd) {
-  background-color: #b58863;
-}
-
-.row:nth-of-type(even) .highlight:nth-of-type(even) {
-  background-color: #F7EC59 !important;
-}
-
-.row:nth-of-type(even) .highlight:nth-of-type(odd) {
-  background-color: #dac431 !important;
+  .piece {
+    margin-left: -4.75px;
+    margin-top: -4.75px;
+  }
 }
 
 .square, .piece {
   width: 75px;
   height: 75px;
-}
-
-.active .piece {
-  margin-left: -5px;
-  margin-top: -5px;
 }
 
 .square {
@@ -231,3 +257,18 @@ body {
 }
 
 /*Black pieces end*/
+
+.fileLabel, .rankLabel {
+  position: absolute;
+  z-index: 1;
+}
+
+.fileLabel {
+  bottom: 0;
+  right: 6px;
+}
+
+.rankLabel {
+  top: 0;
+  left: 6px;
+}

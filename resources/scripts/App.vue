@@ -54,7 +54,7 @@ const selectedKeys = ref<string[]>(['4']);
   </a-layout>
 </template>
 
-<style>
+<style lang="scss">
 @import "./assets/base.scss";
 
 #components-layout-demo-responsive .logo {

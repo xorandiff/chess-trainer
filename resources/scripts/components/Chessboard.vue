@@ -26,6 +26,8 @@ const { board, color, pieceMouseUp, pieceMouseDown, pieceMoveFromActive, setProm
             :flip="color === 'b'"
             @piece-mouse-down="pieceMouseDown([i-1, j-1])"
           ></Piece>
+          <div v-if="i === 8" class="fileLabel">{{ String.fromCharCode('a'.charCodeAt(0) + (j - 1)) }}</div>
+          <div v-if="j === 1" class="rankLabel">{{ 9 - i }}</div>
         </div>
       </template>
     </div>
