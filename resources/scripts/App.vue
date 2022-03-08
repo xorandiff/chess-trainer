@@ -2,6 +2,7 @@
 import { UserOutlined, VideoCameraOutlined, UploadOutlined } from '@ant-design/icons-vue';
 import { ref } from 'vue';
 import Chessboard from "./components/Chessboard.vue";
+import Movelist from "./components/Movelist.vue";
 
 const onCollapse = (collapsed: boolean, type: string) => {
   //console.log(collapsed, type);
@@ -44,7 +45,10 @@ const selectedKeys = ref<string[]>(['4']);
     <a-layout>
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
-          <Chessboard />
+          <a-row>
+            <a-col :span="12"><Chessboard /></a-col>
+            <a-col :span="12"><Movelist /></a-col>
+          </a-row>
         </div>
       </a-layout-content>
       <a-layout-footer style="text-align: center">

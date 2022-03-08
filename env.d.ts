@@ -20,9 +20,19 @@ type Piece = {
 };
 
 type Move = {
-    piece: Piece,
-    from: Square,
-    to: Square
+    piece: Piece;
+    from: Square;
+    to: Square;
+    isCapture: boolean;
+    isCheck: boolean;
+    isCheckmate: boolean;
+    castlingSide: boolean | "k" | "q";
+    promotionType: boolean | Piece["type"];
+}
+
+type Fullmove = {
+    w: Move;
+    b?: Move;
 }
 
 type Board = {

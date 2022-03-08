@@ -123,6 +123,36 @@ export class Chessboard {
         return `${algebraicFile}${algebraicRank}`;
     }
 
+    //TODO handle rook and knight 'file from' move in case of more than one of its type
+    public static moveToAlgebraic(move: Move) : string {
+        let pieceString = move.piece.type.toUpperCase();
+        if (!move.isCapture && (move.piece.type === PIECE_TYPE.PAWN || move.promotionType)) {
+            pieceString = '';
+        }
+        if (move.isCapture && (move.piece.type === PIECE_TYPE.PAWN || move.promotionType)) {
+            pieceString = this.boardToAlgebraic(move.from)[0];
+        }
+        let captureString = move.isCapture ? 'x' : '';
+
+        let moveString = `${pieceString}${captureString}${this.boardToAlgebraic(move.to)}`;
+
+        if (move.promotionType && typeof move.promotionType === "string") {
+            moveString += `=${move.promotionType.toUpperCase()}`;
+        }
+
+        if (move.castlingSide) {
+            moveString = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'O-O' : 'O-O-O';
+        }
+
+        if (move.isCheckmate) {
+            moveString += '#';
+        } else if (move.isCheck) {
+            moveString += '+';
+        }
+
+        return moveString;
+    }
+
     /**
      * Method for converting algebraic notation to board
      */

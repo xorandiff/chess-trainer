@@ -1,4 +1,4 @@
-import { Chessboard, PIECE_COLOR, PIECE_TYPE } from "@/chessboard";
+import { Chessboard, PIECE_COLOR, PIECE_TYPE, CASTLING_SIDE } from "@/chessboard";
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
@@ -32,6 +32,11 @@ export const useBoardStore = defineStore({
       halfmoves,
       fullmoves,
       lastMove,
+      move: {
+        [PIECE_COLOR.WHITE]: {} as Move,
+        [PIECE_COLOR.BLACK]: {} as Move,
+      } as Fullmove,
+      moves: [] as Fullmove[],
       promotionType: PIECE_TYPE.PAWN,
       stockfish: false,
       promotionModalVisible: false,
@@ -122,6 +127,13 @@ export const useBoardStore = defineStore({
         let sound = '';
         const oppositeColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
+        //Move variables
+        let castlingSide: boolean | CASTLING_SIDE = false;
+        let isCapture = false;
+        let promotionType: boolean | PIECE_TYPE = false;
+        let isCheck = false;
+        let isCheckmate = false;
+
         //Castling
         if (i === r && (r === 7 || r === 0) && f === 4 && (Math.abs(f - j) === 2)) {
           //Only possible files for king are 6 and 2
@@ -132,6 +144,7 @@ export const useBoardStore = defineStore({
           const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === i && piece.square[1] === rookFileFrom);
           if (x >= 0) {
             sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'castle1.mp3' : 'castle2.mp3';
+            castlingSide = rookFileFrom === 7 ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
             this.pieces[this.currentTurnColor][x].square = [i, rookFileTo];
             this.board[i][rookFileTo].piece = this.board[i][rookFileFrom].piece;
             this.board[i][rookFileFrom].piece = undefined;
@@ -140,6 +153,7 @@ export const useBoardStore = defineStore({
 
         if (this.board[r][f].piece!.type === PIECE_TYPE.PAWN && !this.board[i][j].piece && j != f) {
           //En passant capture
+          isCapture = true;
           if (this.currentTurnColor === this.color) {
             this.board[i + 1][j].piece = undefined;
             _.remove(this.pieces[oppositeColor], piece => piece.square[0] === i + 1 && piece.square[1] === j);
@@ -165,7 +179,22 @@ export const useBoardStore = defineStore({
           piece: this.board[r][f].piece!,
           from: [r, f],
           to: [i, j],
-        };
+          isCapture: this.board[i][j].piece || isCapture ? true : false,
+          isCheck,
+          isCheckmate,
+          promotionType,
+          castlingSide
+        } as Move;
+
+        //Update move history
+        if (this.currentTurnColor === PIECE_COLOR.WHITE) {
+          this.moves.push({
+            [PIECE_COLOR.WHITE]: this.lastMove,
+          } as Fullmove);
+        }
+        if (this.currentTurnColor === PIECE_COLOR.BLACK) {
+          this.moves[this.fullmoves - 2][PIECE_COLOR.BLACK] = this.lastMove;
+        }
 
         //Highlight last move
         this.board[r][f].highlight = true;
@@ -195,6 +224,11 @@ export const useBoardStore = defineStore({
           if (x >= 0) {
             this.pieces[this.currentTurnColor][x].type = this.promotionType;
             this.board[i][j].piece!.type = this.promotionType;
+            if (this.currentTurnColor === PIECE_COLOR.WHITE) {
+              this.moves[this.fullmoves - 1][this.currentTurnColor]!.promotionType = this.promotionType;
+            } else {
+              this.moves[this.fullmoves - 2][this.currentTurnColor]!.promotionType = this.promotionType;
+            }
           }
         }
 
@@ -205,6 +239,7 @@ export const useBoardStore = defineStore({
 
         //Switching turn for other color
         this.currentTurnColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+        const opponentColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
         //Compute all possible legal moves for next turn color
         this.legalMoves = this.pieces[this.currentTurnColor].map(piece => Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[this.currentTurnColor], this.lastMove));
@@ -213,12 +248,16 @@ export const useBoardStore = defineStore({
 
         //Detect if check occured
         if (Chessboard.detectCheck(this.board, this.currentTurnColor)) {
+          if (opponentColor === PIECE_COLOR.WHITE) {
+            this.moves[this.fullmoves - 1][opponentColor]!.isCheck = true;
+          } else {
+            this.moves[this.fullmoves - 2][opponentColor]!.isCheck = true;
+          }
           sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'check1.mp3' : 'check2.mp3';
         }
 
         //Detect if checkmate occured
         if (this.halfmoves >= 50 || !this.legalMoves.find(moves => moves.length)) {
-          const opponentColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
           const opponentLegalMoves = this.pieces[opponentColor].map(piece => Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[opponentColor], this.lastMove));
           if (this.halfmoves >= 50) {
             console.log('50 move rule reached, draw');
@@ -231,7 +270,11 @@ export const useBoardStore = defineStore({
               src: ['sounds/stalemate.mp3']
             }).play();
           } else {
-            console.log('Checkmate');
+            if (opponentColor === PIECE_COLOR.WHITE) {
+              this.moves[this.fullmoves - 1][opponentColor]!.isCheckmate = true;
+            } else {
+              this.moves[this.fullmoves - 2][opponentColor]!.isCheckmate = true;
+            }
             new Howl({
               src: ['sounds/checkmate.mp3']
             }).play();
@@ -240,7 +283,7 @@ export const useBoardStore = defineStore({
           new Howl({
             src: ['sounds/' + sound]
           }).play();
-          if (this.currentTurnColor != this.color && false) {
+          if (this.currentTurnColor != this.color || true) {
             const fen = Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove);
             console.log(`FEN: ${fen}`);
             axios('/api/bestmove/' + fen)
