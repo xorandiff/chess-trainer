@@ -36,6 +36,7 @@ export class Chessboard {
         let fields = fen.split(' ');
         const color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
         const castlingRightsString = fields[2];
+        //TODO load en passant target square
         let enPassantTargetSquare = fields[3];
         const halfmoves = parseInt(fields[4]);
         const fullmoves = parseInt(fields[5]);

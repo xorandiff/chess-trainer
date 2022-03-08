@@ -246,6 +246,25 @@ export const useBoardStore = defineStore({
 
         this.pieceMouseUp();
 
+        let isThreefoldRepetition = false;
+        if (this.moves.length > 6 || (this.moves.length == 6 && this.moves[this.moves.length - 1][PIECE_COLOR.BLACK])) {
+          const m = this.moves.length;
+          const b = this.currentTurnColor === PIECE_COLOR.BLACK ? m - 1 : m;
+          if (
+              Chessboard.moveToAlgebraic(this.moves[m-1][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-3][opponentColor]!) &&
+              Chessboard.moveToAlgebraic(this.moves[m-3][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-5][opponentColor]!) &&
+              Chessboard.moveToAlgebraic(this.moves[m-2][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-4][opponentColor]!) &&
+              Chessboard.moveToAlgebraic(this.moves[m-4][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-6][opponentColor]!) &&
+              Chessboard.moveToAlgebraic(this.moves[b-1][this.currentTurnColor]!) === Chessboard.moveToAlgebraic(this.moves[b-3][this.currentTurnColor]!) &&
+              Chessboard.moveToAlgebraic(this.moves[b-3][this.currentTurnColor]!) === Chessboard.moveToAlgebraic(this.moves[b-5][this.currentTurnColor]!) &&
+              Chessboard.moveToAlgebraic(this.moves[b-2][this.currentTurnColor]!) === Chessboard.moveToAlgebraic(this.moves[b-4][this.currentTurnColor]!) &&
+              Chessboard.moveToAlgebraic(this.moves[b-4][this.currentTurnColor]!) === Chessboard.moveToAlgebraic(this.moves[b-6][this.currentTurnColor]!)
+            ) {
+              isThreefoldRepetition = true;
+          }
+        }
+
+
         //Detect if check occured
         if (Chessboard.detectCheck(this.board, this.currentTurnColor)) {
           if (opponentColor === PIECE_COLOR.WHITE) {
@@ -256,7 +275,7 @@ export const useBoardStore = defineStore({
           sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'check1.mp3' : 'check2.mp3';
         }
 
-        //Detect if checkmate occured
+        //Detect if checkmate/stalemate/50 move rule occured
         if (this.halfmoves >= 50 || !this.legalMoves.find(moves => moves.length)) {
           const opponentLegalMoves = this.pieces[opponentColor].map(piece => Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[opponentColor], this.lastMove));
           if (this.halfmoves >= 50) {
@@ -279,6 +298,11 @@ export const useBoardStore = defineStore({
               src: ['sounds/checkmate.mp3']
             }).play();
           }
+        } else if (isThreefoldRepetition) { //Detect threefold repetition draw
+          console.log('Threefold repetition, draw');
+          new Howl({
+            src: ['sounds/endgame.mp3']
+          }).play();
         } else {
           new Howl({
             src: ['sounds/' + sound]
@@ -295,7 +319,6 @@ export const useBoardStore = defineStore({
       }
     },
     setPromotionPiece(pieceType : PIECE_TYPE) {
-      console.log(pieceType);
       this.promotionType = pieceType;
       this.promotionModalVisible = false;
       this.pieceMove(this.promotionMove.from, this.promotionMove.to);
