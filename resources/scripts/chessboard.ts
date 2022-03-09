@@ -29,6 +29,7 @@ export class Chessboard {
                     active: false,
                     legalMove: false,
                     highlight: false,
+                    draggedOver: false
                 };
             }
         }
@@ -490,9 +491,10 @@ export class Chessboard {
      * Method for detecting any attack by given color on given square
      */
     private static isSquareAttacked(board: Board, color: PIECE_COLOR, [i, j]: Square) : boolean {
+        const d = color === PIECE_COLOR.WHITE ? 1 : -1;
         for (let k = 0; k < 3; k++) {
             const shortRangeChecks: any = [
-                [[i - 1, j - 1], [i - 1, j + 1]], //pawn
+                [[i + d, j - 1], [i + d, j + 1]], //pawn
                 [[i-2, j-1], [i-2, j+1], [i+2, j-1], [i+2, j+1], [i-1, j-2], [i-1, j+2], [i+1, j-2], [i+1, j+2]], //knight
                 [[i-1, j-1], [i-1, j+1], [i+1, j-1], [i+1, j+1], [i, j-1], [i, j+1], [i-1, j], [i+1, j]], //king
             ];

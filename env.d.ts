@@ -37,8 +37,9 @@ type Fullmove = {
 
 type Board = {
     piece?: Piece;
-    dragged: boolean,
-    active: boolean,
-    legalMove: boolean,
-    highlight: boolean,
+    dragged: boolean;
+    active: boolean;
+    legalMove: boolean;
+    highlight: boolean;
+    draggedOver: boolean;
 }[][];

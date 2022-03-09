@@ -8,7 +8,7 @@ const { moves } = store;
 </script>
 
 <template>
-    <a-list :style="{ height: '420px', overflow: 'auto' }" bordered>
+    <a-list :style="{ height: '340px', overflow: 'auto' }" bordered>
         <a-list-item v-for="(fullmove, index) in _.reverse([...moves])">{{ (moves.length - index) + '. ' }} {{ Chessboard.moveToAlgebraic(fullmove[PIECE_COLOR.WHITE]) + ' ' + (fullmove[PIECE_COLOR.BLACK] ? Chessboard.moveToAlgebraic(fullmove[PIECE_COLOR.BLACK]!) : '') }}</a-list-item>
         <template #header>
             <div>Moves</div>

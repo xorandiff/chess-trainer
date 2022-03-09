@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useBoardStore } from "@/stores/board";
 const store = useBoardStore();
-const { switchAlwaysStockfish, switchStockfish, setStockfishSkillLevel } = store;
+const { switchAlwaysStockfish, switchStockfish, setStockfishSkillLevel, setStockfishMovetime } = store;
 const { stockfishSkillLevel } = store;
 </script>
 
@@ -43,7 +43,24 @@ const { stockfishSkillLevel } = store;
             </a-row>
         </a-list-item>
         <a-list-item>
-            Stockfish Skill Level <a-slider :step="1" :min="1" :max="8" dots @afterChange="setStockfishSkillLevel" />
+            <a-row :style="{ width: '100%' }" :gutter="10">
+                <a-col :span="8">
+                    Stockfish Skill Level <a-input-number v-model:value="store.stockfishSkillLevel" :step="1" :min="0" :max="20" @change="setStockfishSkillLevel" />
+                </a-col>
+                <a-col :span="8">
+                    Stockfish Move Time 
+                    <a-input-number v-model:value="store.stockfishMovetime" :step="100" :min="100" :max="5000" @change="setStockfishMovetime">
+                        <template #addonAfter>
+                            ms
+                        </template>
+                    </a-input-number>
+                </a-col>
+                <a-col :span="8">
+                    <template v-if="store.alwaysStockfish || store.stockfish">
+                        Stockfish Depth {{ store.stockfishDepth }}
+                    </template>
+                </a-col>
+            </a-row>
         </a-list-item>
     </a-list>
 </template>

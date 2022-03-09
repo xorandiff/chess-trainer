@@ -147,12 +147,10 @@ body {
 }
 
 .active {
-  border: $square-active-border-color solid 5px;
-
-  .piece {
-    margin-left: -4.75px;
-    margin-top: -4.75px;
-  }
+  border: $square-active-border-color solid 4px;
+  position: absolute;
+  width: 75px;
+  height: 75px;
 }
 
 .square, .piece {

@@ -4,7 +4,7 @@ import { useBoardStore } from "@/stores/board";
 import Piece from "./Piece.vue";
 
 const store = useBoardStore();
-const { board, color, pieceMouseUp, pieceMouseDown, pieceMoveFromActive, setPromotionPiece } = store;
+const { board, color, pieceMouseUp, pieceMouseDown, pieceMoveFromActive, setPromotionPiece, setDraggedOver } = store;
 </script>
 
 <template>
@@ -13,11 +13,13 @@ const { board, color, pieceMouseUp, pieceMouseDown, pieceMoveFromActive, setProm
       <template v-for="j in 8">
         <div 
           class="square"
-          :class="[board[i-1][j-1].active ? 'active highlight' : '', board[i-1][j-1].highlight ? 'highlight' : '']"
+          :class="[board[i-1][j-1].active || board[i-1][j-1].highlight ? 'highlight' : '']"
           @drop="pieceMoveFromActive([i-1, j-1])"
           @dragover.prevent
-          @dragenter.prevent
+          @dragenter="setDraggedOver([i-1, j-1])"
+          @dragleave="setDraggedOver([i-1, j-1])"
         >
+          <div v-if="board[i-1][j-1].active || board[i-1][j-1].draggedOver" class="active"></div>
           <div v-if="board[i-1][j-1].legalMove" :class="board[i-1][j-1].piece ? 'capture' : 'move'"></div>
           <Piece 
             v-if="board[i-1][j-1].piece"
