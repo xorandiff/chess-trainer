@@ -21,7 +21,10 @@ export const useBoardStore = defineStore({
     };
     const lastMove = {} as Move;
 
-    const legalMoves = pieces[color].map(piece => Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], lastMove));
+    pieces[color].forEach(piece => {
+      piece.legalMoves = Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], lastMove);
+    })
+    const legalMoves = pieces[color].map(piece => piece.legalMoves);
 
     return ({
       board,
@@ -80,7 +83,10 @@ export const useBoardStore = defineStore({
         [PIECE_COLOR.BLACK]: Chessboard.getPieces(board, PIECE_COLOR.BLACK),
       }
       this.lastMove = {} as Move; //TODO set last move to en passant target square if present
-      this.legalMoves = this.pieces[color].map(piece => Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], this.lastMove));
+      this.pieces[color].forEach(piece => {
+        piece.legalMoves = Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], this.lastMove);
+      })
+      this.legalMoves = this.pieces[color].map(piece => piece.legalMoves);
       this.halfmoves = halfmoves;
       this.fullmoves = fullmoves;
       this.move = {
@@ -229,8 +235,11 @@ export const useBoardStore = defineStore({
           isCheck,
           isCheckmate,
           promotionType,
-          castlingSide
+          castlingSide,
+          algebraicNotation: ''
         } as Move;
+
+        this.lastMove.algebraicNotation = Chessboard.moveToAlgebraic(this.lastMove, this.pieces[this.currentTurnColor]);
 
         //Update move history
         if (this.currentTurnColor === PIECE_COLOR.WHITE) {
@@ -288,7 +297,10 @@ export const useBoardStore = defineStore({
         const opponentColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
         //Compute all possible legal moves for next turn color
-        this.legalMoves = this.pieces[this.currentTurnColor].map(piece => Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[this.currentTurnColor], this.lastMove));
+        this.pieces[this.currentTurnColor].forEach(piece => {
+          piece.legalMoves = Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[this.currentTurnColor], this.lastMove);
+        })
+        this.legalMoves = this.pieces[this.currentTurnColor].map(piece => piece.legalMoves);
 
         this.pieceMouseUp();
 
@@ -296,7 +308,7 @@ export const useBoardStore = defineStore({
         if (this.moves.length > 6 || (this.moves.length == 6 && this.moves[this.moves.length - 1][PIECE_COLOR.BLACK])) {
           const m = this.moves.length;
           const b = this.currentTurnColor === PIECE_COLOR.BLACK ? m - 1 : m;
-          if (
+          /* if (
               Chessboard.moveToAlgebraic(this.moves[m-1][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-3][opponentColor]!) &&
               Chessboard.moveToAlgebraic(this.moves[m-3][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-5][opponentColor]!) &&
               Chessboard.moveToAlgebraic(this.moves[m-2][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-4][opponentColor]!) &&
@@ -307,17 +319,14 @@ export const useBoardStore = defineStore({
               Chessboard.moveToAlgebraic(this.moves[b-4][this.currentTurnColor]!) === Chessboard.moveToAlgebraic(this.moves[b-6][this.currentTurnColor]!)
             ) {
               isThreefoldRepetition = true;
-          }
+          } */
         }
 
 
         //Detect if check occured
         if (Chessboard.detectCheck(this.board, this.currentTurnColor)) {
-          if (opponentColor === PIECE_COLOR.WHITE) {
-            this.moves[this.fullmoves - 1][opponentColor]!.isCheck = true;
-          } else {
-            this.moves[this.fullmoves - 2][opponentColor]!.isCheck = true;
-          }
+          const movesIndex = opponentColor === PIECE_COLOR.WHITE ? this.fullmoves - 1 : this.fullmoves - 2;
+          this.moves[movesIndex][opponentColor]!.algebraicNotation += '+';
           sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'check1.mp3' : 'check2.mp3';
         }
 
@@ -325,8 +334,8 @@ export const useBoardStore = defineStore({
         this.fen = Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove);
 
         //Update eval
-        axios('/api/eval/' + this.fen)
-        .then(response => this.setEval(response.data.eval as number));
+        //axios('/api/eval/' + this.fen)
+        //.then(response => this.setEval(response.data.eval as number));
 
         //Detect if checkmate/stalemate/50 move rule occured
         if (this.halfmoves >= 50 || !this.legalMoves.find(moves => moves.length)) {
@@ -342,11 +351,9 @@ export const useBoardStore = defineStore({
               src: ['sounds/stalemate.mp3']
             }).play();
           } else {
-            if (opponentColor === PIECE_COLOR.WHITE) {
-              this.moves[this.fullmoves - 1][opponentColor]!.isCheckmate = true;
-            } else {
-              this.moves[this.fullmoves - 2][opponentColor]!.isCheckmate = true;
-            }
+            const movesIndex = opponentColor === PIECE_COLOR.WHITE ? this.fullmoves - 1 : this.fullmoves - 2;
+            let algebraicNotation = this.moves[movesIndex][opponentColor]!.algebraicNotation;
+            this.moves[movesIndex][opponentColor]!.algebraicNotation = algebraicNotation.slice(0, -1) + '#';
             new Howl({
               src: ['sounds/checkmate.mp3']
             }).play();

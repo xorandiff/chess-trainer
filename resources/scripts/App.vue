@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { UserOutlined, VideoCameraOutlined, UploadOutlined } from '@ant-design/icons-vue';
+import { UserOutlined, ReadOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import { ref } from 'vue';
-import Chessboard from "./components/Chessboard.vue";
-import Movelist from "./components/Movelist.vue";
-import PlayingMode from "./components/PlayingMode.vue";
+import Analysis from "./Analysis.vue";
 
 const onCollapse = (collapsed: boolean, type: string) => {
   //console.log(collapsed, type);
@@ -13,7 +11,7 @@ const onBreakpoint = (broken: boolean) => {
   //console.log(broken);
 };
 
-const selectedKeys = ref<string[]>(['4']);
+const selectedKeys = ref<string[]>(['3']);
 </script>
 
 <template>
@@ -27,29 +25,22 @@ const selectedKeys = ref<string[]>(['4']);
       <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline">
         <a-menu-item key="1">
           <user-outlined />
-          <span class="nav-text">nav 1</span>
+          <span class="nav-text">Profile</span>
         </a-menu-item>
         <a-menu-item key="2">
-          <video-camera-outlined />
-          <span class="nav-text">nav 2</span>
+          <read-outlined />
+          <span class="nav-text">Openings</span>
         </a-menu-item>
         <a-menu-item key="3">
-          <upload-outlined />
-          <span class="nav-text">nav 3</span>
-        </a-menu-item>
-        <a-menu-item key="4">
-          <user-outlined />
-          <span class="nav-text">nav 4</span>
+          <search-outlined />
+          <span class="nav-text">Analysis</span>
         </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout>
       <a-layout-content :style="{ margin: '24px 16px 0' }">
         <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
-          <a-row>
-            <a-col :span="12"><Chessboard /></a-col>
-            <a-col :span="12"><Movelist /><br/><PlayingMode /></a-col>
-          </a-row>
+          <Analysis />
         </div>
       </a-layout-content>
       <a-layout-footer style="text-align: center">

@@ -15,9 +15,8 @@ const { board, color, pieceMouseUp, pieceMouseDown, pieceMoveFromActive, setProm
           class="square"
           :class="[board[i-1][j-1].active || board[i-1][j-1].highlight ? 'highlight' : '']"
           @drop="pieceMoveFromActive([i-1, j-1])"
-          @dragover.prevent
-          @dragenter="setDraggedOver([i-1, j-1])"
-          @dragleave="setDraggedOver([i-1, j-1])"
+          @dragenter.prevent
+          @dragover="e => {e.preventDefault(); return setDraggedOver([i-1, j-1]);}"
         >
           <div v-if="board[i-1][j-1].active || board[i-1][j-1].draggedOver" class="active"></div>
           <div v-if="board[i-1][j-1].legalMove" :class="board[i-1][j-1].piece ? 'capture' : 'move'"></div>

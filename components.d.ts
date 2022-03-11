@@ -26,6 +26,8 @@ declare module 'vue' {
     ARow: typeof import('ant-design-vue/es')['Row']
     ASlider: typeof import('ant-design-vue/es')['Slider']
     ASwitch: typeof import('ant-design-vue/es')['Switch']
+    ATabPane: typeof import('ant-design-vue/es')['TabPane']
+    ATabs: typeof import('ant-design-vue/es')['Tabs']
   }
 }
 

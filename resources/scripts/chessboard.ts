@@ -116,7 +116,7 @@ export class Chessboard {
     }
 
     /**
-     * Method for converting board notation to algebraic
+     * Method for converting board notation to algebraic notation
      */
     public static boardToAlgebraic([i, j]: Square) : string {
         const algebraicRank = (7 - i) + 1;
@@ -125,18 +125,59 @@ export class Chessboard {
         return `${algebraicFile}${algebraicRank}`;
     }
 
-    //TODO handle rook and knight 'file from' move in case of more than one of its type
-    public static moveToAlgebraic(move: Move) : string {
-        let pieceString = move.piece.type.toUpperCase();
-        if (!move.isCapture && (move.piece.type === PIECE_TYPE.PAWN || move.promotionType)) {
+    /**
+     * Method for converting move to algebraic notation
+     */
+    public static moveToAlgebraic(move: Move, pieces: Piece[]) : string {
+        const { type } = move.piece;
+
+        let pieceString = type.toUpperCase();
+        if (!move.isCapture && (type === PIECE_TYPE.PAWN || move.promotionType)) {
             pieceString = '';
         }
-        if (move.isCapture && (move.piece.type === PIECE_TYPE.PAWN || move.promotionType)) {
+        if (move.isCapture && (type === PIECE_TYPE.PAWN || move.promotionType)) {
             pieceString = this.boardToAlgebraic(move.from)[0];
         }
+
+        let onSquare = '';
+        if (type !== PIECE_TYPE.PAWN) {
+            let piecesOfType = pieces.filter(p => p.type === type);
+
+            //We now check if there are at least two pieces of the same type
+            if (piecesOfType.length > 1) {
+                //We exclude our current piece from this list
+                piecesOfType = piecesOfType.filter(p => p.square[0] != move.piece.square[0] || p.square[1] != move.piece.square[1]);
+
+                //We left only pieces which can go to the same square
+                piecesOfType = piecesOfType.filter(piece => piece.legalMoves.find(square => square[0] === move.to[0] && square[1] === move.to[1]));
+
+                if (piecesOfType.length > 0) {
+                    let removedPieces = _.remove(piecesOfType, piece => piece.square[1] === move.from[1]);
+                    if (!removedPieces.length) {
+                        /**
+                         * There are no other pieces on the same file, so file is enough 
+                         * to disambiguate move
+                         */
+                        onSquare = this.boardToAlgebraic(move.from)[0];
+                    } else {
+                        let removedPieces = _.remove(piecesOfType, piece => piece.square[0] === move.from[0]);
+                        if (!removedPieces.length) {
+                            /**
+                             * There are no other pieces on the same rank, so rank is enough 
+                             * to disambiguate move
+                             */
+                            onSquare = this.boardToAlgebraic(move.from)[1];
+                        } else {
+                            onSquare = this.boardToAlgebraic(move.from);
+                        }
+                    }
+                }
+            }
+        }
+
         let captureString = move.isCapture ? 'x' : '';
 
-        let moveString = `${pieceString}${captureString}${this.boardToAlgebraic(move.to)}`;
+        let moveString = `${pieceString}${onSquare}${captureString}${this.boardToAlgebraic(move.to)}`;
 
         if (move.promotionType && typeof move.promotionType === "string") {
             moveString += `=${move.promotionType.toUpperCase()}`;

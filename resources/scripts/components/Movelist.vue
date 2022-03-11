@@ -9,9 +9,10 @@ const { moves } = store;
 
 <template>
     <a-list :style="{ height: '340px', overflow: 'auto' }" bordered>
-        <a-list-item v-for="(fullmove, index) in _.reverse([...moves])">{{ (moves.length - index) + '. ' }} {{ Chessboard.moveToAlgebraic(fullmove[PIECE_COLOR.WHITE]) + ' ' + (fullmove[PIECE_COLOR.BLACK] ? Chessboard.moveToAlgebraic(fullmove[PIECE_COLOR.BLACK]!) : '') }}</a-list-item>
-        <template #header>
-            <div>Moves</div>
-        </template>
+        <a-list-item v-for="(fullmove, index) in _.reverse([...moves])">
+            {{ (moves.length - index) + '. ' }} 
+            {{ fullmove[PIECE_COLOR.WHITE].algebraicNotation }} 
+            {{ (fullmove[PIECE_COLOR.BLACK] ? fullmove[PIECE_COLOR.BLACK]!.algebraicNotation : '') }}
+        </a-list-item>
     </a-list>
 </template>

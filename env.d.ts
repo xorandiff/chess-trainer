@@ -28,6 +28,7 @@ type Move = {
     isCheckmate: boolean;
     castlingSide: boolean | "k" | "q";
     promotionType: boolean | Piece["type"];
+    algebraicNotation: string;
 }
 
 type Fullmove = {
