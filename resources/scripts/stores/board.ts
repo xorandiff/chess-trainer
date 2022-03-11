@@ -4,6 +4,53 @@ import { Howl } from "howler";
 import _ from "lodash";
 import axios from "axios";
 
+let effects = {
+  move1: new Howl({
+    src: ['sounds/move1.mp3'],
+    preload: true
+  }),
+  move2: new Howl({
+    src: ['sounds/move2.mp3'],
+    preload: true
+  }),
+  capture1: new Howl({
+    src: ['sounds/capture1.mp3'],
+    preload: true
+  }),
+  capture2: new Howl({
+    src: ['sounds/capture2.mp3'],
+    preload: true
+  }),
+  castle1: new Howl({
+    src: ['sounds/castle1.mp3'],
+    preload: true
+  }),
+  castle2: new Howl({
+    src: ['sounds/castle1.mp3'],
+    preload: true
+  }),
+  check1: new Howl({
+    src: ['sounds/check1.mp3'],
+    preload: true
+  }),
+  check2: new Howl({
+    src: ['sounds/check2.mp3'],
+    preload: true
+  }),
+  checkmate: new Howl({
+    src: ['sounds/checkmate.mp3'],
+    preload: true
+  }),
+  stalemate: new Howl({
+    src: ['sounds/stalemate.mp3'],
+    preload: true
+  }),
+  endgame: new Howl({
+    src: ['sounds/endgame.mp3'],
+    preload: true
+  }),
+};
+
 //'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 //'r3k2r/p1p2ppp/2p1bn2/2Q5/5Bq1/2N5/PPP1NPPP/R3K2R b KQkq - 0 14'
 
@@ -24,7 +71,6 @@ export const useBoardStore = defineStore({
     pieces[color].forEach(piece => {
       piece.legalMoves = Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], lastMove);
     })
-    const legalMoves = pieces[color].map(piece => piece.legalMoves);
 
     return ({
       board,
@@ -32,7 +78,6 @@ export const useBoardStore = defineStore({
       currentTurnColor: color,
       castlingRights,
       pieces,
-      legalMoves,
       halfmoves,
       fullmoves,
       lastMove,
@@ -93,7 +138,6 @@ export const useBoardStore = defineStore({
       this.pieces[color].forEach(piece => {
         piece.legalMoves = Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[PIECE_COLOR.WHITE], this.lastMove);
       })
-      this.legalMoves = this.pieces[color].map(piece => piece.legalMoves);
       this.halfmoves = 0;
       this.fullmoves = 1;
       this.move = {
@@ -109,12 +153,15 @@ export const useBoardStore = defineStore({
       };
       this.fen = fen;
     },
+    loadPGN(pgn: string) {
+      //TODO load game from PGN
+    },
     pieceMouseDown([i, j]: Square) {
       if (this.board[i][j].piece && this.board[i][j].piece!.color == this.currentTurnColor) {
         this.board[i][j].active = true;
-        const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === i && piece.square[1] === j);
-        if (x >= 0) {
-          for (const [a, b] of this.legalMoves[x]) {
+        const piece = this.pieces[this.currentTurnColor].find(piece => piece.square[0] === i && piece.square[1] === j);
+        if (piece) {
+          for (const [a, b] of piece.legalMoves) {
             this.board[a][b].legalMove = true;
           }
         }
@@ -167,7 +214,6 @@ export const useBoardStore = defineStore({
         const [i, j] = toSquare;
 
         if (this.promotionType === PIECE_TYPE.PAWN && this.board[r][f].piece!.type === PIECE_TYPE.PAWN && ((this.board[r][f].piece!.color === PIECE_COLOR.WHITE && i === 0) || (this.board[r][f].piece!.color === PIECE_COLOR.BLACK && i === 7))) {
-          console.log('promotion detected, showing modal...')
           /**
            * Promotion move detected, instead of performing this move, first show
            * popover for user in order to select promotion piece
@@ -181,8 +227,8 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMove([r, f]: Square, [i, j]: Square) {
-      const squareIndex = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === r && piece.square[1] === f);
-      if (squareIndex >= 0 && this.legalMoves[squareIndex].find(s => s[0] === i && s[1] === j)) {
+      const piece = this.pieces[this.currentTurnColor].find(piece => piece.square[0] === r && piece.square[1] === f);
+      if (piece && piece.legalMoves.find(s => s[0] === i && s[1] === j)) {
         let sound = '';
         const oppositeColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
@@ -202,7 +248,7 @@ export const useBoardStore = defineStore({
           //Move rook to castled square
           const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === i && piece.square[1] === rookFileFrom);
           if (x >= 0) {
-            sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'castle1.mp3' : 'castle2.mp3';
+            sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'castle1' : 'castle2';
             castlingSide = rookFileFrom === 7 ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
             this.pieces[this.currentTurnColor][x].square = [i, rookFileTo];
             this.board[i][rookFileTo].piece = this.board[i][rookFileFrom].piece;
@@ -269,11 +315,11 @@ export const useBoardStore = defineStore({
           if (this.board[i][j].piece) {
             _.remove(this.pieces[oppositeColor], piece => piece.square[0] === i && piece.square[1] === j);
             if (!sound) {
-              sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'capture1.mp3' : 'capture2.mp3';
+              sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'capture1' : 'capture2';
             }
           } else {
             if (!sound) {
-              sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'move1.mp3' : 'move2.mp3';
+              sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'move1' : 'move2';
             }         
           }
           this.board[i][j].piece = this.board[r][f].piece;
@@ -307,7 +353,6 @@ export const useBoardStore = defineStore({
         this.pieces[this.currentTurnColor].forEach(piece => {
           piece.legalMoves = Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[this.currentTurnColor], this.lastMove);
         })
-        this.legalMoves = this.pieces[this.currentTurnColor].map(piece => piece.legalMoves);
 
         this.pieceMouseUp();
 
@@ -334,7 +379,7 @@ export const useBoardStore = defineStore({
         if (Chessboard.detectCheck(this.board, this.currentTurnColor)) {
           const movesIndex = opponentColor === PIECE_COLOR.WHITE ? this.fullmoves - 1 : this.fullmoves - 2;
           this.moves[movesIndex][opponentColor]!.algebraicNotation += '+';
-          sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'check1.mp3' : 'check2.mp3';
+          sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'check1' : 'check2';
         }
 
         //Update FEN
@@ -348,7 +393,7 @@ export const useBoardStore = defineStore({
         //.then(response => this.setEval(response.data.eval as number));
 
         //Detect if checkmate/stalemate/50 move rule occured
-        if (this.halfmoves >= 50 || !this.legalMoves.find(moves => moves.length)) {
+        if (this.halfmoves >= 50 || !this.pieces[this.currentTurnColor].map(piece => piece.legalMoves).find(moves => moves.length)) {
           const opponentLegalMoves = this.pieces[opponentColor].map(piece => Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[opponentColor], this.lastMove));
           if (this.halfmoves >= 50) {
             console.log('50 move rule reached, draw');
@@ -357,26 +402,18 @@ export const useBoardStore = defineStore({
             }).play();
           } else if (!opponentLegalMoves.find(moves => moves.length)) {
             console.log('Stalemate');
-            new Howl({
-              src: ['sounds/stalemate.mp3']
-            }).play();
+            effects.stalemate.play();
           } else {
             const movesIndex = opponentColor === PIECE_COLOR.WHITE ? this.fullmoves - 1 : this.fullmoves - 2;
             let algebraicNotation = this.moves[movesIndex][opponentColor]!.algebraicNotation;
             this.moves[movesIndex][opponentColor]!.algebraicNotation = algebraicNotation.slice(0, -1) + '#';
-            new Howl({
-              src: ['sounds/checkmate.mp3']
-            }).play();
+            effects.checkmate.play();
           }
         } else if (isThreefoldRepetition) { //Detect threefold repetition draw
           console.log('Threefold repetition, draw');
-          new Howl({
-            src: ['sounds/endgame.mp3']
-          }).play();
+          effects.endgame.play();
         } else {
-          new Howl({
-            src: ['sounds/' + sound]
-          }).play();
+          effects[sound].play();
           if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
             this.stockfishRun();
           }

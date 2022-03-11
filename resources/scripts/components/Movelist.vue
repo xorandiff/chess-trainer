@@ -6,7 +6,7 @@ const store = useBoardStore();
 </script>
 
 <template>
-    <a-list :style="{ height: '340px', overflow: 'auto' }" bordered>
+    <a-list :style="{ height: '280px', overflow: 'auto' }" bordered>
         <a-list-item v-for="(fullmove, index) in _.reverse([...store.moves])">
             {{ (store.moves.length - index) + '. ' }} 
             {{ fullmove[PIECE_COLOR.WHITE].algebraicNotation }} 
