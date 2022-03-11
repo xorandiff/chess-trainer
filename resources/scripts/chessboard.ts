@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import moment from 'moment';
 
 export const enum PIECE_TYPE {
     ROOK = "r",
@@ -259,6 +260,20 @@ export class Chessboard {
         const fen = [position, turnColor, castling, enPassantTargetSquare, halfmoves, fullmoves].join(' ');
 
         return fen;
+    }
+
+    /**
+     * Method for converting move history to PGN string
+     */
+    public static getPGN(moves: Fullmove[]) : string {
+        let pgn = `[Site "Chess Trainer"]\n[Date "${moment().format('YYYY.MM.DD')}"]\n\n`;
+        for (let i = 0; i < moves.length; i++) {
+            pgn += `${i + 1}. ${moves[i][PIECE_COLOR.WHITE].algebraicNotation} `;
+            if (moves[i][PIECE_COLOR.BLACK]) {
+                pgn += `${moves[i][PIECE_COLOR.BLACK]!.algebraicNotation} `;
+            }
+        }
+        return pgn;
     }
 
     /**

@@ -3,6 +3,7 @@ import { ref } from "vue";
 import Chessboard from "./components/Chessboard.vue";
 import Movelist from "./components/Movelist.vue";
 import PlayingMode from "./components/PlayingMode.vue";
+import PGN from "./components/PGN.vue";
 
 const activeKey = ref("1");
 </script>
@@ -28,7 +29,7 @@ const activeKey = ref("1");
                             Analysis
                         </span>
                     </template>
-
+                    <PGN />
                 </a-tab-pane>
             </a-tabs>
             <br/>

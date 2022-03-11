@@ -49,6 +49,7 @@ export const useBoardStore = defineStore({
       stockfishWorking: false,
       stockfishDepth: 0,
       fen,
+      pgn: '',
       eval: 0.0,
       promotionModalVisible: false,
       promotionMove: {
@@ -332,6 +333,9 @@ export const useBoardStore = defineStore({
 
         //Update FEN
         this.fen = Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove);
+
+        //Update PGN
+        this.pgn = Chessboard.getPGN(this.moves);
 
         //Update eval
         //axios('/api/eval/' + this.fen)

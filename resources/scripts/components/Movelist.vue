@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import _ from 'lodash';
-import { Chessboard, PIECE_COLOR } from "@/chessboard";
+import { PIECE_COLOR } from "@/chessboard";
 import { useBoardStore } from "@/stores/board";
 const store = useBoardStore();
 

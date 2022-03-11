@@ -28,6 +28,7 @@ declare module 'vue' {
     ASwitch: typeof import('ant-design-vue/es')['Switch']
     ATabPane: typeof import('ant-design-vue/es')['TabPane']
     ATabs: typeof import('ant-design-vue/es')['Tabs']
+    ATextarea: typeof import('ant-design-vue/es')['Textarea']
   }
 }
 
