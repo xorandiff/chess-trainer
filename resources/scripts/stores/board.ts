@@ -75,21 +75,27 @@ export const useBoardStore = defineStore({
   actions: {
     newGame(fen: string) {
       const chessboard = Chessboard.create(fen);
-      const { board, castlingRights, halfmoves, fullmoves, color } = chessboard;
+      const { board, castlingRights } = chessboard;
+      const color = PIECE_COLOR.WHITE;
       this.color = PIECE_COLOR.WHITE;
-      this.board = board;
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          this.board[i][j] = board[i][j];
+        }
+      }
+      this.castlingRights = castlingRights;
       this.currentTurnColor = color;
       this.pieces = {
-        [PIECE_COLOR.WHITE]: Chessboard.getPieces(board, PIECE_COLOR.WHITE),
-        [PIECE_COLOR.BLACK]: Chessboard.getPieces(board, PIECE_COLOR.BLACK),
+        [PIECE_COLOR.WHITE]: Chessboard.getPieces(this.board, PIECE_COLOR.WHITE),
+        [PIECE_COLOR.BLACK]: Chessboard.getPieces(this.board, PIECE_COLOR.BLACK),
       }
       this.lastMove = {} as Move; //TODO set last move to en passant target square if present
       this.pieces[color].forEach(piece => {
-        piece.legalMoves = Chessboard.computeLegalMoves(board, piece.square, castlingRights[PIECE_COLOR.WHITE], this.lastMove);
+        piece.legalMoves = Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[PIECE_COLOR.WHITE], this.lastMove);
       })
       this.legalMoves = this.pieces[color].map(piece => piece.legalMoves);
-      this.halfmoves = halfmoves;
-      this.fullmoves = fullmoves;
+      this.halfmoves = 0;
+      this.fullmoves = 1;
       this.move = {
         [PIECE_COLOR.WHITE]: {} as Move,
         [PIECE_COLOR.BLACK]: {} as Move,

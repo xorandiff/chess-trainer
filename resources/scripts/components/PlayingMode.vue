@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { useBoardStore } from "@/stores/board";
 const store = useBoardStore();
-const { switchAlwaysStockfish, switchStockfish, setStockfishSkillLevel, setStockfishMovetime } = store;
-const { stockfishSkillLevel } = store;
+const { switchAlwaysStockfish, switchStockfish, setStockfishSkillLevel, setStockfishMovetime, newGame } = store;
 </script>
 
 <template>
@@ -10,14 +9,14 @@ const { stockfishSkillLevel } = store;
         <a-list-item>
             <a-row :style="{ width: '100%' }" :gutter="5">
                 <a-col :span="20">
-                    <a-input :value="store.fen">
+                    <a-input v-model:value="store.fen">
                         <template #addonBefore>
                             FEN
                         </template>
                     </a-input>
                 </a-col>
                 <a-col :span="4">
-                    <a-button>Load FEN</a-button>
+                    <a-button @click="newGame(store.fen)">Load FEN</a-button>
                 </a-col>
             </a-row>
             
