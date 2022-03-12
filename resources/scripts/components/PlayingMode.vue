@@ -48,7 +48,7 @@ const { switchAlwaysStockfish, switchStockfish, setStockfishSkillLevel, setStock
                 </a-col>
                 <a-col :span="8">
                     Stockfish Move Time 
-                    <a-input-number v-model:value="store.stockfishMovetime" :step="100" :min="100" :max="5000" @change="setStockfishMovetime">
+                    <a-input-number v-model:value="store.stockfishMovetime" :step="10" :min="10" :max="5000" @change="setStockfishMovetime">
                         <template #addonAfter>
                             ms
                         </template>

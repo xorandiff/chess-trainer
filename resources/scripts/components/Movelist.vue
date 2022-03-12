@@ -3,14 +3,21 @@ import _ from 'lodash';
 import { PIECE_COLOR } from "@/chessboard";
 import { useBoardStore } from "@/stores/board";
 const store = useBoardStore();
+const { showMove } = store;
 </script>
 
 <template>
     <a-list :style="{ height: '280px', overflow: 'auto' }" bordered>
         <a-list-item v-for="(fullmove, index) in _.reverse([...store.moves])">
             {{ (store.moves.length - index) + '. ' }} 
-            {{ fullmove[PIECE_COLOR.WHITE].algebraicNotation }} 
-            {{ (fullmove[PIECE_COLOR.BLACK] ? fullmove[PIECE_COLOR.BLACK]!.algebraicNotation : '') }}
+            <a @click="showMove(store.moves.length - index - 1, PIECE_COLOR.WHITE)">
+                {{ fullmove[PIECE_COLOR.WHITE].algebraicNotation + ' ' }} 
+            </a> 
+            <template v-if="fullmove[PIECE_COLOR.BLACK]">
+                <a @click="showMove(store.moves.length - index - 1, PIECE_COLOR.BLACK)">
+                    {{ fullmove[PIECE_COLOR.BLACK]!.algebraicNotation }}
+                </a>
+            </template>
         </a-list-item>
     </a-list>
 </template>

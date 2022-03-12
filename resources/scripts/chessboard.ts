@@ -94,6 +94,41 @@ export class Chessboard {
         };
     }
 
+    public static fenToBoard(fen: string) : Board {
+        const rows = fen.split(' ')[0].split('/');
+        let board: Board = new Array(8).fill(0).map(_row => new Array(8));
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                board[i][j] = {
+                    dragged: false,
+                    active: false,
+                    legalMove: false,
+                    highlight: false,
+                    draggedOver: false
+                };
+            }
+        }
+        for (let i = 0; i < 8; i++) {
+            let row = rows[i];
+            for (let j = 0; j < 8; j++) {
+                let c = row[0];
+                row = row.substring(1);
+                if (["k", "q", "b", "n", "p", "r"].includes(c.toLowerCase())) {
+                    board[i][j].piece = {
+                        type: c.toLowerCase() as PIECE_TYPE,
+                        color: c === c.toLowerCase() ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE,
+                        square: [i, j],
+                        legalMoves: []
+                    };
+                } else {
+                    j += parseInt(c) - 1;
+                }
+            }
+        }
+        
+        return board;
+    }
+
     /**
      * Method for getting the piece of given color on given square
      */

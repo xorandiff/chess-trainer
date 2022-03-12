@@ -1,14 +1,37 @@
 <script setup lang="ts">
-import { PIECE_TYPE } from "@/chessboard";
+import { onMounted, onUnmounted } from "vue";
+import { PIECE_TYPE, PIECE_COLOR } from "@/chessboard";
 import { useBoardStore } from "@/stores/board";
 import Piece from "./Piece.vue";
 
 const store = useBoardStore();
-const { board, color, pieceMouseUp, pieceMouseDown, pieceMoveFromActive, setPromotionPiece, setDraggedOver } = store;
+const { board, color, currentMove, pieceMouseUp, pieceMouseDown, pieceMoveFromActive, setPromotionPiece, setDraggedOver, showMove } = store;
+
+function handleKeydown(e: KeyboardEvent) {
+  switch (e.key) {
+    case "ArrowLeft":
+      if (currentMove.color === PIECE_COLOR.BLACK) {
+        showMove(currentMove.index, PIECE_COLOR.WHITE);
+      } else {
+        showMove(currentMove.index - 1, PIECE_COLOR.BLACK);
+      }
+    break;
+    case "ArrowRight": 
+      if (currentMove.color === PIECE_COLOR.WHITE) {
+        showMove(currentMove.index, PIECE_COLOR.BLACK);
+      } else {
+        showMove(currentMove.index + 1, PIECE_COLOR.WHITE);
+      }
+    break;
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', handleKeydown))
+onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 </script>
 
 <template>
-  <div id="chessboard" @mouseup="pieceMouseUp" :class="color === 'b' ? 'flip' : ''">
+  <div id="chessboard" :class="color === 'b' ? 'flip' : ''" @mouseup="pieceMouseUp">
     <div class="row" v-for="i in 8">
       <template v-for="j in 8">
         <div 

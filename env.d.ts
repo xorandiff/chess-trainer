@@ -29,6 +29,7 @@ type Move = {
     castlingSide: boolean | "k" | "q";
     promotionType: boolean | Piece["type"];
     algebraicNotation: string;
+    fen: string;
 }
 
 type Fullmove = {

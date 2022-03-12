@@ -87,6 +87,10 @@ export const useBoardStore = defineStore({
       } as Fullmove,
       moves: [] as Fullmove[],
       promotionType: PIECE_TYPE.PAWN,
+      currentMove: {
+        index: -1,
+        color: PIECE_COLOR.WHITE
+      },
       stockfish: false,
       alwaysStockfish: false,
       stockfishSkillLevel: 8, //from 0 to 20
@@ -115,7 +119,8 @@ export const useBoardStore = defineStore({
       }
       percent -= Math.round(evalMultiplied);
       return percent;
-    }
+    },
+    oppositeColor: (state) => state.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE,
   },
   actions: {
     newGame(fen: string) {
@@ -157,7 +162,12 @@ export const useBoardStore = defineStore({
       //TODO load game from PGN
     },
     pieceMouseDown([i, j]: Square) {
-      if (this.board[i][j].piece && this.board[i][j].piece!.color == this.currentTurnColor) {
+      if (
+        this.currentMove.index === this.moves.length - 1 &&
+        (this.currentMove.color !== this.currentTurnColor || !this.moves.length) &&
+        this.board[i][j].piece && 
+        this.board[i][j].piece!.color == this.currentTurnColor
+      ) {
         this.board[i][j].active = true;
         const piece = this.pieces[this.currentTurnColor].find(piece => piece.square[0] === i && piece.square[1] === j);
         if (piece) {
@@ -289,7 +299,8 @@ export const useBoardStore = defineStore({
           isCheckmate,
           promotionType,
           castlingSide,
-          algebraicNotation: ''
+          algebraicNotation: '',
+          fen: ''
         } as Move;
 
         this.lastMove.algebraicNotation = Chessboard.moveToAlgebraic(this.lastMove, this.pieces[this.currentTurnColor]);
@@ -299,9 +310,11 @@ export const useBoardStore = defineStore({
           this.moves.push({
             [PIECE_COLOR.WHITE]: this.lastMove,
           } as Fullmove);
-        }
-        if (this.currentTurnColor === PIECE_COLOR.BLACK) {
+          this.currentMove.color = PIECE_COLOR.WHITE;
+          this.currentMove.index++;
+        } else {
           this.moves[this.fullmoves - 2][PIECE_COLOR.BLACK] = this.lastMove;
+          this.currentMove.color = PIECE_COLOR.BLACK;
         }
 
         //Highlight last move
@@ -374,16 +387,17 @@ export const useBoardStore = defineStore({
           } */
         }
 
+        const movesIndex = opponentColor === PIECE_COLOR.WHITE ? this.fullmoves - 1 : this.fullmoves - 2;
 
         //Detect if check occured
         if (Chessboard.detectCheck(this.board, this.currentTurnColor)) {
-          const movesIndex = opponentColor === PIECE_COLOR.WHITE ? this.fullmoves - 1 : this.fullmoves - 2;
           this.moves[movesIndex][opponentColor]!.algebraicNotation += '+';
           sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'check1' : 'check2';
         }
 
         //Update FEN
         this.fen = Chessboard.getFen(this.board, this.castlingRights, this.halfmoves, this.fullmoves, this.currentTurnColor, this.lastMove);
+        this.moves[movesIndex][opponentColor]!.fen = this.fen;
 
         //Update PGN
         this.pgn = Chessboard.getPGN(this.moves);
@@ -420,6 +434,21 @@ export const useBoardStore = defineStore({
         }
       } else {
         this.pieceMouseUp();
+      }
+    },
+    showMove(index: number, color: PIECE_COLOR) {
+      if (index >= 0 && index < this.moves.length && this.moves[index][color]) {
+        this.currentMove.index = index;
+        this.currentMove.color = color;
+        this.loadPosition(this.moves[index][color]!.fen);
+      }
+    },
+    loadPosition(fen: string) {
+      const board = Chessboard.fenToBoard(fen);
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          this.board[i][j] = board[i][j];
+        }
       }
     },
     setEval(evaluation: number) {
