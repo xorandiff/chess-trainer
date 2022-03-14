@@ -21,13 +21,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/bestmove/{movetime}/{level}/{fen}', function ($movetime, $level, $fen) {
+Route::get('/bestmove/{depth}/{level}/{fen}', function ($depth, $level, $fen) {
     $input = new InputStream();
     $input->write("ucinewgame\n");
     $input->write("setoption name Skill Level value " . $level . "\n");
     $input->write("setoption name UCI_LimitStrength value true\n");
     $input->write("position fen " . $fen . "\n");
-    $input->write("go movetime " . $movetime . " depth 20\n");
+    $input->write("go movetime 5000 depth " . $depth . "\n");
     $input->close();
     
     $process = new Process([dirname(__DIR__) . '\stockfish_14.1_win_x64_avx2.exe']);
@@ -46,12 +46,12 @@ Route::get('/bestmove/{movetime}/{level}/{fen}', function ($movetime, $level, $f
     $bestmove = explode(" ", array_pop($output))[1];
 
     $info = explode(" ", array_pop($output));
-    $depth = $info[2];
+    $finalDepth = $info[2];
     $mate = 0;
     if (!strcmp($info[8], "mate")) {
         $mate = intval($info[9]);
     }
-    return response()->json(['bestmove' => $bestmove, 'depth' => intval($depth), 'mate' => $mate]);
+    return response()->json(['bestmove' => $bestmove, 'depth' => intval($finalDepth), 'mate' => $mate]);
 })->where('fen', '.*');
 
 Route::get('/eval/{fen}', function ($fen) {

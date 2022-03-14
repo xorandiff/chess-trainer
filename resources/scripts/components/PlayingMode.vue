@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useBoardStore } from "@/stores/board";
 const store = useBoardStore();
-const { switchAlwaysStockfish, switchStockfish, setStockfishSkillLevel, setStockfishMovetime, newGame } = store;
+const { switchAlwaysStockfish, switchStockfish, setStockfishSkillLevel, setStockfishDesiredDepth, newGame } = store;
 </script>
 
 <template>
@@ -32,6 +32,9 @@ const { switchAlwaysStockfish, switchStockfish, setStockfishSkillLevel, setStock
             </a-row>
         </a-list-item>
         <a-list-item>
+            ECO {{ store.eco ? store.eco : '-' }}
+        </a-list-item>
+        <a-list-item>
             <a-row :style="{ width: '100%' }" :gutter="10">
                 <a-col :span="12">
                     Stockfish playing both sides <a-switch :checked="store.alwaysStockfish" @click="switchAlwaysStockfish" />
@@ -47,8 +50,8 @@ const { switchAlwaysStockfish, switchStockfish, setStockfishSkillLevel, setStock
                     Stockfish Skill Level <a-input-number v-model:value="store.stockfishSkillLevel" :step="1" :min="0" :max="20" @change="setStockfishSkillLevel" />
                 </a-col>
                 <a-col :span="8">
-                    Stockfish Move Time 
-                    <a-input-number v-model:value="store.stockfishMovetime" :step="10" :min="10" :max="5000" @change="setStockfishMovetime">
+                    Stockfish desired depth 
+                    <a-input-number v-model:value="store.stockfishDesiredDepth" :step="1" :min="1" :max="35" @change="setStockfishDesiredDepth">
                         <template #addonAfter>
                             ms
                         </template>

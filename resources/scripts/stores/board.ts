@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
 import axios from "axios";
+import eco from "../eco.json";
 
 let effects = {
   move1: new Howl({
@@ -93,13 +94,14 @@ export const useBoardStore = defineStore({
       },
       stockfish: false,
       alwaysStockfish: false,
-      stockfishSkillLevel: 8, //from 0 to 20
-      stockfishMovetime: 1000, //in ms
+      stockfishSkillLevel: 20, //from 0 to 20
+      stockfishDesiredDepth: 20, //from 1 to 35
       stockfishWorking: false,
       stockfishDepth: 0,
       stockfishMateIn: 0,
       fen,
       pgn: '',
+      eco: '',
       eval: 0.0,
       promotionModalVisible: false,
       promotionMove: {
@@ -406,6 +408,18 @@ export const useBoardStore = defineStore({
 
         //Update PGN
         this.pgn = Chessboard.getPGN(this.moves);
+        
+        let moveslength = 0;
+        for (const opening of eco) {
+          if (this.pgn.split("\n\n")[1].startsWith(opening.moves)) {
+            
+            if (opening.moves.length > moveslength) {
+              moveslength = opening.moves.length;
+              this.eco = opening.eco + ': ' + opening.name;
+            }
+          }
+        }
+        if (this.pgn.split("\n\n")[1])
 
         //Update eval
         axios('/api/eval/' + this.fen)
@@ -462,7 +476,7 @@ export const useBoardStore = defineStore({
     stockfishRun() {
       this.stockfishWorking = true;
       //consider using built-in fetch api instead of axios
-      axios(`/api/bestmove/${this.stockfishMovetime}/${this.stockfishSkillLevel}/${this.fen}`)
+      axios(`/api/bestmove/${this.stockfishDesiredDepth}/${this.stockfishSkillLevel}/${this.fen}`)
       .then(response => this.stockfishMove(response.data));
     },
     setPromotionPiece(pieceType : PIECE_TYPE) {
@@ -486,8 +500,8 @@ export const useBoardStore = defineStore({
     setStockfishSkillLevel(level: any) {
       this.stockfishSkillLevel = level as number;
     },
-    setStockfishMovetime(movetime: any) {
-      this.stockfishMovetime = movetime as number;
+    setStockfishDesiredDepth(desiredDepth: any) {
+      this.stockfishDesiredDepth = desiredDepth as number;
     },
     setDraggedOver([r, f]: Square) {
       for (let i = 0; i < 8; i++) {
