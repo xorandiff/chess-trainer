@@ -5,7 +5,7 @@ import { useBoardStore } from "@/stores/board";
 import Piece from "./Piece.vue";
 
 const store = useBoardStore();
-const { board, color, currentMove, pieceMouseUp, pieceMouseDown, pieceMoveFromActive, setPromotionPiece, setDraggedOver, showMove } = store;
+const { board, color, currentMove, pieceMouseUp, pieceMoveFromActive, setPromotionPiece, setDraggedOver, showMove } = store;
 
 function handleKeydown(e: KeyboardEvent) {
   switch (e.key) {
@@ -26,8 +26,8 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', handleKeydown))
-onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
+onMounted(() => window.addEventListener('keydown', handleKeydown));
+onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 </script>
 
 <template>
@@ -45,10 +45,9 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
           <div v-if="board[i-1][j-1].legalMove" :class="board[i-1][j-1].piece ? 'capture' : 'move'"></div>
           <Piece 
             v-if="board[i-1][j-1].piece"
-            :piece="board[i-1][j-1].piece"
+            :piece="board[i-1][j-1].piece!"
             :square="[i-1, j-1]"
             :flip="color === 'b'"
-            @piece-mouse-down="pieceMouseDown([i-1, j-1])"
           ></Piece>
           <div v-if="i === 8" class="fileLabel">{{ String.fromCharCode('a'.charCodeAt(0) + (j - 1)) }}</div>
           <div v-if="j === 1" class="rankLabel">{{ 9 - i }}</div>

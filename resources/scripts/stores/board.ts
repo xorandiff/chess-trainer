@@ -97,6 +97,7 @@ export const useBoardStore = defineStore({
       stockfishMovetime: 1000, //in ms
       stockfishWorking: false,
       stockfishDepth: 0,
+      stockfishMateIn: 0,
       fen,
       pgn: '',
       eval: 0.0,
@@ -200,6 +201,10 @@ export const useBoardStore = defineStore({
 
       this.stockfishWorking = false;
       this.stockfishDepth = depth;
+
+      if (data.mate) {
+        this.stockfishMateIn = data.mate as number;
+      }
 
       const from = bestmove.substring(0, 2);
       const to = bestmove.substring(2, 4);
@@ -403,8 +408,8 @@ export const useBoardStore = defineStore({
         this.pgn = Chessboard.getPGN(this.moves);
 
         //Update eval
-        //axios('/api/eval/' + this.fen)
-        //.then(response => this.setEval(response.data.eval as number));
+        axios('/api/eval/' + this.fen)
+        .then(response => this.setEval(response.data.eval as number));
 
         //Detect if checkmate/stalemate/50 move rule occured
         if (this.halfmoves >= 50 || !this.pieces[this.currentTurnColor].map(piece => piece.legalMoves).find(moves => moves.length)) {
@@ -456,6 +461,7 @@ export const useBoardStore = defineStore({
     },
     stockfishRun() {
       this.stockfishWorking = true;
+      //consider using built-in fetch api instead of axios
       axios(`/api/bestmove/${this.stockfishMovetime}/${this.stockfishSkillLevel}/${this.fen}`)
       .then(response => this.stockfishMove(response.data));
     },

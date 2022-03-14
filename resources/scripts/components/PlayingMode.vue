@@ -27,7 +27,7 @@ const { switchAlwaysStockfish, switchStockfish, setStockfishSkillLevel, setStock
                     <a-progress :percent="store.evalPercent" strokeLinecap="square" strokeColor="black" :showInfo="false" />
                 </a-col>
                 <a-col :span="1">
-                    {{ store.eval }}
+                    {{ store.stockfishMateIn ? `M${store.stockfishMateIn}` : store.eval }}
                 </a-col>
             </a-row>
         </a-list-item>

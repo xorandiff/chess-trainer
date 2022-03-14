@@ -27,7 +27,7 @@ Route::get('/bestmove/{movetime}/{level}/{fen}', function ($movetime, $level, $f
     $input->write("setoption name Skill Level value " . $level . "\n");
     $input->write("setoption name UCI_LimitStrength value true\n");
     $input->write("position fen " . $fen . "\n");
-    $input->write("go movetime " . $movetime . "\n");
+    $input->write("go movetime " . $movetime . " depth 20\n");
     $input->close();
     
     $process = new Process([dirname(__DIR__) . '\stockfish_14.1_win_x64_avx2.exe']);
@@ -39,11 +39,19 @@ Route::get('/bestmove/{movetime}/{level}/{fen}', function ($movetime, $level, $f
         return str_contains($output, "bestmove");
     });
 
-    $output = explode("\n", $process->getOutput());
+    $rawOutput = $process->getOutput();
+    //return nl2br($rawOutput);
+    $output = explode("\n", $rawOutput);
     array_pop($output);
     $bestmove = explode(" ", array_pop($output))[1];
-    $depth = explode(" ", array_pop($output))[2];
-    return response()->json(['bestmove' => $bestmove, 'depth' => intval($depth)]);
+
+    $info = explode(" ", array_pop($output));
+    $depth = $info[2];
+    $mate = 0;
+    if (!strcmp($info[8], "mate")) {
+        $mate = intval($info[9]);
+    }
+    return response()->json(['bestmove' => $bestmove, 'depth' => intval($depth), 'mate' => $mate]);
 })->where('fen', '.*');
 
 Route::get('/eval/{fen}', function ($fen) {

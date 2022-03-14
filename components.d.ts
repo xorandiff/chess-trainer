@@ -29,6 +29,8 @@ declare module 'vue' {
     ATabPane: typeof import('ant-design-vue/es')['TabPane']
     ATabs: typeof import('ant-design-vue/es')['Tabs']
     ATextarea: typeof import('ant-design-vue/es')['Textarea']
+    ATypographyLink: typeof import('ant-design-vue/es')['TypographyLink']
+    ATypographyText: typeof import('ant-design-vue/es')['TypographyText']
   }
 }
 
