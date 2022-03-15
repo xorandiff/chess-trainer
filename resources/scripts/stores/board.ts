@@ -4,6 +4,24 @@ import { Howl } from "howler";
 import _ from "lodash";
 import axios from "axios";
 import eco from "../eco.json";
+/* import Echo from "laravel-echo";
+import Pusher from "pusher-js";
+
+let laravelEcho = new Echo({
+    broadcaster: 'pusher',
+    key: "app-key",
+    wsHost: "127.0.0.1",
+    wsPort: 6001,
+    forceTLS: false,
+    encrypted: true,
+    disableStats: true,
+    enabledTransports: ['ws', 'wss'],
+});
+
+laravelEcho.channel('bestmove')
+.listen('message', (e) => {
+    console.log(e);
+}); */
 
 let effects = {
   move1: new Howl({
@@ -94,8 +112,8 @@ export const useBoardStore = defineStore({
       },
       stockfish: false,
       alwaysStockfish: false,
-      stockfishSkillLevel: 20, //from 0 to 20
-      stockfishDesiredDepth: 20, //from 1 to 35
+      stockfishElo: 300, //from 100 to 3000
+      stockfishDesiredDepth: 15, //from 1 to 35
       stockfishWorking: false,
       stockfishDepth: 0,
       stockfishMateIn: 0,
@@ -203,24 +221,32 @@ export const useBoardStore = defineStore({
 
       this.stockfishWorking = false;
       this.stockfishDepth = depth;
+      
+      if (data.eval !== null) {
+        this.eval = data.eval as number;
+      }
 
       if (data.mate) {
         this.stockfishMateIn = data.mate as number;
+      } else {
+        this.stockfishMateIn = 0;
       }
 
-      const from = bestmove.substring(0, 2);
-      const to = bestmove.substring(2, 4);
+      if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
+        const from = bestmove.substring(0, 2);
+        const to = bestmove.substring(2, 4);
 
-      const [r, f] = Chessboard.algebraicToBoard(from);
-      const [i, j] = Chessboard.algebraicToBoard(to);
+        const [r, f] = Chessboard.algebraicToBoard(from);
+        const [i, j] = Chessboard.algebraicToBoard(to);
 
-      if (bestmove.length > 4) {
-        this.promotionType = bestmove[4] as PIECE_TYPE;
+        if (bestmove.length > 4) {
+          this.promotionType = bestmove[4] as PIECE_TYPE;
+        }
+        
+        this.clearHighlights();
+
+        this.pieceMove([r, f], [i, j]);
       }
-      
-      this.clearHighlights();
-
-      this.pieceMove([r, f], [i, j]);
     },
     pieceMoveFromActive(toSquare: Square) {
       const fromSquare = Chessboard.getActiveSquare(this.board);
@@ -307,7 +333,7 @@ export const useBoardStore = defineStore({
           promotionType,
           castlingSide,
           algebraicNotation: '',
-          fen: ''
+          fen: '',
         } as Move;
 
         this.lastMove.algebraicNotation = Chessboard.moveToAlgebraic(this.lastMove, this.pieces[this.currentTurnColor]);
@@ -419,11 +445,6 @@ export const useBoardStore = defineStore({
             }
           }
         }
-        if (this.pgn.split("\n\n")[1])
-
-        //Update eval
-        axios('/api/eval/' + this.fen)
-        .then(response => this.setEval(response.data.eval as number));
 
         //Detect if checkmate/stalemate/50 move rule occured
         if (this.halfmoves >= 50 || !this.pieces[this.currentTurnColor].map(piece => piece.legalMoves).find(moves => moves.length)) {
@@ -447,9 +468,7 @@ export const useBoardStore = defineStore({
           effects.endgame.play();
         } else {
           effects[sound].play();
-          if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
-            this.stockfishRun();
-          }
+          this.stockfishRun();
         }
       } else {
         this.pieceMouseUp();
@@ -460,6 +479,18 @@ export const useBoardStore = defineStore({
         this.currentMove.index = index;
         this.currentMove.color = color;
         this.loadPosition(this.moves[index][color]!.fen);
+
+        const [a, b] = this.moves[index][color]!.from;
+        const [c, d] = this.moves[index][color]!.to;
+        for (let r = 0; r < 8; r++) {
+          for (let f = 0; f < 8; f++) {
+            if ((a === r && b === f) || (c === r && d === f)) {
+              this.board[r][f].highlight = true;
+            } else {
+              this.board[r][f].highlight = false;
+            }
+          }
+        }
       }
     },
     loadPosition(fen: string) {
@@ -470,14 +501,14 @@ export const useBoardStore = defineStore({
         }
       }
     },
-    setEval(evaluation: number) {
-      this.eval = evaluation;
-    },
     stockfishRun() {
       this.stockfishWorking = true;
       //consider using built-in fetch api instead of axios
-      axios(`/api/bestmove/${this.stockfishDesiredDepth}/${this.stockfishSkillLevel}/${this.fen}`)
-      .then(response => this.stockfishMove(response.data));
+      axios(`/api/bestmove/${this.stockfishDesiredDepth}/${this.stockfishElo}/${this.fen}`)
+      .then(response => this.stockfishMove(response.data))
+      .catch(error => {
+        console.log(error);
+      });
     },
     setPromotionPiece(pieceType : PIECE_TYPE) {
       this.promotionType = pieceType;
@@ -497,8 +528,8 @@ export const useBoardStore = defineStore({
         this.stockfishRun();
       }
     },
-    setStockfishSkillLevel(level: any) {
-      this.stockfishSkillLevel = level as number;
+    setStockfishElo(elo: any) {
+      this.stockfishElo = elo as number;
     },
     setStockfishDesiredDepth(desiredDepth: any) {
       this.stockfishDesiredDepth = desiredDepth as number;

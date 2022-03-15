@@ -4,16 +4,20 @@ import Chessboard from "./components/Chessboard.vue";
 import Movelist from "./components/Movelist.vue";
 import PlayingMode from "./components/PlayingMode.vue";
 import PGN from "./components/PGN.vue";
+import Eval from "./components/Eval.vue";
 
 const activeKey = ref("1");
 </script>
 
 <template>
     <a-row>
+        <a-col :span="1">
+            <Eval />
+        </a-col>
         <a-col :span="12">
             <Chessboard />
         </a-col>
-        <a-col :span="12">
+        <a-col :span="11">
             <a-tabs v-model:activeKey="activeKey">
                 <a-tab-pane key="1">
                     <template #tab>
@@ -26,7 +30,7 @@ const activeKey = ref("1");
                 <a-tab-pane key="2">
                     <template #tab>
                         <span>
-                            Analysis
+                            PGN
                         </span>
                     </template>
                     <PGN />

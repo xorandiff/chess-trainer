@@ -41,8 +41,10 @@
         "@popperjs/core": "^2.11.2",
         "ant-design-vue": "^2.2.8",
         "howler": "^2.2.3",
+        "laravel-echo": "^1.11.3",
         "moment": "^2.29.1",
         "pinia": "^2.0.11",
+        "pusher-js": "^7.0.6",
         "vue": "^3.2.31"
     }
 }

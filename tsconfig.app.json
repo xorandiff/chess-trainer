@@ -1,6 +1,6 @@
 {
   "extends": "@vue/tsconfig/tsconfig.web.json",
-  "include": ["env.d.ts", "resources/scripts/**/*", "resources/scripts/**/*.vue"],
+  "include": ["env.d.ts", "resources/scripts/eco.json", "resources/scripts/**/*", "resources/scripts/**/*.vue"],
   "exclude": ["resources/scripts/**/__tests__/*"],
   "compilerOptions": {
     "composite": true,
