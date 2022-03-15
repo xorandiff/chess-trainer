@@ -5,7 +5,7 @@ import { useBoardStore } from "@/stores/board";
 import Piece from "./Piece.vue";
 
 const store = useBoardStore();
-const { board, color, currentMove, pieceMouseUp, pieceMoveFromActive, setPromotionPiece, setDraggedOver, showMove } = store;
+const { board, color, currentMove, pieceMouseUp, pieceMoveFromActive, setPromotionPiece, setDraggedOver, showMove, setHighlightColor, clearColoredHighlights } = store;
 
 function handleKeydown(e: KeyboardEvent) {
   switch (e.key) {
@@ -31,16 +31,18 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 </script>
 
 <template>
-  <div id="chessboard" :class="color === 'b' ? 'flip' : ''" @mouseup="pieceMouseUp">
+  <div id="chessboard" :class="color === 'b' ? 'flip' : ''" @mouseup="pieceMouseUp" @mousedown.left="clearColoredHighlights">
     <div class="row" v-for="i in 8">
       <template v-for="j in 8">
         <div 
           class="square"
-          :class="[board[i-1][j-1].active || board[i-1][j-1].highlight ? 'highlight' : '']"
+          :class="[board[i-1][j-1].active || board[i-1][j-1].highlight ? 'highlight' : '' ]"
           @drop="pieceMoveFromActive([i-1, j-1])"
           @dragenter.prevent
           @dragover="e => {e.preventDefault(); return setDraggedOver([i-1, j-1]);}"
+          @click.right.prevent="setHighlightColor([i-1, j-1], 'red')"
         >
+          <div v-if="board[i-1][j-1].highlightColor" :class="board[i-1][j-1].highlightColor"></div>
           <div v-if="board[i-1][j-1].active || board[i-1][j-1].draggedOver" class="active"></div>
           <div v-if="board[i-1][j-1].legalMove" :class="board[i-1][j-1].piece ? 'capture' : 'move'"></div>
           <Piece 

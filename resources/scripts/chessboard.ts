@@ -30,7 +30,8 @@ export class Chessboard {
                     active: false,
                     legalMove: false,
                     highlight: false,
-                    draggedOver: false
+                    draggedOver: false,
+                    highlightColor: ''
                 };
             }
         }
@@ -104,7 +105,8 @@ export class Chessboard {
                     active: false,
                     legalMove: false,
                     highlight: false,
-                    draggedOver: false
+                    draggedOver: false,
+                    highlightColor: ''
                 };
             }
         }

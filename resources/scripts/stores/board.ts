@@ -182,6 +182,13 @@ export const useBoardStore = defineStore({
     loadPGN(pgn: string) {
       //TODO load game from PGN
     },
+    setHighlightColor([i, j]: Square, color: string) {
+      if (!this.board[i][j].highlightColor) {
+        this.board[i][j].highlightColor = color;
+      } else {
+        this.board[i][j].highlightColor = '';
+      }
+    },
     pieceMouseDown([i, j]: Square) {
       if (
         this.currentMove.index === this.moves.length - 1 &&
@@ -212,6 +219,14 @@ export const useBoardStore = defineStore({
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
           this.board[i][j].highlight = false;
+          this.board[i][j].highlightColor = '';
+        }
+      }
+    },
+    clearColoredHighlights() {
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          this.board[i][j].highlightColor = '';
         }
       }
     },

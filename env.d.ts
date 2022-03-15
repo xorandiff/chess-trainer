@@ -43,5 +43,6 @@ type Board = {
     active: boolean;
     legalMove: boolean;
     highlight: boolean;
+    highlightColor: string;
     draggedOver: boolean;
 }[][];
