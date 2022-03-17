@@ -117,6 +117,8 @@ export const useBoardStore = defineStore({
       stockfishWorking: false,
       stockfishDepth: 0,
       stockfishMateIn: 0,
+      arrowFrom: null as Square | null,
+      arrows: [] as Arrow[],
       fen,
       pgn: '',
       eco: '',
@@ -229,6 +231,7 @@ export const useBoardStore = defineStore({
           this.board[i][j].highlightColor = '';
         }
       }
+      this.arrows = [] as Arrow[];
     },
     stockfishMove(data: any) {
       const bestmove = data.bestmove as string;
@@ -556,6 +559,23 @@ export const useBoardStore = defineStore({
         }
       }
       this.board[r][f].draggedOver = true;
+    },
+    setArrowFrom(square: Square) {
+      this.arrowFrom = [...square];
+    },
+    setArrowTo([i, j]: Square) {
+      //TODO delete arrow if it already exist
+      if (this.arrowFrom && (this.arrowFrom[0] !== i || this.arrowFrom[1] !== j)) {
+        const { rotation, points } = Chessboard.getArrowCoordinates(this.arrowFrom, [i, j]);
+        //Add an arrow
+        this.arrows.push({
+          color: 'orange',
+          rotation,
+          points
+        });
+      } else {
+        this.setHighlightColor([i, j], 'red');
+      }
     }
   },
 });

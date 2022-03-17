@@ -171,6 +171,21 @@ body {
   height: 75px;
 }
 
+#chessboard .arrows {
+  height: 100%;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 4;
+}
+
+.arrow {
+  fill: rgba(255, 170, 0, 0.8);
+  opacity: 0.8;
+}
+
 .piece {
   background-size: contain;
   background-repeat: no-repeat;

@@ -37,6 +37,12 @@ type Fullmove = {
     b?: Move;
 }
 
+type Arrow = {
+    color: string;
+    rotation: string;
+    points: string;
+}
+
 type Board = {
     piece?: Piece;
     dragged: boolean;

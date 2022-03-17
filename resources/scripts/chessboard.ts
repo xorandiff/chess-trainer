@@ -139,6 +139,38 @@ export class Chessboard {
     }
 
     /**
+     * Method for computing position of an arrow
+     */
+    public static getArrowCoordinates([a, b]: Square, [c, d]: Square) {
+        const x = Math.sqrt((a-c)**2 + (d-b)**2) - 1;
+
+        const sideY = c-a;
+        const sideX = b-d;
+
+        let angle = Math.atan(sideX / sideY) * 180 / Math.PI;
+        if ((sideX >= 0 && sideY < 0) || (sideX < 0 && sideY < 0)) {
+            angle = 180 + angle;
+        } else if (sideX < 0 && sideY >= 0) {
+            angle = 360 + angle;
+        }
+        const center = `${b*12.5 + 6.25} ${a*12.5 + 6.25}`;
+        const rotation = `${angle} ${center}`;
+
+        let points = `${b*12.5 + 4.875} ${a*12.5 + 10.75}, `;
+        points    += `${b*12.5 + 4.875} ${a*12.5 + x*12.5 + 14.25}, `;
+        points    += `${b*12.5 + 3} ${a*12.5 + x*12.5 + 14.25}, `;
+        points    += `${b*12.5 + 6.25} ${a*12.5 + x*12.5 + 18.75}, `;
+        points    += `${b*12.5 + 9.5} ${a*12.5 + x*12.5 + 14.25}, `;
+        points    += `${b*12.5 + 7.625} ${a*12.5 + x*12.5 + 14.25}, `;
+        points    += `${b*12.5 + 7.625} ${a*12.5 + 10.75}`;
+
+        return {
+            rotation,
+            points
+        };
+    }
+
+    /**
      * Method for getting the pieces of given color
      */
     public static getPieces(board: Board, color: PIECE_COLOR) {
