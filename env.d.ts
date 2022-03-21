@@ -30,6 +30,7 @@ type Move = {
     promotionType: boolean | Piece["type"];
     algebraicNotation: string;
     fen: string;
+    sound: string;
 }
 
 type Fullmove = {

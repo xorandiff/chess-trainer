@@ -352,6 +352,7 @@ export const useBoardStore = defineStore({
           castlingSide,
           algebraicNotation: '',
           fen: '',
+          sound
         } as Move;
 
         this.lastMove.algebraicNotation = Chessboard.moveToAlgebraic(this.lastMove, this.pieces[this.currentTurnColor]);
@@ -464,25 +465,26 @@ export const useBoardStore = defineStore({
           }
         }
 
+        this.moves[movesIndex][opponentColor]!.sound = sound;
+
         //Detect if checkmate/stalemate/50 move rule occured
         if (this.halfmoves >= 50 || !this.pieces[this.currentTurnColor].map(piece => piece.legalMoves).find(moves => moves.length)) {
           const opponentLegalMoves = this.pieces[opponentColor].map(piece => Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[opponentColor], this.lastMove));
           if (this.halfmoves >= 50) {
-            console.log('50 move rule reached, draw');
-            new Howl({
-              src: ['sounds/endgame.mp3']
-            }).play();
+            //50 move rule reached, draw
+            effects.endgame.play();
           } else if (!opponentLegalMoves.find(moves => moves.length)) {
-            console.log('Stalemate');
+            //Stalemate
             effects.stalemate.play();
           } else {
             const movesIndex = opponentColor === PIECE_COLOR.WHITE ? this.fullmoves - 1 : this.fullmoves - 2;
             let algebraicNotation = this.moves[movesIndex][opponentColor]!.algebraicNotation;
             this.moves[movesIndex][opponentColor]!.algebraicNotation = algebraicNotation.slice(0, -1) + '#';
+            this.moves[movesIndex][opponentColor]!.sound = 'checkmate';
             effects.checkmate.play();
           }
         } else if (isThreefoldRepetition) { //Detect threefold repetition draw
-          console.log('Threefold repetition, draw');
+          //Threefold repetition, draw
           effects.endgame.play();
         } else {
           effects[sound].play();
@@ -497,6 +499,7 @@ export const useBoardStore = defineStore({
         this.currentMove.index = index;
         this.currentMove.color = color;
         this.loadPosition(this.moves[index][color]!.fen);
+        effects[this.moves[index][color]!.sound].play();
 
         const [a, b] = this.moves[index][color]!.from;
         const [c, d] = this.moves[index][color]!.to;
