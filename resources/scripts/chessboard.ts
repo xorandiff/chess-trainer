@@ -132,13 +132,6 @@ export class Chessboard {
     }
 
     /**
-     * Method for getting the piece of given color on given square
-     */
-    public static getPiece(pieces: Piece[]) {
-        
-    }
-
-    /**
      * Method for computing position of an arrow
      */
     public static getArrowCoordinates([a, b]: Square, [c, d]: Square) {
@@ -377,6 +370,7 @@ export class Chessboard {
     public static canCastle(board: Board, color: PIECE_COLOR, side: CASTLING_SIDE) {
         //Determine castling rank
         const r = color === PIECE_COLOR.WHITE ? 7 : 0;
+        const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
         /**
          * Squares that must be empty for given castling side in order 
@@ -390,6 +384,17 @@ export class Chessboard {
         for (const [i, j] of checks) {
             if (board[i][j].piece) {
                 //Square is not empty, can't castle
+                return false;
+            }
+        }
+
+        //Check if squares between are attacked
+        if (side === CASTLING_SIDE.QUEENSIDE) {
+            if (this.isSquareAttacked(board, oppositeColor, [r, 3])) {
+                return false;
+            }
+        } else {
+            if (this.isSquareAttacked(board, oppositeColor, [r, 5])) {
                 return false;
             }
         }
