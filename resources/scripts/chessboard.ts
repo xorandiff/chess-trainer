@@ -1,6 +1,17 @@
 import _ from 'lodash';
 import moment from 'moment';
 
+export const enum SOUND_TYPE {
+    MOVE_SELF = 0,
+    MOVE_OPPONENT = 1,
+    MOVE_CHECK = 2,
+    CAPTURE = 3,
+    CASTLE = 4,
+    PROMOTE = 5,
+    GAME_START = 6,
+    GAME_END = 7,
+}
+
 export const enum PIECE_TYPE {
     ROOK = "r",
     KNIGHT = "n",

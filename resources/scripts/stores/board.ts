@@ -1,4 +1,4 @@
-import { Chessboard, PIECE_COLOR, PIECE_TYPE, CASTLING_SIDE } from "@/chessboard";
+import { Chessboard, PIECE_COLOR, PIECE_TYPE, CASTLING_SIDE, SOUND_TYPE } from "@/chessboard";
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
@@ -23,52 +23,15 @@ laravelEcho.channel('bestmove')
     console.log(e);
 }); */
 
-let effects = {
-  move1: new Howl({
-    src: ['sounds/move1.mp3'],
-    preload: true
-  }),
-  move2: new Howl({
-    src: ['sounds/move2.mp3'],
-    preload: true
-  }),
-  capture1: new Howl({
-    src: ['sounds/capture1.mp3'],
-    preload: true
-  }),
-  capture2: new Howl({
-    src: ['sounds/capture2.mp3'],
-    preload: true
-  }),
-  castle1: new Howl({
-    src: ['sounds/castle1.mp3'],
-    preload: true
-  }),
-  castle2: new Howl({
-    src: ['sounds/castle1.mp3'],
-    preload: true
-  }),
-  check1: new Howl({
-    src: ['sounds/check1.mp3'],
-    preload: true
-  }),
-  check2: new Howl({
-    src: ['sounds/check2.mp3'],
-    preload: true
-  }),
-  checkmate: new Howl({
-    src: ['sounds/checkmate.mp3'],
-    preload: true
-  }),
-  stalemate: new Howl({
-    src: ['sounds/stalemate.mp3'],
-    preload: true
-  }),
-  endgame: new Howl({
-    src: ['sounds/endgame.mp3'],
-    preload: true
-  }),
-};
+let effects : Howl[] = [];
+effects[SOUND_TYPE.MOVE_SELF] = new Howl({ src: ['sounds/move_self.mp3'], preload: true });
+effects[SOUND_TYPE.MOVE_OPPONENT] = new Howl({ src: ['sounds/move_opponent.mp3'], preload: true });
+effects[SOUND_TYPE.MOVE_CHECK] = new Howl({ src: ['sounds/move_check.mp3'], preload: true });
+effects[SOUND_TYPE.CAPTURE] = new Howl({ src: ['sounds/capture.mp3'], preload: true });
+effects[SOUND_TYPE.CASTLE] = new Howl({ src: ['sounds/castle.mp3'], preload: true });
+effects[SOUND_TYPE.PROMOTE] = new Howl({ src: ['sounds/promote.mp3'], preload: true });
+effects[SOUND_TYPE.GAME_START] = new Howl({ src: ['sounds/game_start.mp3'], preload: true });
+effects[SOUND_TYPE.GAME_END] = new Howl({ src: ['sounds/game_end.mp3'], preload: true });
 
 //'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 //'r3k2r/p1p2ppp/2p1bn2/2Q5/5Bq1/2N5/PPP1NPPP/R3K2R b KQkq - 0 14'
@@ -290,7 +253,7 @@ export const useBoardStore = defineStore({
     pieceMove([r, f]: Square, [i, j]: Square) {
       const piece = this.pieces[this.currentTurnColor].find(piece => piece.square[0] === r && piece.square[1] === f);
       if (piece && piece.legalMoves.find(s => s[0] === i && s[1] === j)) {
-        let sound = '';
+        let sound = SOUND_TYPE.MOVE_SELF;
         const oppositeColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
         //Move variables
@@ -309,7 +272,7 @@ export const useBoardStore = defineStore({
           //Move rook to castled square
           const x = _.findIndex(this.pieces[this.currentTurnColor], piece => piece.square[0] === i && piece.square[1] === rookFileFrom);
           if (x >= 0) {
-            sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'castle1' : 'castle2';
+            sound = SOUND_TYPE.CASTLE;
             castlingSide = rookFileFrom === 7 ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
             this.pieces[this.currentTurnColor][x].square = [i, rookFileTo];
             this.board[i][rookFileTo].piece = this.board[i][rookFileFrom].piece;
@@ -379,12 +342,12 @@ export const useBoardStore = defineStore({
           this.pieces[this.currentTurnColor][x].square = [i, j];
           if (this.board[i][j].piece) {
             _.remove(this.pieces[oppositeColor], piece => piece.square[0] === i && piece.square[1] === j);
-            if (!sound) {
-              sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'capture1' : 'capture2';
+            if (sound === SOUND_TYPE.MOVE_SELF) {
+              sound = SOUND_TYPE.CAPTURE;
             }
           } else {
-            if (!sound) {
-              sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'move1' : 'move2';
+            if (sound === SOUND_TYPE.MOVE_SELF) {
+              sound = this.currentTurnColor === this.color ? SOUND_TYPE.MOVE_SELF : SOUND_TYPE.MOVE_OPPONENT;
             }         
           }
           this.board[i][j].piece = this.board[r][f].piece;
@@ -421,30 +384,12 @@ export const useBoardStore = defineStore({
 
         this.pieceMouseUp();
 
-        let isThreefoldRepetition = false;
-        if (this.moves.length > 6 || (this.moves.length == 6 && this.moves[this.moves.length - 1][PIECE_COLOR.BLACK])) {
-          const m = this.moves.length;
-          const b = this.currentTurnColor === PIECE_COLOR.BLACK ? m - 1 : m;
-          /* if (
-              Chessboard.moveToAlgebraic(this.moves[m-1][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-3][opponentColor]!) &&
-              Chessboard.moveToAlgebraic(this.moves[m-3][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-5][opponentColor]!) &&
-              Chessboard.moveToAlgebraic(this.moves[m-2][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-4][opponentColor]!) &&
-              Chessboard.moveToAlgebraic(this.moves[m-4][opponentColor]!) === Chessboard.moveToAlgebraic(this.moves[m-6][opponentColor]!) &&
-              Chessboard.moveToAlgebraic(this.moves[b-1][this.currentTurnColor]!) === Chessboard.moveToAlgebraic(this.moves[b-3][this.currentTurnColor]!) &&
-              Chessboard.moveToAlgebraic(this.moves[b-3][this.currentTurnColor]!) === Chessboard.moveToAlgebraic(this.moves[b-5][this.currentTurnColor]!) &&
-              Chessboard.moveToAlgebraic(this.moves[b-2][this.currentTurnColor]!) === Chessboard.moveToAlgebraic(this.moves[b-4][this.currentTurnColor]!) &&
-              Chessboard.moveToAlgebraic(this.moves[b-4][this.currentTurnColor]!) === Chessboard.moveToAlgebraic(this.moves[b-6][this.currentTurnColor]!)
-            ) {
-              isThreefoldRepetition = true;
-          } */
-        }
-
         const movesIndex = opponentColor === PIECE_COLOR.WHITE ? this.fullmoves - 1 : this.fullmoves - 2;
 
         //Detect if check occured
         if (Chessboard.detectCheck(this.board, this.currentTurnColor)) {
           this.moves[movesIndex][opponentColor]!.algebraicNotation += '+';
-          sound = this.currentTurnColor === PIECE_COLOR.WHITE ? 'check1' : 'check2';
+          sound = SOUND_TYPE.MOVE_CHECK;
         }
 
         //Update FEN
@@ -470,22 +415,19 @@ export const useBoardStore = defineStore({
         //Detect if checkmate/stalemate/50 move rule occured
         if (this.halfmoves >= 50 || !this.pieces[this.currentTurnColor].map(piece => piece.legalMoves).find(moves => moves.length)) {
           const opponentLegalMoves = this.pieces[opponentColor].map(piece => Chessboard.computeLegalMoves(this.board, piece.square, this.castlingRights[opponentColor], this.lastMove));
+          
           if (this.halfmoves >= 50) {
             //50 move rule reached, draw
-            effects.endgame.play();
           } else if (!opponentLegalMoves.find(moves => moves.length)) {
             //Stalemate
-            effects.stalemate.play();
           } else {
+            //Checkmate
             const movesIndex = opponentColor === PIECE_COLOR.WHITE ? this.fullmoves - 1 : this.fullmoves - 2;
             let algebraicNotation = this.moves[movesIndex][opponentColor]!.algebraicNotation;
             this.moves[movesIndex][opponentColor]!.algebraicNotation = algebraicNotation.slice(0, -1) + '#';
-            this.moves[movesIndex][opponentColor]!.sound = 'checkmate';
-            effects.checkmate.play();
           }
-        } else if (isThreefoldRepetition) { //Detect threefold repetition draw
-          //Threefold repetition, draw
-          effects.endgame.play();
+
+          effects[SOUND_TYPE.GAME_END].play();
         } else {
           effects[sound].play();
           this.stockfishRun();

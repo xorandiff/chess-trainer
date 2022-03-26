@@ -5,7 +5,7 @@ import { useBoardStore } from "@/stores/board";
 import Piece from "./Piece.vue";
 
 const store = useBoardStore();
-const { board, color, currentMove, pieceMouseUp, pieceMoveFromActive, setPromotionPiece, setDraggedOver, showMove, setHighlightColor, clearColoredHighlights, setArrowFrom, setArrowTo } = store;
+const { board, color, currentMove, pieceMouseUp, pieceMoveFromActive, setPromotionPiece, setDraggedOver, showMove, clearColoredHighlights, setArrowFrom, setArrowTo } = store;
 
 function handleKeydown(e: KeyboardEvent) {
   switch (e.key) {
