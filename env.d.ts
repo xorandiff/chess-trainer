@@ -53,3 +53,26 @@ type Board = {
     highlightColor: string;
     draggedOver: boolean;
 }[][];
+
+type EngineResponse = {
+    bestmove: string;
+    depth: number;
+    mate: number;
+    eval?: number;
+}
+
+type Patch<Type> = {
+    [Property in keyof Type]+?: Type[Property];
+};
+
+interface EngineConfig {
+    depth: number
+}
+
+interface StockfishConfig extends EngineConfig {
+    elo: number
+}
+
+type StockfishConfigPatch = Patch<StockfishConfig>;
+
+

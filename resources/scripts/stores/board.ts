@@ -1,27 +1,10 @@
-import { Chessboard, PIECE_COLOR, PIECE_TYPE, CASTLING_SIDE, SOUND_TYPE } from "@/chessboard";
+import Chessboard from "@/chessboard";
+import { useEngineStore } from "@/stores/engine";
+import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE } from '@/enums';
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
-import axios from "axios";
 import eco from "../eco.json";
-/* import Echo from "laravel-echo";
-import Pusher from "pusher-js";
-
-let laravelEcho = new Echo({
-    broadcaster: 'pusher',
-    key: "app-key",
-    wsHost: "127.0.0.1",
-    wsPort: 6001,
-    forceTLS: false,
-    encrypted: true,
-    disableStats: true,
-    enabledTransports: ['ws', 'wss'],
-});
-
-laravelEcho.channel('bestmove')
-.listen('message', (e) => {
-    console.log(e);
-}); */
 
 let effects : Howl[] = [];
 effects[SOUND_TYPE.MOVE_SELF] = new Howl({ src: ['sounds/move_self.mp3'], preload: true });
@@ -32,9 +15,6 @@ effects[SOUND_TYPE.CASTLE] = new Howl({ src: ['sounds/castle.mp3'], preload: tru
 effects[SOUND_TYPE.PROMOTE] = new Howl({ src: ['sounds/promote.mp3'], preload: true });
 effects[SOUND_TYPE.GAME_START] = new Howl({ src: ['sounds/game_start.mp3'], preload: true });
 effects[SOUND_TYPE.GAME_END] = new Howl({ src: ['sounds/game_end.mp3'], preload: true });
-
-//'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-//'r3k2r/p1p2ppp/2p1bn2/2Q5/5Bq1/2N5/PPP1NPPP/R3K2R b KQkq - 0 14'
 
 export const useBoardStore = defineStore({
   id: "board",
@@ -75,11 +55,6 @@ export const useBoardStore = defineStore({
       },
       stockfish: false,
       alwaysStockfish: false,
-      stockfishElo: 300, //from 100 to 3000
-      stockfishDesiredDepth: 15, //from 1 to 35
-      stockfishWorking: false,
-      stockfishDepth: 0,
-      stockfishMateIn: 0,
       arrowFrom: null as Square | null,
       arrows: [] as Arrow[],
       fen,
@@ -94,18 +69,6 @@ export const useBoardStore = defineStore({
     });
   },
   getters: {
-    evalPercent: (state) => {
-      let percent = 50;
-      let evalMultiplied = state.eval * 3;
-      if (evalMultiplied < -50) {
-        evalMultiplied = -50;
-      }
-      if (evalMultiplied > 50) {
-        evalMultiplied = 50;
-      }
-      percent -= Math.round(evalMultiplied);
-      return percent;
-    },
     oppositeColor: (state) => state.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE,
   },
   actions: {
@@ -195,39 +158,6 @@ export const useBoardStore = defineStore({
         }
       }
       this.arrows = [] as Arrow[];
-    },
-    stockfishMove(data: any) {
-      const bestmove = data.bestmove as string;
-      const depth = data.depth as number;
-
-      this.stockfishWorking = false;
-      this.stockfishDepth = depth;
-      
-      if (data.eval !== null) {
-        this.eval = data.eval as number;
-      }
-
-      if (data.mate) {
-        this.stockfishMateIn = data.mate as number;
-      } else {
-        this.stockfishMateIn = 0;
-      }
-
-      if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
-        const from = bestmove.substring(0, 2);
-        const to = bestmove.substring(2, 4);
-
-        const [r, f] = Chessboard.algebraicToBoard(from);
-        const [i, j] = Chessboard.algebraicToBoard(to);
-
-        if (bestmove.length > 4) {
-          this.promotionType = bestmove[4] as PIECE_TYPE;
-        }
-        
-        this.clearHighlights();
-
-        this.pieceMove([r, f], [i, j]);
-      }
     },
     pieceMoveFromActive(toSquare: Square) {
       const fromSquare = Chessboard.getActiveSquare(this.board);
@@ -464,14 +394,26 @@ export const useBoardStore = defineStore({
         }
       }
     },
-    stockfishRun() {
-      this.stockfishWorking = true;
-      //consider using built-in fetch api instead of axios
-      axios(`/api/bestmove/${this.stockfishDesiredDepth}/${this.stockfishElo}/${this.fen}`)
-      .then(response => this.stockfishMove(response.data))
-      .catch(error => {
-        console.log(error);
-      });
+    async stockfishRun() {
+      const engine = useEngineStore();
+
+      await engine.run(ENGINE.STOCKFISH, this.fen);
+
+      if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
+        const from = engine.response.bestmove.substring(0, 2);
+        const to = engine.response.bestmove.substring(2, 4);
+
+        const [r, f] = Chessboard.algebraicToBoard(from);
+        const [i, j] = Chessboard.algebraicToBoard(to);
+
+        if (engine.response.bestmove.length > 4) {
+          this.promotionType = engine.response.bestmove[4] as PIECE_TYPE;
+        }
+        
+        this.clearHighlights();
+
+        this.pieceMove([r, f], [i, j]);
+      }
     },
     setPromotionPiece(pieceType : PIECE_TYPE) {
       this.promotionType = pieceType;
@@ -490,12 +432,6 @@ export const useBoardStore = defineStore({
       if (this.stockfish && this.currentTurnColor === PIECE_COLOR.BLACK) {
         this.stockfishRun();
       }
-    },
-    setStockfishElo(elo: any) {
-      this.stockfishElo = elo as number;
-    },
-    setStockfishDesiredDepth(desiredDepth: any) {
-      this.stockfishDesiredDepth = desiredDepth as number;
     },
     setDraggedOver([r, f]: Square) {
       for (let i = 0; i < 8; i++) {

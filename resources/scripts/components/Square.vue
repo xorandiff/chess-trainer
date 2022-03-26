@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import { useBoardStore } from "@/stores/board";
-
-const store = useBoardStore();
-const { legalMoves } = store;
 
 defineProps<{
   rank: number,

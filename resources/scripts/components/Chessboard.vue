@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from "vue";
-import { PIECE_TYPE, PIECE_COLOR } from "@/chessboard";
+import { PIECE_TYPE, PIECE_COLOR } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 import Piece from "./Piece.vue";
 

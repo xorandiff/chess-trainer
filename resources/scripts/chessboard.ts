@@ -1,37 +1,8 @@
+import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE } from '@/enums';
 import _ from 'lodash';
 import moment from 'moment';
 
-export const enum SOUND_TYPE {
-    MOVE_SELF = 0,
-    MOVE_OPPONENT = 1,
-    MOVE_CHECK = 2,
-    CAPTURE = 3,
-    CASTLE = 4,
-    PROMOTE = 5,
-    GAME_START = 6,
-    GAME_END = 7,
-}
-
-export const enum PIECE_TYPE {
-    ROOK = "r",
-    KNIGHT = "n",
-    BISHOP = "b",
-    KING = "k",
-    QUEEN = "q",
-    PAWN = "p",
-}
-
-export const enum PIECE_COLOR {
-    WHITE = "w",
-    BLACK = "b",
-}
-
-export const enum CASTLING_SIDE {
-    KINGSIDE = 'k',
-    QUEENSIDE = 'q',
-}
-
-export class Chessboard {
+export default class Chessboard {
     public static create(fen: string) {
         let board: Board = new Array(8).fill(0).map(_row => new Array(8));
         for (let i = 0; i < 8; i++) {
