@@ -44,15 +44,15 @@ type Arrow = {
     points: string;
 }
 
-type Board = {
+type SquareData = {
     piece?: Piece;
-    dragged: boolean;
     active: boolean;
     legalMove: boolean;
     highlight: boolean;
     highlightColor: string;
-    draggedOver: boolean;
-}[][];
+};
+
+type Board = SquareData[][];
 
 type EngineResponse = {
     bestmove: string;

@@ -190,7 +190,7 @@ body {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  cursor: pointer;
+  pointer-events: none;
   z-index: 3;
 }
 

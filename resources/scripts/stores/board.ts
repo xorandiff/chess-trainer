@@ -65,7 +65,8 @@ export const useBoardStore = defineStore({
       promotionMove: {
         from: [0, 0] as Square,
         to: [0, 0] as Square
-      }
+      },
+      dragging: -1
     });
   },
   getters: {
@@ -124,6 +125,7 @@ export const useBoardStore = defineStore({
         this.board[i][j].piece && 
         this.board[i][j].piece!.color == this.currentTurnColor
       ) {
+        this.dragging = i * 10 + j;
         this.board[i][j].active = true;
         const piece = this.pieces[this.currentTurnColor].find(piece => piece.square[0] === i && piece.square[1] === j);
         if (piece) {
@@ -134,12 +136,11 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMouseUp() {
+      this.dragging = -1;
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
-          this.board[i][j].dragged = false;
           this.board[i][j].active = false;
           this.board[i][j].legalMove = false;
-          this.board[i][j].draggedOver = false;
         }
       }
     },
@@ -432,14 +433,6 @@ export const useBoardStore = defineStore({
       if (this.stockfish && this.currentTurnColor === PIECE_COLOR.BLACK) {
         this.stockfishRun();
       }
-    },
-    setDraggedOver([r, f]: Square) {
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          this.board[i][j].draggedOver = false;
-        }
-      }
-      this.board[r][f].draggedOver = true;
     },
     setArrowFrom(square: Square) {
       this.arrowFrom = [...square];

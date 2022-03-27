@@ -1,14 +1,28 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { PIECE_TYPE, PIECE_COLOR } from "@/enums";
 import { useBoardStore } from "@/stores/board";
-import Piece from "./Piece.vue";
+import BoardPiece from "./BoardPiece.vue";
+import BoardSquare from "./BoardSquare.vue";
 
 const store = useBoardStore();
-const { board, color, currentMove, pieceMouseUp, pieceMoveFromActive, setPromotionPiece, setDraggedOver, showMove, clearColoredHighlights, setArrowFrom, setArrowTo } = store;
+const { board, color, currentMove, pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
 
-function handleKeydown(e: KeyboardEvent) {
-  switch (e.key) {
+const x = ref(0);
+const y = ref(0);
+
+function handleMousemove(event: MouseEvent) {
+  if (store.dragging >= 0) {
+    x.value += event.movementX;
+    y.value += event.movementY;
+  } else {
+    x.value = 0;
+    y.value = 0;
+  }
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  switch (event.key) {
     case "ArrowLeft":
       if (currentMove.color === PIECE_COLOR.BLACK) {
         showMove(currentMove.index, PIECE_COLOR.WHITE);
@@ -26,43 +40,35 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', handleKeydown));
-onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+  window.addEventListener('mousemove', handleMousemove);
+});
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
+  window.removeEventListener('mousemove', handleMousemove);
+});
 </script>
 
 <template>
-  <div id="chessboard" :class="color === 'b' ? 'flip' : ''" @mouseup="pieceMouseUp" @mousedown.left="clearColoredHighlights">
-     <svg class="arrows" viewBox="0 0 100 100">
-       <template v-for="arrow in store.arrows">
+  <div id="chessboard" :class="color === 'b' ? 'flip' : ''" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
+    <svg class="arrows" viewBox="0 0 100 100">
+      <template v-for="arrow in store.arrows">
         <polygon class="arrow" :transform="`rotate(${arrow.rotation})`" :points="arrow.points"></polygon>
-       </template>
-    </svg> 
-    <div class="row" v-for="i in 8">
-      <template v-for="j in 8">
-        <div 
-          class="square"
-          :class="[board[i-1][j-1].active || board[i-1][j-1].highlight ? 'highlight' : '' ]"
-          @drop="pieceMoveFromActive([i-1, j-1])"
-          @dragenter.prevent
-          @dragover="e => {e.preventDefault(); return setDraggedOver([i-1, j-1]);}"
-          @click.right.prevent
-          @mousedown.right="setArrowFrom([i-1, j-1])"
-          @mouseup.right="setArrowTo([i-1, j-1])"
-        >
-          <div v-if="board[i-1][j-1].highlightColor" :class="board[i-1][j-1].highlightColor"></div>
-          <div v-if="board[i-1][j-1].active || board[i-1][j-1].draggedOver" class="active"></div>
-          <div v-if="board[i-1][j-1].legalMove" :class="board[i-1][j-1].piece ? 'capture' : 'move'"></div>
-          <Piece 
-            v-if="board[i-1][j-1].piece"
-            :piece="board[i-1][j-1].piece!"
-            :square="[i-1, j-1]"
-            :flip="color === 'b'"
-          ></Piece>
-          <div v-if="i === 8" class="fileLabel">{{ String.fromCharCode('a'.charCodeAt(0) + (j - 1)) }}</div>
-          <div v-if="j === 1" class="rankLabel">{{ 9 - i }}</div>
-        </div>
       </template>
+    </svg>
+    <div class="row" v-for="i in 8">
+      <BoardSquare v-for="j in 8" :rank="i-1" :file="j-1" :squareData="board[i-1][j-1]">
+        <BoardPiece
+          v-if="board[i-1][j-1].piece"
+          :piece="board[i-1][j-1].piece!"
+          :square="[i-1, j-1]"
+          :flip="color === 'b'"
+          :style="{ transform: store.dragging === (i-1)*10 + (j-1) ? `translate(${x}px, ${y}px)` : 'none' }"
+        ></BoardPiece>
+      </BoardSquare>
     </div>
+
     <a-modal
       :visible="store.promotionModalVisible"
       :footer="null"
