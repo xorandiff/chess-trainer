@@ -116,6 +116,7 @@ $square-active-border-color: #fcf8c5;
 }
 
 .piece {
+  position: absolute;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
