@@ -44,6 +44,7 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('mousemove', handleMousemove);
 });
+
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('mousemove', handleMousemove);
@@ -64,7 +65,7 @@ onUnmounted(() => {
           :piece="board[i-1][j-1].piece!"
           :square="[i-1, j-1]"
           :flip="color === 'b'"
-          :style="{ transform: store.dragging === (i-1)*10 + (j-1) ? `translate(${x}px, ${y}px)` : 'none' }"
+          :style="{ transform: store.dragging === (i-1)*10 + (j-1) ? `translate(${x}px, ${y}px)` : 'none', zIndex: store.dragging === (i-1)*10 + (j-1) ? 4 : 3 }"
         ></BoardPiece>
       </BoardSquare>
     </div>
