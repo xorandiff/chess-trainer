@@ -2,7 +2,6 @@
 defineProps<{
   piece: Piece;
   flip: boolean;
-  square: Square;
 }>();
 </script>
 

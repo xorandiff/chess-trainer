@@ -5,6 +5,6 @@ const { loadPGN } = store;
 </script>
 
 <template>
-    <a-textarea v-model:value="store.pgn" :style="{ height: '190px', marginBottom: '15px' }" />
+    <a-textarea id="pgn" v-model:value="store.pgn" />
     <a-button @click="loadPGN(store.pgn)">Load PGN</a-button>
 </template>

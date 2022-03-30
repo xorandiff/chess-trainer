@@ -22,7 +22,7 @@ const selectedKeys = ref<string[]>(['3']);
       @collapse="onCollapse"
       @breakpoint="onBreakpoint"
     >
-      <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline">
+      <a-menu v-model:selectedKeys="selectedKeys" mode="inline">
         <a-menu-item key="1">
           <user-outlined />
           <span class="nav-text">Profile</span>
@@ -39,9 +39,9 @@ const selectedKeys = ref<string[]>(['3']);
     </a-layout-sider>
     <a-layout>
       <a-layout-content :style="{ margin: '24px 16px 0' }">
-        <div :style="{ padding: '24px', background: '#fff', minHeight: '360px' }">
+        <a-card :bordered="false">
           <Analysis />
-        </div>
+        </a-card>
       </a-layout-content>
       <a-layout-footer style="text-align: center">
         Chess Trainer ©2022
@@ -52,22 +52,4 @@ const selectedKeys = ref<string[]>(['3']);
 
 <style lang="scss">
 @import "./assets/base.scss";
-
-#components-layout-demo-responsive .logo {
-  height: 32px;
-  background: rgba(255, 255, 255, 0.2);
-  margin: 16px;
-}
-
-.site-layout-sub-header-background {
-  background: #fff;
-}
-
-.site-layout-background {
-  background: #fff;
-}
-
-[data-theme='dark'] .site-layout-sub-header-background {
-  background: #141414;
-}
 </style>

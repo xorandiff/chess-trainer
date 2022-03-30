@@ -7,7 +7,7 @@ const { showMove, currentMove } = store;
 </script>
 
 <template>
-    <a-list :style="{ height: '240px', overflow: 'auto' }" bordered>
+    <a-list id="movelist" bordered>
         <a-list-item v-for="(fullmove, index) in _.reverse([...store.moves])">
             {{ (store.moves.length - index) + '. ' }} 
             <a-typography-link @click="showMove(store.moves.length - index - 1, PIECE_COLOR.WHITE)" :strong="currentMove.index === store.moves.length - index - 1 && currentMove.color === PIECE_COLOR.WHITE">

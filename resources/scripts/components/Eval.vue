@@ -7,5 +7,13 @@ const { response } = storeToRefs(store);
 
 <template>
     <a-typography-text>{{ response.mate ? `M${response.mate}` : response.eval }}</a-typography-text>
-    <a-progress :style="{ transform: 'rotate(90deg)', transformOrigin: 'left center', width: '550px', marginLeft: '7px' }" :percent="store.evalPercent" strokeLinecap="square" strokeColor="black" :showInfo="false" />
+    <a-progress 
+        id="eval"
+        :percent="store.evalPercent" 
+        strokeLinecap="square" 
+        strokeColor="black" 
+        trailColor="white" 
+        strokeWidth="20" 
+        :showInfo="false" 
+    />
 </template>

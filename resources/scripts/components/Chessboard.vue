@@ -63,9 +63,8 @@ onUnmounted(() => {
         <BoardPiece
           v-if="board[i-1][j-1].piece"
           :piece="board[i-1][j-1].piece!"
-          :square="[i-1, j-1]"
           :flip="color === 'b'"
-          :style="{ transform: store.dragging === (i-1)*10 + (j-1) ? `translate(${x}px, ${y}px)` : 'none', zIndex: store.dragging === (i-1)*10 + (j-1) ? 4 : 3 }"
+          :style="{ transform: store.dragging === (i-1)*10 + (j-1) ? `translate(${x}px, ${y}px)` : 'none', zIndex: store.dragging === (i-1)*10 + (j-1) ? 5 : 3 }"
         ></BoardPiece>
       </BoardSquare>
     </div>
