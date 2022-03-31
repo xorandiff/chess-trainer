@@ -63,7 +63,7 @@ onUnmounted(() => {
 
 <template>
   <div id="chessboard" :style="boardSizeStyle" :class="{ flip: color === 'b' }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
-    <svg class="arrows" viewBox="0 0 100 100">
+    <svg class="arrows" :style="boardSizeStyle" viewBox="0 0 100 100">
       <template v-for="arrow in store.arrows">
         <polygon class="arrow" :transform="`rotate(${arrow.rotation})`" :points="arrow.points"></polygon>
       </template>

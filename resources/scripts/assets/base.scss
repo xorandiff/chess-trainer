@@ -105,12 +105,10 @@ $square-active-border-color: #fff;
 }
 
 #chessboard .arrows {
-  height: 100%;
   left: 0;
   pointer-events: none;
   position: absolute;
   top: 0;
-  width: 100%;
   z-index: 4;
 }
 
@@ -220,7 +218,8 @@ $square-active-border-color: #fff;
 #labels {
   position: absolute;
   overflow: hidden;
-  z-index: 1;
+  pointer-events: none;
+  z-index: 5;
   font-weight: 700;
 
   #files {
