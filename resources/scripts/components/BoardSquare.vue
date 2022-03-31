@@ -16,7 +16,7 @@ const { pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
 <template>
   <div 
     class="square"
-    :class="[squareData.active || squareData.highlight ? 'highlight' : '' ]"
+    :class="{ highlight: squareData.active || squareData.highlight, dragging: store.dragging >= 0 }"
     :style="{ cursor: squareData.piece ? 'pointer' : 'default' }"
     @mousedown.left="pieceMouseDown([rank, file])"
     @mouseup.left="pieceMoveFromActive([rank, file])"

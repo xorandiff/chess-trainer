@@ -8,17 +8,12 @@ import BoardSquare from "./BoardSquare.vue";
 const store = useBoardStore();
 const { board, color, currentMove, pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
 
-const x = ref(0);
-const y = ref(0);
+const pieceLeft = ref(0);
+const pieceTop = ref(0);
 
 function handleMousemove(event: MouseEvent) {
-  if (store.dragging >= 0) {
-    x.value += event.movementX;
-    y.value += event.movementY;
-  } else {
-    x.value = 0;
-    y.value = 0;
-  }
+  pieceLeft.value = event.pageX - 37.5;
+  pieceTop.value = event.pageY - 37.5;
 }
 
 function handleKeydown(event: KeyboardEvent) {
@@ -52,7 +47,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div id="chessboard" :class="color === 'b' ? 'flip' : ''" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
+  <div id="chessboard" :class="{ flip: color === 'b' }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
     <svg class="arrows" viewBox="0 0 100 100">
       <template v-for="arrow in store.arrows">
         <polygon class="arrow" :transform="`rotate(${arrow.rotation})`" :points="arrow.points"></polygon>
@@ -60,12 +55,23 @@ onUnmounted(() => {
     </svg>
     <div class="row" v-for="i in 8">
       <BoardSquare v-for="j in 8" :rank="i-1" :file="j-1" :squareData="board[i-1][j-1]">
-        <BoardPiece
-          v-if="board[i-1][j-1].piece"
-          :piece="board[i-1][j-1].piece!"
-          :flip="color === 'b'"
-          :style="{ transform: store.dragging === (i-1)*10 + (j-1) ? `translate(${x}px, ${y}px)` : 'none', zIndex: store.dragging === (i-1)*10 + (j-1) ? 5 : 3 }"
-        ></BoardPiece>
+        <template v-if="board[i-1][j-1].piece">
+          <template v-if="store.dragging === (i-1)*10 + (j-1)">
+            <Teleport to="body">
+              <BoardPiece
+                class="dragging"
+                :piece="board[i-1][j-1].piece!"
+                :flip="color === 'b'"
+                :style="{ left: `${pieceLeft}px`, top: `${pieceTop}px` }"
+              ></BoardPiece>
+            </Teleport>
+          </template>
+          <BoardPiece
+            v-else
+            :piece="board[i-1][j-1].piece!"
+            :flip="color === 'b'"
+          ></BoardPiece>
+        </template>
       </BoardSquare>
     </div>
 

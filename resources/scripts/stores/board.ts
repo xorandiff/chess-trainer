@@ -119,16 +119,28 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMouseDown([i, j]: Square) {
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          this.board[i][j].active = false;
+          this.board[i][j].legalMove = false;
+        }
+      }
+
       if (
         this.currentMove.index === this.moves.length - 1 &&
         (this.currentMove.color !== this.currentTurnColor || !this.moves.length) &&
         this.board[i][j].piece && 
         this.board[i][j].piece!.color == this.currentTurnColor
       ) {
+        //Set coordinates of current dragged piece
         this.dragging = i * 10 + j;
+
+        //Make square background in active yellow color
         this.board[i][j].active = true;
+
         const piece = this.pieces[this.currentTurnColor].find(piece => piece.square[0] === i && piece.square[1] === j);
         if (piece) {
+          //Display all legal moves for piece on chessboard
           for (const [a, b] of piece.legalMoves) {
             this.board[a][b].legalMove = true;
           }
@@ -136,13 +148,8 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMouseUp() {
+      //Set non-existing dragging coordinates
       this.dragging = -1;
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          this.board[i][j].active = false;
-          this.board[i][j].legalMove = false;
-        }
-      }
     },
     clearHighlights() {
       for (let i = 0; i < 8; i++) {
@@ -162,7 +169,7 @@ export const useBoardStore = defineStore({
     },
     pieceMoveFromActive(toSquare: Square) {
       const fromSquare = Chessboard.getActiveSquare(this.board);
-      if (fromSquare) {
+      if (fromSquare && (fromSquare[0] != toSquare[0] || fromSquare[1] != toSquare[1])) {
         this.clearHighlights();
 
         const [r, f] = fromSquare;
@@ -184,6 +191,13 @@ export const useBoardStore = defineStore({
     pieceMove([r, f]: Square, [i, j]: Square) {
       const piece = this.pieces[this.currentTurnColor].find(piece => piece.square[0] === r && piece.square[1] === f);
       if (piece && piece.legalMoves.find(s => s[0] === i && s[1] === j)) {
+        for (let i = 0; i < 8; i++) {
+          for (let j = 0; j < 8; j++) {
+            this.board[i][j].active = false;
+            this.board[i][j].legalMove = false;
+          }
+        }
+        
         let sound = SOUND_TYPE.MOVE_SELF;
         const oppositeColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 

@@ -4,7 +4,7 @@ $light-square-color: #f0d9b5;
 $dark-square-color: #b58863;
 $light-square-active-color: #f7ec59;
 $dark-square-active-color: #dac431;
-$square-active-border-color: #fcf8c5;
+$square-active-border-color: #fff;
 
 .flip {
   transform-origin: center center;
@@ -79,6 +79,7 @@ $square-active-border-color: #fcf8c5;
   position: absolute;
   width: 75px;
   height: 75px;
+  opacity: 0.6;
 }
 
 .square, .piece {
@@ -122,6 +123,11 @@ $square-active-border-color: #fcf8c5;
   background-position: center;
   pointer-events: none;
   z-index: 3;
+}
+
+.dragging {
+  z-index: 5;
+  cursor: grab !important;
 }
 
 .move {
