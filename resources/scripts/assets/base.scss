@@ -1,5 +1,12 @@
 @import 'ant-design-vue/dist/antd.dark.css';
 
+/* ==========================================================================
+   Chessboard
+   ========================================================================== */
+
+/* Variables
+   ========================================================================== */
+
 $light-square-color: #f0d9b5;
 $dark-square-color: #b58863;
 $light-square-active-color: #f7ec59;
@@ -17,8 +24,6 @@ $square-active-border-color: #fff;
 }
 
 #chessboard {
-  width: 600px;
-  height: 600px;
   user-select: none;
 }
 
@@ -77,14 +82,12 @@ $square-active-border-color: #fff;
 .active {
   border: $square-active-border-color solid 4px;
   position: absolute;
-  width: 75px;
-  height: 75px;
   opacity: 0.6;
 }
 
-.square, .piece {
-  width: 75px;
-  height: 75px;
+.piece {
+  width: inherit;
+  height: inherit;
 }
 
 .square {
@@ -97,8 +100,8 @@ $square-active-border-color: #fff;
   background-color: rgb(235, 97, 80) !important;
   opacity: 0.8;
   position: absolute;
-  width: 75px;
-  height: 75px;
+  width: inherit;
+  height: inherit;
 }
 
 #chessboard .arrows {
@@ -133,32 +136,31 @@ $square-active-border-color: #fff;
 .move {
   border-radius: 50%;
   behavior: url(PIE.htc);
-  width: 25px;
-  height: 25px;
+  width: 35%;
+  height: 35%;
   background: black;
   opacity: 0.1;
   margin: 0 auto;
-  margin-top: 25px;
+  margin-top: 35%;
 }
 
 .capture {
   position: absolute;
   z-index: 2;
-  width: 65px;
-  height: 65px;
+  width: 87%;
+  height: 87%;
   border-radius: 50%;
   border-style: solid;
-  border-width: 7px;
-  line-height: 50px;
+  border-width: 0.6em;
   border-color: black;
-  padding: 10px 18px;
   background-color: rgba(0, 0, 0, 0);
   opacity: 0.1;
-  left: 5px;
-  top: 5px;
+  left: 0.37em;
+  top: 0.37em;
 }
 
-/*White pieces begin*/
+/* White pieces
+   ========================================================================== */
 
 .wr {
   background-image: url('./img/pieces/wr.png');
@@ -184,10 +186,9 @@ $square-active-border-color: #fff;
   background-image: url('./img/pieces/wp.png');
 }
 
-/*White pieces end*/
 
-
-/*Black pieces begin*/
+/* Black pieces
+   ========================================================================== */
 
 .br {
   background-image: url('./img/pieces/br.png');
@@ -213,21 +214,46 @@ $square-active-border-color: #fff;
   background-image: url('./img/pieces/bp.png');
 }
 
-/*Black pieces end*/
+/* Labels
+   ========================================================================== */
 
-.fileLabel, .rankLabel {
+#labels {
   position: absolute;
+  overflow: hidden;
   z-index: 1;
-}
+  font-weight: 700;
 
-.fileLabel {
-  bottom: 0;
-  right: 6px;
-}
+  #files {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+     
+    div {
+      float: left;
+      text-align: right;
+      color: $light-square-color;
+      padding-right: 0.3em;
+    }
 
-.rankLabel {
-  top: 0;
-  left: 6px;
+    div:nth-of-type(even) {
+      color: $dark-square-color;
+    }
+  }
+
+  #ranks {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    div {
+      color: $dark-square-color;
+      padding-left: 0.3em;
+    }
+
+    div:nth-of-type(even) {
+      color: $light-square-color;
+    }
+  }
 }
 
 #eval {

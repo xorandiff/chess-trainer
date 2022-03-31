@@ -26,11 +26,9 @@ const { pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
     @mousedown.right="setArrowFrom([rank, file])"
     @mouseup.right="setArrowTo([rank, file])"
   >
-    <div v-if="squareData.highlightColor" :class="squareData.highlightColor"></div>
-    <div v-if="squareData.active || highlight" class="active"></div>
+    <div v-if="squareData.highlightColor" v-bind="$attrs" :class="squareData.highlightColor"></div>
+    <div v-if="squareData.active || highlight" v-bind="$attrs" class="active"></div>
     <div v-if="squareData.legalMove" :class="squareData.piece ? 'capture' : 'move'"></div>
     <slot></slot>
-    <div v-if="rank === 7" class="fileLabel">{{ String.fromCharCode('a'.charCodeAt(0) + file) }}</div>
-    <div v-if="file === 0" class="rankLabel">{{ 8 - rank }}</div>
   </div>
 </template>

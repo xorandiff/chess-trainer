@@ -1,19 +1,34 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { PIECE_TYPE, PIECE_COLOR } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 import BoardPiece from "./BoardPiece.vue";
 import BoardSquare from "./BoardSquare.vue";
 
-const store = useBoardStore();
-const { board, color, currentMove, pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
+const props = defineProps<{
+  size: number;
+}>();
+
+const squareSize = computed(() => props.size / 8);
+const labelFontSize = computed(() => props.size * 0.027);
+
+const boardSizeStyle = computed(() => {
+  return { width: `${props.size}px`, height: `${props.size}px` };
+});
+
+const squareSizeStyle = computed(() => {
+  return { width: `${squareSize.value}px`, height: `${squareSize.value}px` };
+});
 
 const pieceLeft = ref(0);
 const pieceTop = ref(0);
 
+const store = useBoardStore();
+const { board, color, currentMove, pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
+
 function handleMousemove(event: MouseEvent) {
-  pieceLeft.value = event.pageX - 37.5;
-  pieceTop.value = event.pageY - 37.5;
+  pieceLeft.value = event.pageX - (squareSize.value / 2);
+  pieceTop.value = event.pageY - (squareSize.value / 2);
 }
 
 function handleKeydown(event: KeyboardEvent) {
@@ -47,14 +62,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div id="chessboard" :class="{ flip: color === 'b' }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
+  <div id="chessboard" :style="boardSizeStyle" :class="{ flip: color === 'b' }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
     <svg class="arrows" viewBox="0 0 100 100">
       <template v-for="arrow in store.arrows">
         <polygon class="arrow" :transform="`rotate(${arrow.rotation})`" :points="arrow.points"></polygon>
       </template>
     </svg>
     <div class="row" v-for="i in 8">
-      <BoardSquare v-for="j in 8" :rank="i-1" :file="j-1" :squareData="board[i-1][j-1]">
+      <BoardSquare v-for="j in 8" :rank="i-1" :file="j-1" :squareData="board[i-1][j-1]" :style="squareSizeStyle">
         <template v-if="board[i-1][j-1].piece">
           <template v-if="store.dragging === (i-1)*10 + (j-1)">
             <Teleport to="body">
@@ -62,7 +77,7 @@ onUnmounted(() => {
                 class="dragging"
                 :piece="board[i-1][j-1].piece!"
                 :flip="color === 'b'"
-                :style="{ left: `${pieceLeft}px`, top: `${pieceTop}px` }"
+                :style="{ ...squareSizeStyle, left: `${pieceLeft}px`, top: `${pieceTop}px` }"
               ></BoardPiece>
             </Teleport>
           </template>
@@ -73,6 +88,18 @@ onUnmounted(() => {
           ></BoardPiece>
         </template>
       </BoardSquare>
+    </div>
+    <div id="labels" :style="boardSizeStyle">
+      <div id="ranks" :style="{ width: `${squareSize}px`, height: `${size}px` }">
+        <div v-for="rank in 8" :style="{ height: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
+          {{ 9 - rank }}
+        </div>
+      </div>
+      <div id="files" :style="{ width: `${size}px` }">
+        <div v-for="file in 8" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
+          {{ String.fromCharCode('a'.charCodeAt(0) + file - 1) }}
+        </div>
+      </div>
     </div>
 
     <a-modal

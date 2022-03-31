@@ -15,7 +15,7 @@ const activeKey = ref("1");
             <Eval />
         </a-col>
         <a-col :span="12">
-            <Chessboard />
+            <Chessboard :size="600" />
         </a-col>
         <a-col :span="11">
             <a-tabs v-model:activeKey="activeKey">
