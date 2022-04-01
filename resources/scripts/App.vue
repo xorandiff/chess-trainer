@@ -3,35 +3,22 @@ import { UserOutlined, ReadOutlined, SearchOutlined } from '@ant-design/icons-vu
 import { ref } from 'vue';
 import Analysis from "./Analysis.vue";
 
-const onCollapse = (collapsed: boolean, type: string) => {
-  //console.log(collapsed, type);
-};
-
-const onBreakpoint = (broken: boolean) => {
-  //console.log(broken);
-};
-
-const selectedKeys = ref<string[]>(['3']);
+const selectedKeys = ref<string[]>(['analysis']);
 </script>
 
 <template>
   <a-layout>
-    <a-layout-sider
-      breakpoint="lg"
-      collapsed-width="0"
-      @collapse="onCollapse"
-      @breakpoint="onBreakpoint"
-    >
+    <a-layout-sider>
       <a-menu v-model:selectedKeys="selectedKeys" mode="inline">
-        <a-menu-item key="1">
+        <a-menu-item key="profile">
           <user-outlined />
           <span class="nav-text">Profile</span>
         </a-menu-item>
-        <a-menu-item key="2">
+        <a-menu-item key="openings">
           <read-outlined />
           <span class="nav-text">Openings</span>
         </a-menu-item>
-        <a-menu-item key="3">
+        <a-menu-item key="analysis">
           <search-outlined />
           <span class="nav-text">Analysis</span>
         </a-menu-item>

@@ -2,6 +2,9 @@
 import { storeToRefs } from 'pinia';
 import { useBoardStore } from "@/stores/board";
 import { useEngineStore } from "@/stores/engine";
+import Import from "@/components/Import.vue";
+import Export from "@/components/Export.vue";
+
 const boardStore = useBoardStore();
 const engineStore = useEngineStore();
 const { switchAlwaysStockfish, switchStockfish, newGame } = boardStore;
@@ -16,15 +19,11 @@ const { stockfish, response } = storeToRefs(engineStore);
         </a-list-item>
         <a-list-item>
             <a-row :style="{ width: '100%' }" :gutter="5">
-                <a-col :span="20">
-                    <a-input v-model:value="boardStore.fen">
-                        <template #addonBefore>
-                            FEN
-                        </template>
-                    </a-input>
+                <a-col>
+                    <Import />
                 </a-col>
-                <a-col :span="4">
-                    <a-button @click="newGame(boardStore.fen)">Load FEN</a-button>
+                <a-col>
+                    <Export />
                 </a-col>
             </a-row>
         </a-list-item>

@@ -270,7 +270,11 @@ $square-active-border-color: #fff;
   overflow: auto;
 }
 
+.exportImportTabPane {
+  height: 200px;
+}
+
 #pgn {
-  height: 190px;
+  height: 100%;
   margin-bottom: 15px;
 }

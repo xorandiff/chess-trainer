@@ -13,7 +13,7 @@ const { response } = storeToRefs(store);
         strokeLinecap="square" 
         strokeColor="#403d39" 
         trailColor="white" 
-        strokeWidth="20" 
+        :strokeWidth="20" 
         :showInfo="false" 
     />
 </template>
