@@ -40,7 +40,7 @@ type Fullmove = {
 
 type Arrow = {
     color: string;
-    rotation: string;
+    transform: string;
     points: string;
 }
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { ImportOutlined } from '@ant-design/icons-vue';
-import { useBoardStore } from "@/stores/board";
+import { useBoardStore } from '@/stores/board';
 
 interface FormState {
   code: string;
@@ -42,7 +42,7 @@ const store = useBoardStore();
                 <a-textarea v-model:value="formState.code" />
             </a-form-item>
             <a-form-item>
-                <a-button type="primary" html-type="submit">Submit</a-button>
+                <a-button type="primary" html-type="submit">Import</a-button>
             </a-form-item>
         </a-form>        
     </a-modal>

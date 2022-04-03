@@ -117,26 +117,77 @@ export default class Chessboard {
 
         const sideY = c-a;
         const sideX = b-d;
-
+        
         let angle = Math.atan(sideX / sideY) * 180 / Math.PI;
+        
         if ((sideX >= 0 && sideY < 0) || (sideX < 0 && sideY < 0)) {
             angle = 180 + angle;
         } else if (sideX < 0 && sideY >= 0) {
             angle = 360 + angle;
         }
+
+        let transform = ``;
+        let scale = ``;
+        let translate = ``;
+        let points = ``;
+
+        if ((Math.abs(sideX) === 2 && Math.abs(sideY) === 1) || (Math.abs(sideX) === 1 && Math.abs(sideY) === 2)) {
+            //Arrow for knight
+
+            if (sideX === -1 && sideY === 2) {
+                angle = 0;
+            } else if (sideX === -2 && sideY === -1) {
+                angle = 270;
+            } else if (sideX === 1 && sideY === -2) {
+                angle = 180;
+            } else if (sideX === 2 && sideY === 1) {
+                angle = 90;
+            } else {
+                scale = `scale(-1, 1)`;
+                translate = `translate(-${b*2*12.5 + 12.5}, 0)`;
+                if (sideX === 1 && sideY === 2) {
+                    angle = 0;
+                } else if (sideX === 2 && sideY === -1) {
+                    angle = 90;
+                } else if (sideX === -1 && sideY === -2) {
+                    angle = 180;
+                } else if (sideX === -2 && sideY === 1) {
+                    angle = 270;
+                }
+            }
+
+            points += `${b*12.5 + 4.875} ${a*12.5 + 10.75}, `;
+            points += `${b*12.5 + 4.875} ${a*12.5 + 32.625}, `;
+            points += `${b*12.5 + 14.25} ${a*12.5 + 32.625}, `;
+            points += `${b*12.5 + 14.25} ${a*12.5 + 34.5}, `;
+            points += `${b*12.5 + 18.75} ${a*12.5 + 31.25}, `;
+            points += `${b*12.5 + 14.25} ${a*12.5 + 28}, `;
+            points += `${b*12.5 + 14.25} ${a*12.5 + 29.875}, `;
+            points += `${b*12.5 + 7.625} ${a*12.5 + 29.875}, `;
+            points += `${b*12.5 + 7.625} ${a*12.5 + 10.75}`;
+        } else {
+            points += `${b*12.5 + 4.875} ${a*12.5 + 10.75}, `;
+            points += `${b*12.5 + 4.875} ${a*12.5 + x*12.5 + 14.25}, `;
+            points += `${b*12.5 + 3} ${a*12.5 + x*12.5 + 14.25}, `;
+            points += `${b*12.5 + 6.25} ${a*12.5 + x*12.5 + 18.75}, `;
+            points += `${b*12.5 + 9.5} ${a*12.5 + x*12.5 + 14.25}, `;
+            points += `${b*12.5 + 7.625} ${a*12.5 + x*12.5 + 14.25}, `;
+            points += `${b*12.5 + 7.625} ${a*12.5 + 10.75}`;
+        }
+
         const center = `${b*12.5 + 6.25} ${a*12.5 + 6.25}`;
         const rotation = `${angle} ${center}`;
 
-        let points = `${b*12.5 + 4.875} ${a*12.5 + 10.75}, `;
-        points    += `${b*12.5 + 4.875} ${a*12.5 + x*12.5 + 14.25}, `;
-        points    += `${b*12.5 + 3} ${a*12.5 + x*12.5 + 14.25}, `;
-        points    += `${b*12.5 + 6.25} ${a*12.5 + x*12.5 + 18.75}, `;
-        points    += `${b*12.5 + 9.5} ${a*12.5 + x*12.5 + 14.25}, `;
-        points    += `${b*12.5 + 7.625} ${a*12.5 + x*12.5 + 14.25}, `;
-        points    += `${b*12.5 + 7.625} ${a*12.5 + 10.75}`;
+        transform = `rotate(${rotation})`;
+        if (scale) {
+            transform += ` ${scale}`;
+        }
+        if (translate) {
+            transform += ` ${translate}`;
+        }
 
         return {
-            rotation,
+            transform,
             points
         };
     }

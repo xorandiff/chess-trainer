@@ -454,11 +454,11 @@ export const useBoardStore = defineStore({
     setArrowTo([i, j]: Square) {
       //TODO delete arrow if it already exist
       if (this.arrowFrom && (this.arrowFrom[0] !== i || this.arrowFrom[1] !== j)) {
-        const { rotation, points } = Chessboard.getArrowCoordinates(this.arrowFrom, [i, j]);
+        const { transform, points } = Chessboard.getArrowCoordinates(this.arrowFrom, [i, j]);
         //Add an arrow
         this.arrows.push({
           color: 'orange',
-          rotation,
+          transform,
           points
         });
       } else {
