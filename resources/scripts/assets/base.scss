@@ -216,6 +216,8 @@ $square-active-border-color: #fff;
    ========================================================================== */
 
 #labels {
+  top: 0;
+  left: 0;
   position: absolute;
   overflow: hidden;
   pointer-events: none;
@@ -274,7 +276,17 @@ $square-active-border-color: #fff;
   height: 200px;
 }
 
+.endRow {
+  clear: both;
+}
+
 #pgn {
   height: 100%;
   margin-bottom: 15px;
+}
+
+#resize {
+  position: absolute;
+  right: -15px;
+  bottom: 0;
 }

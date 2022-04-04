@@ -455,7 +455,7 @@ export const useBoardStore = defineStore({
       if (this.arrowFrom && (this.arrowFrom[0] !== i || this.arrowFrom[1] !== j)) {
         const arrow = this.arrows.find(arrow => arrow.from[0] == this.arrowFrom![0] && arrow.from[1] == this.arrowFrom![1] && arrow.to[0] == i && arrow.to[1] == j);
         if (arrow) {
-          //Remove arrow, because it exist
+          //Remove an arrow, because it exist
           this.arrows = this.arrows.filter(arrow => arrow.from[0] != this.arrowFrom![0] || arrow.from[1] != this.arrowFrom![1] || arrow.to[0] != i || arrow.to[1] != j);
         } else {
           const { transform, points } = Chessboard.getArrowCoordinates(this.arrowFrom, [i, j]);

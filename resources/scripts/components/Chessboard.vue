@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ExpandAltOutlined } from '@ant-design/icons-vue';
 import { PIECE_TYPE, PIECE_COLOR } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 import BoardPiece from "./BoardPiece.vue";
@@ -9,11 +10,14 @@ const props = defineProps<{
   size: number;
 }>();
 
-const squareSize = computed(() => props.size / 8);
-const labelFontSize = computed(() => props.size * 0.027);
+const boardSize = ref<number>(props.size);
+const isMouseDown = ref<boolean>(false);
+
+const squareSize = computed(() => boardSize.value / 8);
+const labelFontSize = computed(() => boardSize.value * 0.027);
 
 const boardSizeStyle = computed(() => {
-  return { width: `${props.size}px`, height: `${props.size}px` };
+  return { width: `${boardSize.value}px`, height: `${boardSize.value}px` };
 });
 
 const squareSizeStyle = computed(() => {
@@ -29,6 +33,11 @@ const { board, color, currentMove, pieceMouseUp, setPromotionPiece, showMove, cl
 function handleMousemove(event: MouseEvent) {
   pieceLeft.value = event.pageX - (squareSize.value / 2);
   pieceTop.value = event.pageY - (squareSize.value / 2);
+
+  if (isMouseDown.value) {
+    //TODO Fix flickering file labels on resize
+    boardSize.value += event.movementY;
+  }
 }
 
 function handleKeydown(event: KeyboardEvent) {
@@ -50,19 +59,25 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 
+function handleMouseUp(event: MouseEvent) {
+  isMouseDown.value = false;
+}
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('mousemove', handleMousemove);
+  window.addEventListener('mouseup', handleMouseUp);
 });
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('mousemove', handleMousemove);
+  window.removeEventListener('mouseup', handleMouseUp);
 });
 </script>
 
 <template>
-  <div id="chessboard" :style="boardSizeStyle" :class="{ flip: color === 'b' }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
+  <div id="chessboard" :class="{ flip: color === 'b' }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
     <svg class="arrows" :style="boardSizeStyle" viewBox="0 0 100 100">
       <template v-for="arrow in store.arrows">
         <polygon class="arrow" :transform="arrow.transform" :points="arrow.points"></polygon>
@@ -88,18 +103,26 @@ onUnmounted(() => {
           ></BoardPiece>
         </template>
       </BoardSquare>
+      <div class="endRow"></div>
     </div>
     <div id="labels" :style="boardSizeStyle">
-      <div id="ranks" :style="{ width: `${squareSize}px`, height: `${size}px` }">
+      <div id="ranks" :style="{ width: `${squareSize}px`, height: `${boardSize}px` }">
         <div v-for="rank in 8" :style="{ height: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
           {{ 9 - rank }}
         </div>
       </div>
-      <div id="files" :style="{ width: `${size}px` }">
+      <div id="files" :style="{ width: `${boardSize}px` }">
         <div v-for="file in 8" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
           {{ String.fromCharCode('a'.charCodeAt(0) + file - 1) }}
         </div>
       </div>
+    </div>
+    <div id="resize">
+        <a-button type="dashed" @mousedown="isMouseDown = true">
+            <template #icon>
+                <ExpandAltOutlined />
+            </template>
+        </a-button>
     </div>
 
     <a-modal
