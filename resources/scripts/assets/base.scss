@@ -230,6 +230,8 @@ $square-active-border-color: #fff;
     left: 0;
      
     div {
+      position: absolute;
+      bottom: 0;
       float: left;
       text-align: right;
       color: $light-square-color;
@@ -287,6 +289,4 @@ $square-active-border-color: #fff;
 
 #resize {
   position: absolute;
-  right: -15px;
-  bottom: 0;
 }

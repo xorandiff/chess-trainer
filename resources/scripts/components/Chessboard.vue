@@ -10,6 +10,9 @@ const props = defineProps<{
   size: number;
 }>();
 
+const boardSizeMax = 600;
+const boardSizeMin = 300;
+
 const boardSize = ref<number>(props.size);
 const isMouseDown = ref<boolean>(false);
 
@@ -35,8 +38,15 @@ function handleMousemove(event: MouseEvent) {
   pieceTop.value = event.pageY - (squareSize.value / 2);
 
   if (isMouseDown.value) {
-    //TODO Fix flickering file labels on resize
-    boardSize.value += event.movementY;
+    if (boardSize.value >= boardSizeMin && boardSize.value <= boardSizeMax) {
+      if (boardSize.value + event.movementY > boardSizeMax) {
+        boardSize.value = boardSizeMax;
+      } else if (boardSize.value + event.movementY < boardSizeMin) {
+        boardSize.value = boardSizeMin;
+      } else {
+        boardSize.value += event.movementY;
+      }
+    }
   }
 }
 
@@ -112,7 +122,7 @@ onUnmounted(() => {
         </div>
       </div>
       <div id="files" :style="{ width: `${boardSize}px` }">
-        <div v-for="file in 8" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
+        <div v-for="file in 8" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px`, left: `${squareSize*(file - 1)}px` }">
           {{ String.fromCharCode('a'.charCodeAt(0) + file - 1) }}
         </div>
       </div>
