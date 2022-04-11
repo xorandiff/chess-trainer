@@ -10,10 +10,7 @@ const activeKey = ref("1");
 
 <template>
     <a-row>
-        <a-col :span="1">
-            <Eval />
-        </a-col>
-        <a-col :span="12">
+        <a-col :span="13">
             <Chessboard :size="589" />
         </a-col>
         <a-col :span="11">

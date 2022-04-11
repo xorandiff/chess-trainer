@@ -5,6 +5,7 @@ import { PIECE_TYPE, PIECE_COLOR } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 import BoardPiece from "./BoardPiece.vue";
 import BoardSquare from "./BoardSquare.vue";
+import Eval from "./Eval.vue";
 
 const props = defineProps<{
   size: number;
@@ -88,6 +89,7 @@ onUnmounted(() => {
 
 <template>
   <div id="chessboardContainer">
+    <Eval :size="boardSize" />
     <div id="chessboard" :class="{ flip: color === 'b' }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
       <svg id="arrows" :style="boardSizeStyle" viewBox="0 0 100 100">
         <template v-for="arrow in store.arrows">

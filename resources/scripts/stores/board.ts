@@ -60,7 +60,6 @@ export const useBoardStore = defineStore({
       fen,
       pgn: '',
       eco: '',
-      eval: 0.0,
       promotionModalVisible: false,
       promotionMove: {
         from: [0, 0] as Square,

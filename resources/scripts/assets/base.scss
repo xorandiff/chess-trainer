@@ -24,8 +24,42 @@ $square-active-border-color: #fff;
 }
 
 #chessboardContainer {
+  #evalContainer {
+    float: left;
+    width: 20px;
+    height: 100%;
+
+    span {
+      position: absolute;
+      width: 20px;
+      text-align: center;
+      font-size: 0.7em;
+    }
+
+    #evalWhite {
+      bottom: 4px;
+      color: black;
+    }
+
+    #evalBlack {
+      color: white;
+    }
+
+    #eval {
+      width: 100%;
+      background-color: white;
+
+      #bar {
+        width: 100%;
+        background-color: #403d39;
+        transition: height 0.5s ease-in-out;
+      }
+    }
+  }
+
   #chessboard {
     float: left;
+    margin-left: 10px;
     user-select: none;
   }
 
@@ -242,7 +276,7 @@ $square-active-border-color: #fff;
 
 #labels {
   top: 0;
-  left: 0;
+  left: 30px;
   position: absolute;
   overflow: hidden;
   pointer-events: none;
@@ -281,16 +315,6 @@ $square-active-border-color: #fff;
     div:nth-of-type(even) {
       color: $light-square-color;
     }
-  }
-}
-
-#eval {
-  transform: rotate(90deg);
-  transform-origin: left center;
-  width: 550px;
-  margin-left: 7px;
-  div {
-    border-radius: 0; /* Squared shape of eval bar */
   }
 }
 

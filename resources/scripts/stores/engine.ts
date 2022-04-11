@@ -40,6 +40,19 @@ export const useEngineStore = defineStore({
             }
             percent -= Math.round(evalMultiplied);
             return percent;
+        },
+        evalDisplay: (state) => {
+            const evalAbs = Math.abs(state.response.eval);
+            const roundFactor = evalAbs >= 10 ? 1 : 10;
+            const evalRoundedAbs = Math.round(evalAbs * roundFactor) / roundFactor;
+            return state.response.mate ? `M${Math.abs(state.response.mate)}` : evalRoundedAbs;
+        },
+        evalTooltipText: (state) => {
+            let evalTooltipText = `${state.response.eval}`;
+            if (state.response.eval > 0) {
+                evalTooltipText = `+${evalTooltipText}`;
+            }
+            return evalTooltipText;
         }
     },
     actions: {

@@ -3,17 +3,20 @@ import { storeToRefs } from 'pinia';
 import { useEngineStore } from "@/stores/engine";
 const store = useEngineStore();
 const { response } = storeToRefs(store);
+
+defineProps<{
+  size: number;
+}>();
 </script>
 
 <template>
-    <a-typography-text>{{ response.mate ? `M${response.mate}` : response.eval }}</a-typography-text>
-    <a-progress 
-        id="eval"
-        :percent="store.evalPercent" 
-        strokeLinecap="square" 
-        strokeColor="#403d39" 
-        trailColor="white" 
-        :strokeWidth="20" 
-        :showInfo="false" 
-    />
+    <a-tooltip placement="left">
+        <template #title>{{ store.evalTooltipText }}</template>
+        <div id="evalContainer">
+            <span :id="response.eval > 0 ? 'evalWhite' : 'evalBlack'">{{ store.evalDisplay }}</span>
+            <div id="eval" :style="{ height: `${size}px` }">
+                <div id="bar" :style="{ height: `${store.evalPercent}%` }"></div>
+            </div>
+        </div>
+    </a-tooltip>
 </template>
