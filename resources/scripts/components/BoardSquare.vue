@@ -29,7 +29,7 @@ const { pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
     @mouseup.right.shift="setArrowTo([rank, file], 'green')"
     @mouseup.right.alt="setArrowTo([rank, file], 'blue')"
   >
-    <div v-if="squareData.highlightColor" v-bind="$attrs" :class="squareData.highlightColor"></div>
+    <div v-if="squareData.highlightColor" v-bind="$attrs" :class="['highlight', squareData.highlightColor]"></div>
     <div v-if="squareData.active || highlight" v-bind="$attrs" class="active"></div>
     <div v-if="squareData.legalMove" :class="squareData.piece ? 'capture' : 'move'"></div>
     <slot></slot>

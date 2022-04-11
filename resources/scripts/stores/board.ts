@@ -111,7 +111,7 @@ export const useBoardStore = defineStore({
       //TODO load game from PGN
     },
     setHighlightColor([i, j]: Square, color: string) {
-      if (!this.board[i][j].highlightColor) {
+      if (!this.board[i][j].highlightColor || this.board[i][j].highlightColor !== color) {
         this.board[i][j].highlightColor = color;
       } else {
         this.board[i][j].highlightColor = '';
@@ -469,7 +469,7 @@ export const useBoardStore = defineStore({
           });
         }
       } else {
-        this.setHighlightColor([i, j], 'red');
+        this.setHighlightColor([i, j], color);
       }
     }
   },

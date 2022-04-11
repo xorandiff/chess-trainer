@@ -134,11 +134,11 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
   }
 
   .highlight:nth-of-type(even) {
-    background-color: $dark-square-active-color !important;
+    background-color: $dark-square-active-color;
   }
 
   .highlight:nth-of-type(odd) {
-    background-color: $light-square-active-color !important;
+    background-color: $light-square-active-color;
   }
 }
 
@@ -160,11 +160,11 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
   }
   
   .highlight:nth-of-type(even) {
-    background-color: $light-square-active-color !important;
+    background-color: $light-square-active-color;
   }
 
   .highlight:nth-of-type(odd) {
-    background-color: $dark-square-active-color !important;
+    background-color: $dark-square-active-color;
   }
 }
 
@@ -183,14 +183,29 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
   position: relative;
   padding: 0;
   float: left;
-}
 
-.square .red  {
-  background-color: rgb(235, 97, 80) !important;
-  opacity: 0.8;
-  position: absolute;
-  width: inherit;
-  height: inherit;
+  .highlight {
+    position: absolute;
+    width: inherit;
+    height: inherit;
+    opacity: 0.8;
+  }
+
+  .orange {
+    background-color: $highlight-color-red !important;
+  }
+
+  .red {
+    background-color: $highlight-color-orange !important;
+  }
+
+  .green {
+    background-color: $highlight-color-green !important;
+  }
+
+  .blue {
+    background-color: $highlight-color-blue !important;
+  }
 }
 
 .piece {
