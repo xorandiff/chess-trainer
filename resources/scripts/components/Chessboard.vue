@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { ExpandAltOutlined } from '@ant-design/icons-vue';
+import { SettingOutlined, RetweetOutlined, ExpandAltOutlined } from '@ant-design/icons-vue';
 import { PIECE_TYPE, PIECE_COLOR } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 import BoardPiece from "./BoardPiece.vue";
@@ -10,7 +10,7 @@ const props = defineProps<{
   size: number;
 }>();
 
-const boardSizeMax = 600;
+const boardSizeMax = 589;
 const boardSizeMin = 300;
 
 const boardSize = ref<number>(props.size);
@@ -20,7 +20,7 @@ const squareSize = computed(() => boardSize.value / 8);
 const labelFontSize = computed(() => boardSize.value * 0.027);
 
 const boardSizeStyle = computed(() => {
-  return { width: `${boardSize.value}px`, height: `${boardSize.value}px` };
+  return { minWidth: `${boardSize.value}px`, minHeight: `${boardSize.value}px` };
 });
 
 const squareSizeStyle = computed(() => {
@@ -87,54 +87,73 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div id="chessboard" :class="{ flip: color === 'b' }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
-    <svg class="arrows" :style="boardSizeStyle" viewBox="0 0 100 100">
-      <template v-for="arrow in store.arrows">
-        <polygon class="arrow" :transform="arrow.transform" :points="arrow.points"></polygon>
-      </template>
-    </svg>
-    <div class="row" v-for="i in 8">
-      <BoardSquare v-for="j in 8" :rank="i-1" :file="j-1" :squareData="board[i-1][j-1]" :style="squareSizeStyle">
-        <template v-if="board[i-1][j-1].piece">
-          <template v-if="store.dragging === (i-1)*10 + (j-1)">
-            <Teleport to="body">
-              <BoardPiece
-                class="dragging"
-                :piece="board[i-1][j-1].piece!"
-                :flip="color === 'b'"
-                :style="{ ...squareSizeStyle, left: `${pieceLeft}px`, top: `${pieceTop}px` }"
-              ></BoardPiece>
-            </Teleport>
-          </template>
-          <BoardPiece
-            v-else
-            :piece="board[i-1][j-1].piece!"
-            :flip="color === 'b'"
-          ></BoardPiece>
+  <div id="chessboardContainer">
+    <div id="chessboard" :class="{ flip: color === 'b' }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
+      <svg id="arrows" :style="boardSizeStyle" viewBox="0 0 100 100">
+        <template v-for="arrow in store.arrows">
+          <polygon class="arrow" :transform="arrow.transform" :points="arrow.points"></polygon>
         </template>
-      </BoardSquare>
-      <div class="endRow"></div>
-    </div>
-    <div id="labels" :style="boardSizeStyle">
-      <div id="ranks" :style="{ width: `${squareSize}px`, height: `${boardSize}px` }">
-        <div v-for="rank in 8" :style="{ height: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
-          {{ 9 - rank }}
+      </svg>
+      <div class="row" v-for="i in 8">
+        <BoardSquare v-for="j in 8" :rank="i-1" :file="j-1" :squareData="board[i-1][j-1]" :style="squareSizeStyle">
+          <template v-if="board[i-1][j-1].piece">
+            <template v-if="store.dragging === (i-1)*10 + (j-1)">
+              <Teleport to="body">
+                <BoardPiece
+                  class="dragging"
+                  :piece="board[i-1][j-1].piece!"
+                  :flip="color === 'b'"
+                  :style="{ ...squareSizeStyle, left: `${pieceLeft}px`, top: `${pieceTop}px` }"
+                ></BoardPiece>
+              </Teleport>
+            </template>
+            <BoardPiece
+              v-else
+              :piece="board[i-1][j-1].piece!"
+              :flip="color === 'b'"
+            ></BoardPiece>
+          </template>
+        </BoardSquare>
+        <div class="endRow"></div>
+      </div>
+      <div id="labels" :style="boardSizeStyle">
+        <div id="ranks" :style="{ width: `${squareSize}px`, height: `${boardSize}px` }">
+          <div v-for="rank in 8" :style="{ height: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
+            {{ 9 - rank }}
+          </div>
+        </div>
+        <div id="files" :style="{ width: `${boardSize}px` }">
+          <div v-for="file in 8" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px`, left: `${squareSize*(file - 1)}px` }">
+            {{ String.fromCharCode('a'.charCodeAt(0) + file - 1) }}
+          </div>
         </div>
       </div>
-      <div id="files" :style="{ width: `${boardSize}px` }">
-        <div v-for="file in 8" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px`, left: `${squareSize*(file - 1)}px` }">
-          {{ String.fromCharCode('a'.charCodeAt(0) + file - 1) }}
-        </div>
-      </div>
     </div>
-    <div id="resize">
-        <a-button type="dashed" @mousedown="isMouseDown = true">
+    <div id="sidebar" :style="{ height: `${boardSize}px` }">
+      <div id="settings">
+        <a-button size="small" type="dashed">
             <template #icon>
-                <ExpandAltOutlined />
+                <SettingOutlined />
             </template>
         </a-button>
+      </div>
+      <div id="hiddenButtons">
+        <div id="flip">
+          <a-button size="small" type="dashed">
+              <template #icon>
+                  <RetweetOutlined />
+              </template>
+          </a-button>
+        </div>
+        <div id="resize">
+            <a-button size="small" type="dashed" @mousedown="isMouseDown = true">
+                <template #icon>
+                    <ExpandAltOutlined />
+                </template>
+            </a-button>
+        </div>
+      </div>
     </div>
-
     <a-modal
       :visible="store.promotionModalVisible"
       :footer="null"

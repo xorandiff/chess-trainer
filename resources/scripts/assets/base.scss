@@ -23,8 +23,46 @@ $square-active-border-color: #fff;
   transform: rotate(180deg);
 }
 
-#chessboard {
-  user-select: none;
+#chessboardContainer {
+  #chessboard {
+    float: left;
+    user-select: none;
+  }
+
+  #sidebar {
+    float: left;
+    margin-left: 5px;
+
+    #hiddenButtons {
+      display: flex;
+      height: calc(100% - 28px);
+      margin-top: 5px;
+      flex-flow: column wrap;
+      justify-content: space-between;
+      visibility: hidden;
+    }
+
+    &:hover #hiddenButtons {
+      visibility: visible;
+    }
+  }
+
+  #sidebar:hover #content {
+    visibility: visible;
+  }
+
+  #arrows {
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    z-index: 4;
+
+    .arrow {
+      fill: rgba(255, 170, 0, 0.8);
+      opacity: 0.8;
+    }
+  }
 }
 
 .row {
@@ -102,19 +140,6 @@ $square-active-border-color: #fff;
   position: absolute;
   width: inherit;
   height: inherit;
-}
-
-#chessboard .arrows {
-  left: 0;
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  z-index: 4;
-}
-
-.arrow {
-  fill: rgba(255, 170, 0, 0.8);
-  opacity: 0.8;
 }
 
 .piece {
@@ -285,8 +310,4 @@ $square-active-border-color: #fff;
 #pgn {
   height: 100%;
   margin-bottom: 15px;
-}
-
-#resize {
-  position: absolute;
 }
