@@ -12,6 +12,10 @@ $dark-square-color: #b58863;
 $light-square-active-color: #f7ec59;
 $dark-square-active-color: #dac431;
 $square-active-border-color: #fff;
+$highlight-color-orange: rgba(255, 170, 0, 0.8);
+$highlight-color-red: rgba(248, 85, 63, 0.8);
+$highlight-color-green: rgba(159, 207, 63, 0.8);
+$highlight-color-blue: rgba(72, 193, 249, 0.8);
 
 .flip {
   transform-origin: center center;
@@ -86,15 +90,28 @@ $square-active-border-color: #fff;
   }
 
   #arrows {
-    left: 0;
-    pointer-events: none;
     position: absolute;
-    top: 0;
+    pointer-events: none;
     z-index: 4;
 
     .arrow {
-      fill: rgba(255, 170, 0, 0.8);
       opacity: 0.8;
+    }
+
+    .orange {
+      fill: $highlight-color-orange;
+    }
+
+    .red {
+      fill: $highlight-color-red;
+    }
+
+    .green {
+      fill: $highlight-color-green;
+    }
+
+    .blue {
+      fill: $highlight-color-blue;
     }
   }
 }

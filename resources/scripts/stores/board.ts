@@ -450,17 +450,18 @@ export const useBoardStore = defineStore({
     setArrowFrom(square: Square) {
       this.arrowFrom = [...square];
     },
-    setArrowTo([i, j]: Square) {
+    setArrowTo([i, j]: Square, color: string) {
       if (this.arrowFrom && (this.arrowFrom[0] !== i || this.arrowFrom[1] !== j)) {
         const arrow = this.arrows.find(arrow => arrow.from[0] == this.arrowFrom![0] && arrow.from[1] == this.arrowFrom![1] && arrow.to[0] == i && arrow.to[1] == j);
         if (arrow) {
           //Remove an arrow, because it exist
           this.arrows = this.arrows.filter(arrow => arrow.from[0] != this.arrowFrom![0] || arrow.from[1] != this.arrowFrom![1] || arrow.to[0] != i || arrow.to[1] != j);
-        } else {
+        }
+        if (!arrow || arrow.color !== color) {
           const { transform, points } = Chessboard.getArrowCoordinates(this.arrowFrom, [i, j]);
           //Add an arrow
           this.arrows.push({
-            color: 'orange',
+            color,
             from: this.arrowFrom,
             to: [i, j],
             transform,
