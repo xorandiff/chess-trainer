@@ -3,17 +3,16 @@ import { ref } from "vue";
 import Chessboard from "./components/Chessboard.vue";
 import Movelist from "./components/Movelist.vue";
 import PlayingMode from "./components/PlayingMode.vue";
-import Eval from "./components/Eval.vue";
 
 const activeKey = ref("1");
 </script>
 
 <template>
     <a-row>
-        <a-col :span="13">
-            <Chessboard :size="589" />
+        <a-col :span="14">
+            <Chessboard :size="650" />
         </a-col>
-        <a-col :span="11">
+        <a-col :span="10">
             <a-tabs v-model:activeKey="activeKey">
                 <a-tab-pane key="1">
                     <template #tab>

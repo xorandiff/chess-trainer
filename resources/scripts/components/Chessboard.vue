@@ -11,7 +11,7 @@ const props = defineProps<{
   size: number;
 }>();
 
-const boardSizeMax = 589;
+const boardSizeMax = props.size;
 const boardSizeMin = 300;
 
 const boardSize = ref<number>(props.size);
@@ -106,7 +106,6 @@ onUnmounted(() => {
                 <BoardPiece
                   class="dragging"
                   :piece="board[i][j].piece!"
-                  :flip="color === 'b'"
                   :style="{ ...squareSizeStyle, left: `${pieceLeft}px`, top: `${pieceTop}px` }"
                 ></BoardPiece>
               </Teleport>
@@ -114,7 +113,6 @@ onUnmounted(() => {
             <BoardPiece
               v-else
               :piece="board[i][j].piece!"
-              :flip="color === 'b'"
             ></BoardPiece>
           </template>
         </BoardSquare>

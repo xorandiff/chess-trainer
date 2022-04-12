@@ -8,7 +8,7 @@ const selectedKeys = ref<string[]>(['analysis']);
 
 <template>
   <a-layout>
-    <a-layout-sider>
+    <a-layout-sider width="140" :style="{ height: '100vh' }">
       <a-menu v-model:selectedKeys="selectedKeys" mode="inline">
         <a-menu-item key="profile">
           <user-outlined />
@@ -25,14 +25,11 @@ const selectedKeys = ref<string[]>(['analysis']);
       </a-menu>
     </a-layout-sider>
     <a-layout>
-      <a-layout-content :style="{ margin: '24px 16px 0' }">
+      <a-layout-content :style="{ margin: '16px 16px 0' }">
         <a-card :bordered="false">
           <Analysis />
         </a-card>
       </a-layout-content>
-      <a-layout-footer style="text-align: center">
-        Chess Trainer ©2022
-      </a-layout-footer>
     </a-layout>
   </a-layout>
 </template>
