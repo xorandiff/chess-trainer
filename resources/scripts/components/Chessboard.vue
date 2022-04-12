@@ -16,9 +16,11 @@ const boardSizeMin = 300;
 
 const boardSize = ref<number>(props.size);
 const isMouseDown = ref<boolean>(false);
+const flipped = ref<boolean>(false);
 
 const squareSize = computed(() => boardSize.value / 8);
 const labelFontSize = computed(() => boardSize.value * 0.027);
+const indexArray = computed(() => flipped.value ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]);
 
 const boardSizeStyle = computed(() => {
   return { minWidth: `${boardSize.value}px`, minHeight: `${boardSize.value}px` };
@@ -90,20 +92,20 @@ onUnmounted(() => {
 <template>
   <div id="chessboardContainer">
     <Eval :size="boardSize" />
-    <div id="chessboard" :class="{ flip: color === 'b' }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
+    <div id="chessboard" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
       <svg id="arrows" :style="{ width: `${boardSize}px`, height: `${boardSize}px` }" viewBox="0 0 100 100">
         <template v-for="arrow in store.arrows">
           <polygon :class="['arrow', arrow.color]" :transform="arrow.transform" :points="arrow.points"></polygon>
         </template>
       </svg>
-      <div class="row" v-for="i in 8">
-        <BoardSquare v-for="j in 8" :rank="i-1" :file="j-1" :squareData="board[i-1][j-1]" :style="squareSizeStyle">
-          <template v-if="board[i-1][j-1].piece">
-            <template v-if="store.dragging === (i-1)*10 + (j-1)">
+      <div class="row" v-for="i in indexArray">
+        <BoardSquare v-for="j in indexArray" :rank="i" :file="j" :squareData="board[i][j]" :style="squareSizeStyle">
+          <template v-if="board[i][j].piece">
+            <template v-if="store.dragging === i*10 + j">
               <Teleport to="body">
                 <BoardPiece
                   class="dragging"
-                  :piece="board[i-1][j-1].piece!"
+                  :piece="board[i][j].piece!"
                   :flip="color === 'b'"
                   :style="{ ...squareSizeStyle, left: `${pieceLeft}px`, top: `${pieceTop}px` }"
                 ></BoardPiece>
@@ -111,7 +113,7 @@ onUnmounted(() => {
             </template>
             <BoardPiece
               v-else
-              :piece="board[i-1][j-1].piece!"
+              :piece="board[i][j].piece!"
               :flip="color === 'b'"
             ></BoardPiece>
           </template>
@@ -120,13 +122,13 @@ onUnmounted(() => {
       </div>
       <div id="labels" :style="boardSizeStyle">
         <div id="ranks" :style="{ width: `${squareSize}px`, height: `${boardSize}px` }">
-          <div v-for="rank in 8" :style="{ height: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
-            {{ 9 - rank }}
+          <div v-for="rank in indexArray" :style="{ height: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
+            {{ 8 - rank }}
           </div>
         </div>
         <div id="files" :style="{ width: `${boardSize}px` }">
-          <div v-for="file in 8" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px`, left: `${squareSize*(file - 1)}px` }">
-            {{ String.fromCharCode('a'.charCodeAt(0) + file - 1) }}
+          <div v-for="file in indexArray" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px`, left: `${squareSize * (flipped ? 7-file : file)}px` }">
+            {{ String.fromCharCode('a'.charCodeAt(0) + file) }}
           </div>
         </div>
       </div>
@@ -141,7 +143,7 @@ onUnmounted(() => {
       </div>
       <div id="hiddenButtons">
         <div id="flip">
-          <a-button size="small" type="dashed">
+          <a-button size="small" type="dashed" @click="flipped = flipped ? false : true">
               <template #icon>
                   <RetweetOutlined />
               </template>

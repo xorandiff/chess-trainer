@@ -17,16 +17,6 @@ $highlight-color-red: rgba(248, 85, 63, 0.8);
 $highlight-color-green: rgba(159, 207, 63, 0.8);
 $highlight-color-blue: rgba(72, 193, 249, 0.8);
 
-.flip {
-  transform-origin: center center;
-  transform: rotate(180deg) translateY(-600px);
-}
-
-.flip-piece {
-  transform-origin: center center;
-  transform: rotate(180deg);
-}
-
 #chessboardContainer {
   #evalContainer {
     float: left;
