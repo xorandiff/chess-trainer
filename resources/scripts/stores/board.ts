@@ -408,10 +408,12 @@ export const useBoardStore = defineStore({
         }
       }
     },
-    async stockfishRun() {
+    stockfishRun() {
       const engine = useEngineStore();
-
-      await engine.run(ENGINE.STOCKFISH, this.fen);
+      engine.run(ENGINE.STOCKFISH, this.fen);
+    },
+    stockfishDone() {
+      const engine = useEngineStore();
 
       if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
         const from = engine.response.bestmove.substring(0, 2);

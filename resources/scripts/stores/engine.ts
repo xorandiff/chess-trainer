@@ -1,6 +1,39 @@
 import { defineStore } from "pinia";
-import axios from "axios";
+import { useBoardStore } from "@/stores/board";
 import type { ENGINE } from '@/enums';
+
+let stockfish = new Worker('build/stockfish11.js');
+
+stockfish.addEventListener('message', function (e) {
+    if (e.data) {
+        const data = e.data as string;
+
+        if (data.startsWith('info')) {
+            const infoRegexp = /depth\s+(?<depth>\d+)\s+seldepth\s+(?<seldepth>\d+)\s+.*score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;
+            const { depth, seldepth, score, pv } = data.match(infoRegexp)!.groups!;
+
+            if (score.includes('mate')) {
+                const { mate } = score.match(/(?<mate>\-?\d+)/)!.groups!;
+                useEngineStore().response.mate = parseInt(mate);
+            }
+            
+            useEngineStore().response.depth = parseFloat(depth);
+        } else if (data.startsWith('Total evaluation')) {
+            const evalRegexp = /\s+(?<evaluation>[\-\.\d]+)\s+/;
+            const { evaluation } = data.match(evalRegexp)!.groups!;
+
+            useEngineStore().response.eval = parseFloat(evaluation);
+        } else if (data.startsWith('bestmove')) {
+            const bestmoveRegexp = /bestmove\s+(?<bestmove>.+)\s+ponder\s+(?<ponder>.+)/;
+            const { bestmove, ponder } = data.match(bestmoveRegexp)!.groups!;
+
+            useEngineStore().response.bestmove = bestmove;
+
+            const board = useBoardStore();
+            board.stockfishDone();
+        }
+    }
+});
 
 export const useEngineStore = defineStore({
     id: 'engine',
@@ -14,7 +47,8 @@ export const useEngineStore = defineStore({
         stockfish: {
             config: {
                 elo: 300, //from 100 to 3000
-                depth: 15
+                depth: 21,
+                skill: 20 //from 0 to 20
             },
             working: false,
             active: false
@@ -22,7 +56,8 @@ export const useEngineStore = defineStore({
         lc0: {
             config: {
                 elo: 300,
-                depth: 15
+                depth: 21,
+                skill: 20 //from 0 to 20
             },
             working: false,
             active: false
@@ -58,27 +93,11 @@ export const useEngineStore = defineStore({
     actions: {
         async run(engine : ENGINE, fen: string) {
             this[engine].working = true;
-      
-            try {
-              const response = await axios.get(`/api/bestmove/${this[engine].config.depth}/${this[engine].config.elo}/${fen}`);
-              const data : EngineResponse = response.data;
 
-              this[engine].working = false;
-      
-              this.response.bestmove = data.bestmove;
-              this.response.depth = data.depth;
-              
-              if (data.eval !== undefined) {
-                this.response.eval = data.eval;
-              }
-      
-              if (data.mate !== undefined) {
-                this.response.mate = data.mate;
-              }
-      
-            } catch (error) {
-              console.log(error);
-            }
+            stockfish.postMessage(`setoption name Skill Level value ${this[engine].config.skill}`);
+            stockfish.postMessage(`position fen ${fen}`);
+            stockfish.postMessage(`go depth ${this[engine].config.depth}`);
+            stockfish.postMessage(`eval`);
         },
         setStockfishConfig(stockfishConfig: StockfishConfigPatch) {
             this.stockfish.config = { ...this.stockfish.config, ...stockfishConfig };

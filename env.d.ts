@@ -72,7 +72,8 @@ interface EngineConfig {
 }
 
 interface StockfishConfig extends EngineConfig {
-    elo: number
+    elo: number,
+    skill: number
 }
 
 type StockfishConfigPatch = Patch<StockfishConfig>;

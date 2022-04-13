@@ -39,8 +39,8 @@ const { stockfish, response } = storeToRefs(engineStore);
         </a-list-item>
         <a-list-item>
             <a-row :style="{ width: '100%' }" :gutter="5">
-                <a-col :span="6">
-                    Stockfish ELO <a-input-number v-model:value="stockfish.config.elo" :step="100" :min="100" :max="3000" @change="(value: number) => setStockfishConfig({ elo: value })" />
+                <a-col :span="7">
+                    Stockfish Skill Level <a-input-number v-model:value="stockfish.config.skill" :step="1" :min="0" :max="20" @change="(value: number) => setStockfishConfig({ skill: value })" />
                 </a-col>
                 <a-col :span="10">
                     Stockfish desired depth 
