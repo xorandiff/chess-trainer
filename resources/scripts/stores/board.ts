@@ -65,7 +65,9 @@ export const useBoardStore = defineStore({
         from: [0, 0] as Square,
         to: [0, 0] as Square
       },
-      dragging: -1
+      dragging: -1,
+      variations: [] as Variation[],
+      engineWorking: false
     });
   },
   getters: {
@@ -410,10 +412,14 @@ export const useBoardStore = defineStore({
     },
     stockfishRun() {
       const engine = useEngineStore();
+      this.engineWorking = true;
       engine.run(ENGINE.STOCKFISH, this.fen);
     },
     stockfishDone() {
+      this.engineWorking = false;
       const engine = useEngineStore();
+
+      this.variations[0] = Chessboard.getVariationData(this.board, engine.response.variations[0], this.moves.length);
 
       if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
         const from = engine.response.bestmove.substring(0, 2);

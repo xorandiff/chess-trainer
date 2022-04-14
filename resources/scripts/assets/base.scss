@@ -1,5 +1,10 @@
 @import 'ant-design-vue/dist/antd.dark.css';
 
+@font-face {
+  font-family: "Chess";
+  src: url("./fonts/chessGlyphRegular.woff2") format("woff2");
+}
+
 /* ==========================================================================
    Chessboard
    ========================================================================== */
@@ -356,4 +361,64 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
 #pgn {
   height: 100%;
   margin-bottom: 15px;
+}
+
+/* Chess fonts
+   ========================================================================== */
+
+.chessFont {
+  font-family: "Chess";
+  font-size: 1.5rem;
+  line-height: 55%;
+}
+
+.chessFont.f-nb:before {
+  content: "Ė";
+}
+
+.chessFont.f-nw:before {
+  content: "Ç";
+}
+
+.chessFont.f-bb:before {
+  content: "Ä";
+}
+
+.chessFont.f-bw:before {
+  content: "Ă";
+}
+
+.chessFont.f-qb:before {
+  content: "Ķ";
+}
+
+.chessFont.f-qw:before {
+  content: "Į";
+}
+
+.chessFont.f-kb:before {
+  content: "Ą";
+}
+
+.chessFont.f-kw:before {
+  content: "Ā";
+}
+
+.chessFont.f-rb:before {
+  content: "Ļ";
+}
+
+.chessFont.f-rw:before {
+  content: "Ľ";
+}
+
+.variation {
+  font-size: 0.8rem;
+  height: 20px;
+
+  .variationMove {
+    float: left;
+    height: 20px;
+    margin-right: 10px;
+  }
 }

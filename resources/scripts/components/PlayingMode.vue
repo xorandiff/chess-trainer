@@ -4,6 +4,7 @@ import { useBoardStore } from "@/stores/board";
 import { useEngineStore } from "@/stores/engine";
 import Import from "@/components/Import.vue";
 import Export from "@/components/Export.vue";
+import EngineVariations from "@/components/EngineVariations.vue";
 
 const boardStore = useBoardStore();
 const engineStore = useEngineStore();
@@ -14,6 +15,9 @@ const { stockfish, response } = storeToRefs(engineStore);
 
 <template>
     <a-list bordered>
+        <a-list-item>
+            <EngineVariations />
+        </a-list-item>
         <a-list-item>
             ECO {{ boardStore.eco ? boardStore.eco : '-' }}
         </a-list-item>

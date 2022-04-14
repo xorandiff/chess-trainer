@@ -78,4 +78,13 @@ interface StockfishConfig extends EngineConfig {
 
 type StockfishConfigPatch = Patch<StockfishConfig>;
 
+type VariationMove = {
+    from: string;
+    to: string;
+    chessFontClass: string;
+    moveNumber: number;
+}
+
+type Variation = VariationMove[];
+
 

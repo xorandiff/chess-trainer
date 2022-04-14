@@ -22,5 +22,5 @@ export default defineConfig({
     alias: {
       "@": fileURLToPath(new URL("./resources/scripts", import.meta.url)),
     },
-  }
+  },
 });

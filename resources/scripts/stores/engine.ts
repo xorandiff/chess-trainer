@@ -18,6 +18,7 @@ stockfish.addEventListener('message', function (e) {
             }
             
             useEngineStore().response.depth = parseFloat(depth);
+            useEngineStore().response.variations[0] = pv;
         } else if (data.startsWith('Total evaluation')) {
             const evalRegexp = /\s+(?<evaluation>[\-\.\d]+)\s+/;
             const { evaluation } = data.match(evalRegexp)!.groups!;
@@ -42,7 +43,8 @@ export const useEngineStore = defineStore({
             bestmove: '',
             depth: 0,
             mate: 0,
-            eval: 0
+            eval: 0,
+            variations: [] as string[]
         },
         stockfish: {
             config: {
@@ -91,7 +93,7 @@ export const useEngineStore = defineStore({
         }
     },
     actions: {
-        async run(engine : ENGINE, fen: string) {
+        run(engine : ENGINE, fen: string) {
             this[engine].working = true;
 
             stockfish.postMessage(`setoption name Skill Level value ${this[engine].config.skill}`);

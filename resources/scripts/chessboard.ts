@@ -709,4 +709,42 @@ export default class Chessboard {
 
         return false;
     }
+
+    /**
+     * Method for converting variation string returned from UCI into variation
+     * display data
+     */
+    public static getVariationData(board: Board, variation: string, currentMoveNumber: number) : Variation {
+        let x: string[][] = [];
+
+        for (let i=0; i<8; i++) {
+            let row = [];
+            for (let j=0; j<8; j++) {
+                row.push(board[i][j].piece ? `${board[i][j].piece!.type}${board[i][j].piece!.color}` : '');
+            }
+            x.push(row);
+        }
+
+        const variationData = variation.split(' ').slice(0, 6).map(algebraicMove => {
+            const algebraicFrom = algebraicMove.substring(0, 2);
+            const algebraicTo = algebraicMove.substring(2);
+
+            const [a, b] = this.algebraicToBoard(algebraicFrom);
+            const [c, d] = this.algebraicToBoard(algebraicTo);
+
+            const chessFontClass = x[a][b];
+
+            x[c][d] = x[a][b];
+            x[a][b] = '';
+
+            return ({
+                from: algebraicFrom,
+                to: algebraicTo,
+                chessFontClass,
+                moveNumber: ++currentMoveNumber
+            });
+        });
+
+        return variationData;
+    }
 }
