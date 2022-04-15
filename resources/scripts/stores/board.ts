@@ -24,7 +24,7 @@ export const useBoardStore = defineStore({
     const { board, castlingRights, halfmoves, fullmoves, color } = chessboard;
     let whitePieces = Chessboard.getPieces(board, PIECE_COLOR.WHITE);
     let blackPieces = Chessboard.getPieces(board, PIECE_COLOR.BLACK);
-    let pieces = {
+    let pieces: Pieces = {
       [PIECE_COLOR.WHITE]: whitePieces,
       [PIECE_COLOR.BLACK]: blackPieces,
     };
@@ -48,6 +48,7 @@ export const useBoardStore = defineStore({
         [PIECE_COLOR.BLACK]: {} as Move,
       } as Fullmove,
       moves: [] as Fullmove[],
+      variations: [] as Fullmove[][],
       promotionType: PIECE_TYPE.PAWN,
       currentMove: {
         index: -1,
@@ -66,7 +67,6 @@ export const useBoardStore = defineStore({
         to: [0, 0] as Square
       },
       dragging: -1,
-      variations: [] as Variation[],
       engineWorking: false
     });
   },
@@ -419,7 +419,7 @@ export const useBoardStore = defineStore({
       this.engineWorking = false;
       const engine = useEngineStore();
 
-      this.variations[0] = Chessboard.getVariationData(this.board, engine.response.variations[0], this.moves.length);
+      this.variations[0] = Chessboard.getVariationData(this.pieces, engine.response.variations[0]);
 
       if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
         const from = engine.response.bestmove.substring(0, 2);

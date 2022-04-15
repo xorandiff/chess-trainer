@@ -11,7 +11,7 @@ const { showMove, currentMove } = store;
         <a-list-item v-for="(fullmove, index) in _.reverse([...store.moves])">
             {{ (store.moves.length - index) + '. ' }} 
             <a-typography-link @click="showMove(store.moves.length - index - 1, PIECE_COLOR.WHITE)" :strong="currentMove.index === store.moves.length - index - 1 && currentMove.color === PIECE_COLOR.WHITE">
-                {{ fullmove[PIECE_COLOR.WHITE].algebraicNotation + ' ' }} 
+                {{ fullmove[PIECE_COLOR.WHITE]!.algebraicNotation + ' ' }} 
             </a-typography-link>
             <template v-if="fullmove[PIECE_COLOR.BLACK]">
                 <a-typography-link @click="showMove(store.moves.length - index - 1, PIECE_COLOR.BLACK)" :strong="currentMove.index === store.moves.length - index - 1 && currentMove.color === PIECE_COLOR.BLACK">

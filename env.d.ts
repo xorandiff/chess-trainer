@@ -19,6 +19,11 @@ type Piece = {
     legalMoves: Square[];
 };
 
+type Pieces = {
+    w: Piece[],
+    b: Piece[]
+}
+
 type Move = {
     piece: Piece;
     from: Square;
@@ -34,7 +39,7 @@ type Move = {
 }
 
 type Fullmove = {
-    w: Move;
+    w?: Move;
     b?: Move;
 }
 
@@ -77,14 +82,3 @@ interface StockfishConfig extends EngineConfig {
 }
 
 type StockfishConfigPatch = Patch<StockfishConfig>;
-
-type VariationMove = {
-    from: string;
-    to: string;
-    chessFontClass: string;
-    moveNumber: number;
-}
-
-type Variation = VariationMove[];
-
-

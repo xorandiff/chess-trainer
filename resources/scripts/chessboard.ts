@@ -220,10 +220,10 @@ export default class Chessboard {
     /**
      * Method for converting move to algebraic notation
      */
-    public static moveToAlgebraic(move: Move, pieces: Piece[]) : string {
+    public static moveToAlgebraic(move: Move, pieces: Piece[], excludePieceType?: boolean) : string {
         const { type } = move.piece;
 
-        let pieceString = type.toUpperCase();
+        let pieceString = excludePieceType ? '' : type.toUpperCase();
         if (!move.isCapture && (type === PIECE_TYPE.PAWN || move.promotionType)) {
             pieceString = '';
         }
@@ -359,7 +359,7 @@ export default class Chessboard {
     public static getPGN(moves: Fullmove[]) : string {
         let pgn = `[Site "Chess Trainer"]\n[Date "${moment().format('YYYY.MM.DD')}"]\n\n`;
         for (let i = 0; i < moves.length; i++) {
-            pgn += `${i + 1}. ${moves[i][PIECE_COLOR.WHITE].algebraicNotation} `;
+            pgn += `${i + 1}. ${moves[i][PIECE_COLOR.WHITE]!.algebraicNotation} `;
             if (moves[i][PIECE_COLOR.BLACK]) {
                 pgn += `${moves[i][PIECE_COLOR.BLACK]!.algebraicNotation} `;
             }
@@ -491,7 +491,7 @@ export default class Chessboard {
     }
 
     /**
-     * Method for performing a move
+     * Method for performing a move for Board
      */
     private static makeMove(board: Board, [r1, f1]: Square, [r2, f2]: Square) {
         if (board[r1][f1].piece) {
@@ -499,6 +499,42 @@ export default class Chessboard {
             board[r1][f1].piece = undefined;
         }
         return board;
+    }
+
+    /**
+     * Method for finding a piece occupying given square
+     */
+    private static findPiece(pieces: Pieces, [a, b]: Square) {
+        let pieceColor = PIECE_COLOR.WHITE;
+        let pieceIndex = _.findIndex(pieces[pieceColor], piece => piece.square[0] === a && piece.square[1] === b);
+        if (pieceIndex < 0) {
+            pieceColor = PIECE_COLOR.BLACK;
+            pieceIndex = _.findIndex(pieces[pieceColor], piece => piece.square[0] === a && piece.square[1] === b);
+        }
+
+        return pieceIndex >= 0 ? { index: pieceIndex, color: pieceColor } : undefined;
+    }
+
+    /**
+     * Method for finding a piece occupying given square with restriction to
+     * given color
+     */
+    private static findColorPiece(pieces: Pieces, [a, b]: Square, color: PIECE_COLOR) : number {
+        return _.findIndex(pieces[color], piece => piece.square[0] === a && piece.square[1] === b);
+    }
+
+    /**
+     * Method for performing a move for Pieces
+     */
+     private static makeMovePieces(pieces: Pieces, [a, b]: Square, [c, d]: Square) {
+        const pieceIndexColor = this.findPiece(pieces, [a, b]);
+        if (pieceIndexColor) {
+            const { index, color } = pieceIndexColor;
+            const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+
+            _.remove(pieces[oppositeColor], piece => piece.square[0] === c && piece.square[1] === d);
+            pieces[color][index].square = [c, d];
+        }
     }
 
     /**
@@ -714,36 +750,54 @@ export default class Chessboard {
      * Method for converting variation string returned from UCI into variation
      * display data
      */
-    public static getVariationData(board: Board, variation: string, currentMoveNumber: number) : Variation {
-        let x: string[][] = [];
+    public static getVariationData(pieces: Pieces, variation: string) : Fullmove[] {
+        let piecesCopy: Pieces = JSON.parse(JSON.stringify(pieces));
 
-        for (let i=0; i<8; i++) {
-            let row = [];
-            for (let j=0; j<8; j++) {
-                row.push(board[i][j].piece ? `${board[i][j].piece!.type}${board[i][j].piece!.color}` : '');
-            }
-            x.push(row);
-        }
+        const algebraicMoves = variation.split(' ');
+        let variationData: Fullmove[] = [];
 
-        const variationData = variation.split(' ').slice(0, 6).map(algebraicMove => {
+        let fullmove: Fullmove = {};
+
+        for (const algebraicMove of algebraicMoves) {
             const algebraicFrom = algebraicMove.substring(0, 2);
             const algebraicTo = algebraicMove.substring(2);
-
             const [a, b] = this.algebraicToBoard(algebraicFrom);
             const [c, d] = this.algebraicToBoard(algebraicTo);
+            
+            const pieceIndexColor = this.findPiece(piecesCopy, [a, b]);
 
-            const chessFontClass = x[a][b];
+            if (pieceIndexColor !== undefined) {
+                const { index, color } = pieceIndexColor;
+                const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+                const piece = piecesCopy[color][index];
 
-            x[c][d] = x[a][b];
-            x[a][b] = '';
-
-            return ({
-                from: algebraicFrom,
-                to: algebraicTo,
-                chessFontClass,
-                moveNumber: ++currentMoveNumber
-            });
-        });
+                let move: Move = {
+                    piece,
+                    from: [a, b],
+                    to: [c, d],
+                    isCapture: this.findColorPiece(piecesCopy, [c, d], oppositeColor) >= 0,
+                    isCheck: false,
+                    isCheckmate: false,
+                    castlingSide: false,
+                    promotionType: false,
+                    algebraicNotation: '',
+                    fen: '',
+                    sound: -1
+                };
+    
+                move.algebraicNotation = this.moveToAlgebraic(move, piecesCopy[color], true);
+                fullmove[color] = move;
+    
+                if (fullmove[PIECE_COLOR.BLACK]) {
+                    variationData.push(fullmove);
+                    fullmove = {};
+                }
+    
+                this.makeMovePieces(piecesCopy, [a, b], [c, d]);
+            } else {
+                //Error
+            }
+        }
 
         return variationData;
     }
