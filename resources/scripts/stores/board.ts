@@ -72,6 +72,7 @@ export const useBoardStore = defineStore({
   },
   getters: {
     oppositeColor: (state) => state.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE,
+    movesLength: (state) => state.moves.length
   },
   actions: {
     newGame(fen: string) {
@@ -419,7 +420,9 @@ export const useBoardStore = defineStore({
       this.engineWorking = false;
       const engine = useEngineStore();
 
-      this.variations[0] = Chessboard.getVariationData(this.pieces, engine.response.variations[0]);
+      for (let i = 0; i < engine.response.variations.length; i++) {
+        this.variations[i] = Chessboard.getVariationData(this.pieces, engine.response.variations[i]);
+      }
 
       if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
         const from = engine.response.bestmove.substring(0, 2);

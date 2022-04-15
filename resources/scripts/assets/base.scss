@@ -17,6 +17,8 @@ $dark-square-color: #b58863;
 $light-square-active-color: #f7ec59;
 $dark-square-active-color: #dac431;
 $square-active-border-color: #fff;
+$white-eval-color: #fff;
+$black-eval-color: #403d39;
 $highlight-color-orange: rgba(255, 170, 0, 0.8);
 $highlight-color-red: rgba(248, 85, 63, 0.8);
 $highlight-color-green: rgba(159, 207, 63, 0.8);
@@ -46,11 +48,11 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
 
     #eval {
       width: 100%;
-      background-color: white;
+      background-color: $white-eval-color;
 
       #bar {
         width: 100%;
-        background-color: #403d39;
+        background-color: $black-eval-color;
         transition: height 0.5s ease-in-out;
       }
     }
@@ -415,10 +417,41 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
 .variation {
   font-size: 0.8rem;
   height: 20px;
+  width: 530px;
 
-  .variationMove {
+  .variationEval {
     float: left;
+    width: 40px;
+    
+    span {
+      padding: 3px;
+    }
+  }
+
+  .variationEval.black {
+    span {
+      background-color: $black-eval-color;
+      color: white;
+    }
+  }
+
+  .variationEval.white {
+    span {
+      background-color: $white-eval-color;
+      color: black;
+    }
+  }
+
+  .variationMoves {
+    float: left;
+    width: 450px;
     height: 20px;
-    margin-right: 10px;
+    overflow: hidden;
+    
+    .variationMove {
+      float: left;
+      height: 20px;
+      margin-right: 10px;
+    }
   }
 }
