@@ -72,7 +72,8 @@ export const useBoardStore = defineStore({
   },
   getters: {
     oppositeColor: (state) => state.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE,
-    movesLength: (state) => state.moves.length
+    movesLength: (state) => state.moves.length,
+    movesReversed: (state) => state.moves.slice().reverse()
   },
   actions: {
     newGame(fen: string) {
@@ -265,7 +266,7 @@ export const useBoardStore = defineStore({
           sound
         } as Move;
 
-        this.lastMove.algebraicNotation = Chessboard.moveToAlgebraic(this.lastMove, this.pieces[this.currentTurnColor]);
+        this.lastMove.algebraicNotation = Chessboard.moveToAlgebraic(this.lastMove, this.pieces[this.currentTurnColor], true);
 
         //Update move history
         if (this.currentTurnColor === PIECE_COLOR.WHITE) {

@@ -4,13 +4,18 @@ import type { ENGINE } from '@/enums';
 
 let stockfish = new Worker('build/stockfish11.js');
 
+stockfish.postMessage('ucinewgame');
+stockfish.postMessage('setoption name MultiPV value 3');
+
 stockfish.addEventListener('message', function (e) {
     if (e.data) {
         const data = e.data as string;
+        console.log(data);
 
         if (data.startsWith('info')) {
-            const infoRegexp = /depth\s+(?<depth>\d+)\s+seldepth\s+(?<seldepth>\d+)\s+.*score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;
-            const { depth, seldepth, score, pv } = data.match(infoRegexp)!.groups!;
+            const infoRegexp = /depth\s+(?<depth>\d+)\s+seldepth\s+(?<seldepth>\d+)\s+multipv\s+(?<multipv>\d+)\s+score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;
+            const { depth, seldepth, multipv, score, pv } = data.match(infoRegexp)!.groups!;
+            const variationIndex = parseInt(multipv) - 1;
 
             if (score.includes('mate')) {
                 const { mate } = score.match(/(?<mate>\-?\d+)/)!.groups!;
@@ -18,7 +23,7 @@ stockfish.addEventListener('message', function (e) {
             }
             
             useEngineStore().response.depth = parseFloat(depth);
-            useEngineStore().response.variations[0] = pv;
+            useEngineStore().response.variations[variationIndex] = pv;
         } else if (data.startsWith('Total evaluation')) {
             const evalRegexp = /\s+(?<evaluation>[\-\.\d]+)\s+/;
             const { evaluation } = data.match(evalRegexp)!.groups!;
@@ -49,7 +54,7 @@ export const useEngineStore = defineStore({
         stockfish: {
             config: {
                 elo: 300, //from 100 to 3000
-                depth: 21,
+                depth: 12,
                 skill: 20 //from 0 to 20
             },
             working: false,
@@ -78,18 +83,29 @@ export const useEngineStore = defineStore({
             percent -= Math.round(evalMultiplied);
             return percent;
         },
-        evalDisplay: (state) => {
-            const evalAbs = Math.abs(state.response.eval);
-            const roundFactor = evalAbs >= 10 ? 1 : 10;
-            const evalRoundedAbs = Math.round(evalAbs * roundFactor) / roundFactor;
-            return state.response.mate ? `M${Math.abs(state.response.mate)}` : evalRoundedAbs;
-        },
-        evalTooltipText: (state) => {
-            let evalTooltipText = `${state.response.eval}`;
-            if (state.response.eval > 0) {
-                evalTooltipText = `+${evalTooltipText}`;
+        evalFormat: (state) => {
+            return (rounded?: boolean, withPlus?: boolean, overrideWithMate?: boolean) => {
+                const evalCopy = state.response.eval;
+                let evalFormatted = '';
+
+                if (rounded) {
+                    const evalAbs = Math.abs(evalCopy);
+                    const roundFactor = evalAbs >= 10 ? 1 : 10;
+                    evalFormatted = `${Math.round(evalAbs * roundFactor) / roundFactor}`;
+                } else {
+                    evalFormatted = `${evalCopy}`;
+                }
+
+                if (withPlus && evalCopy > 0) {
+                    evalFormatted = `+${evalFormatted}`;
+                }
+
+                if (overrideWithMate && state.response.mate) {
+                    evalFormatted = `M${Math.abs(state.response.mate)}`;
+                }
+
+                return evalFormatted;
             }
-            return evalTooltipText;
         }
     },
     actions: {

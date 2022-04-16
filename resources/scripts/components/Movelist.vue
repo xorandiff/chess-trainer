@@ -1,23 +1,36 @@
 <script setup lang="ts">
-import _ from 'lodash';
-import { PIECE_COLOR } from "@/enums";
+import { storeToRefs } from 'pinia';
+import { PIECE_COLOR, PIECE_TYPE } from "@/enums";
 import { useBoardStore } from "@/stores/board";
+
 const store = useBoardStore();
-const { showMove, currentMove } = store;
+
+const { movesReversed, movesLength } = storeToRefs(store);
+const { showMove } = store;
 </script>
 
 <template>
-    <a-list id="movelist" bordered>
-        <a-list-item v-for="(fullmove, index) in _.reverse([...store.moves])">
-            {{ (store.moves.length - index) + '. ' }} 
-            <a-typography-link @click="showMove(store.moves.length - index - 1, PIECE_COLOR.WHITE)" :strong="currentMove.index === store.moves.length - index - 1 && currentMove.color === PIECE_COLOR.WHITE">
-                {{ fullmove[PIECE_COLOR.WHITE]!.algebraicNotation + ' ' }} 
-            </a-typography-link>
-            <template v-if="fullmove[PIECE_COLOR.BLACK]">
-                <a-typography-link @click="showMove(store.moves.length - index - 1, PIECE_COLOR.BLACK)" :strong="currentMove.index === store.moves.length - index - 1 && currentMove.color === PIECE_COLOR.BLACK">
-                    {{ fullmove[PIECE_COLOR.BLACK]!.algebraicNotation }}
-                </a-typography-link>
-            </template>
-        </a-list-item>
-    </a-list>
+    <a-descriptions :column="1" size="small" bordered>
+        <a-descriptions-item>
+            <a-row justify="start" :gutter="16">
+                <a-col class="moveNumber" v-for="(fullmove, index) in movesReversed">
+                    {{ movesLength - index }}.  
+                    <a-button class="moveButton" type="text" @click="showMove(movesLength - index - 1, PIECE_COLOR.WHITE)">
+                        <template #icon v-if="fullmove[PIECE_COLOR.WHITE]!.piece.type !== PIECE_TYPE.PAWN">
+                            <span :class="`chessFont f-${fullmove[PIECE_COLOR.WHITE]!.piece.type}w`"></span>
+                        </template>
+                        {{ fullmove[PIECE_COLOR.WHITE]!.algebraicNotation }}
+                    </a-button>
+                    <template v-if="fullmove[PIECE_COLOR.BLACK]">
+                        <a-button class="moveButton" type="text" @click="showMove(movesLength - index - 1, PIECE_COLOR.BLACK)">
+                            <template #icon v-if="fullmove[PIECE_COLOR.BLACK]!.piece.type !== PIECE_TYPE.PAWN">
+                                <span :class="`chessFont f-${fullmove[PIECE_COLOR.BLACK]!.piece.type}b`"></span>
+                            </template>
+                            {{ fullmove[PIECE_COLOR.BLACK]!.algebraicNotation }}
+                        </a-button>
+                    </template>
+                </a-col>
+            </a-row>
+        </a-descriptions-item>
+    </a-descriptions>
 </template>

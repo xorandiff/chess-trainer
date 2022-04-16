@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia';
 import { useEngineStore } from "@/stores/engine";
 const store = useEngineStore();
-const { response } = storeToRefs(store);
+const { response, evalFormat, evalPercent } = storeToRefs(store);
 
 defineProps<{
   size: number;
@@ -11,11 +11,11 @@ defineProps<{
 
 <template>
     <a-tooltip placement="left">
-        <template #title>{{ store.evalTooltipText }}</template>
+        <template #title>{{ evalFormat(false, true, false) }}</template>
         <div id="evalContainer">
-            <span :id="response.eval > 0 ? 'evalWhite' : 'evalBlack'">{{ store.evalDisplay }}</span>
+            <span :id="response.eval > 0 ? 'evalWhite' : 'evalBlack'">{{ evalFormat(true, false, true) }}</span>
             <div id="eval" :style="{ height: `${size}px` }">
-                <div id="bar" :style="{ height: `${store.evalPercent}%` }"></div>
+                <div id="bar" :style="{ height: `${evalPercent}%` }"></div>
             </div>
         </div>
     </a-tooltip>

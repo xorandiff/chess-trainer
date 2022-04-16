@@ -799,6 +799,6 @@ export default class Chessboard {
             }
         }
 
-        return variationData;
+        return variationData.splice(0, 5);
     }
 }

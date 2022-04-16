@@ -7,28 +7,42 @@ import { PIECE_TYPE, PIECE_COLOR } from "@/enums";
 
 const store = useBoardStore();
 const engine = useEngineStore();
-const { variations, movesLength } = storeToRefs(store);
-const { response } = storeToRefs(engine);
+
+const { variations, movesLength, engineWorking } = storeToRefs(store);
+const { evalFormat } = storeToRefs(engine);
 </script>
 
 <template>
-    <div class="variation" v-for="variation in variations">
-        <div :class="['variationEval', response.eval >= 0 ? 'white' : 'black']">
-            <LoadingOutlined v-if="store.engineWorking"/>
-            <span v-else>{{ response.eval }}</span>
-        </div>
-        <div class="variationMoves" v-if="!store.engineWorking">
-            <div class="variationMove" v-for="(fullmove, index) in variation">
-                {{ !fullmove[PIECE_COLOR.WHITE] ? `${movesLength + index}... ` : `${movesLength + index + 1}. ` }}
-
-                <template v-if="fullmove[PIECE_COLOR.WHITE]">
-                    <span v-if="fullmove[PIECE_COLOR.WHITE]!.piece.type !== PIECE_TYPE.PAWN" :class="`chessFont f-${fullmove[PIECE_COLOR.WHITE]!.piece.type}w`"></span>
-                    {{ fullmove[PIECE_COLOR.WHITE]?.algebraicNotation }}
-                </template>
-
-                <span v-if="fullmove[PIECE_COLOR.BLACK]!.piece.type !== PIECE_TYPE.PAWN" :class="`chessFont f-${fullmove[PIECE_COLOR.BLACK]!.piece.type}b`"></span>
-                {{ fullmove[PIECE_COLOR.BLACK]?.algebraicNotation }}
-            </div>
-        </div>
-    </div>
+    <a-descriptions 
+        :column="1" 
+        size="small" 
+        :contentStyle="{ padding: '2px 10px' }" 
+        bordered
+    >
+        <a-descriptions-item v-for="variation in variations" :labelStyle="{ width: '50px', textAlign: 'center', padding: '0' }" >
+            <template #label>
+                <LoadingOutlined v-if="engineWorking" />
+                <span class="variationLabel" v-else>
+                    {{ evalFormat(false, true, true) }}
+                </span>
+            </template>
+            <a-space>
+                <span v-for="(fullmove, index) in variation">
+                    {{ !fullmove[PIECE_COLOR.WHITE] ? `${movesLength + index}... ` : `${movesLength + index + 1}. ` }}
+                    <a-button class="moveButton" v-if="fullmove[PIECE_COLOR.WHITE]" type="text">
+                        <template #icon v-if="fullmove[PIECE_COLOR.WHITE]!.piece.type !== PIECE_TYPE.PAWN">
+                            <span :class="`chessFont f-${fullmove[PIECE_COLOR.WHITE]!.piece.type}w`"></span>
+                        </template>
+                        {{ fullmove[PIECE_COLOR.WHITE]!.algebraicNotation }}
+                    </a-button>
+                    <a-button class="moveButton" v-if="fullmove[PIECE_COLOR.BLACK]" type="text">
+                        <template #icon v-if="fullmove[PIECE_COLOR.BLACK]!.piece.type !== PIECE_TYPE.PAWN">
+                            <span :class="`chessFont f-${fullmove[PIECE_COLOR.BLACK]!.piece.type}b`"></span>
+                        </template>
+                        {{ fullmove[PIECE_COLOR.BLACK]!.algebraicNotation }}
+                    </a-button>
+                </span>
+            </a-space>
+        </a-descriptions-item>
+    </a-descriptions>
 </template>

@@ -347,11 +347,6 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
   }
 }
 
-#movelist {
-  height: 240px;
-  overflow: auto;
-}
-
 .exportImportTabPane {
   height: 200px;
 }
@@ -414,44 +409,15 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
   content: "Ľ";
 }
 
-.variation {
-  font-size: 0.8rem;
-  height: 20px;
-  width: 530px;
+.moveButton {
+  padding: 1px 1px;
+}
 
-  .variationEval {
-    float: left;
-    width: 40px;
-    
-    span {
-      padding: 3px;
-    }
-  }
+.moveNumber {
+  color: gray;
+}
 
-  .variationEval.black {
-    span {
-      background-color: $black-eval-color;
-      color: white;
-    }
-  }
-
-  .variationEval.white {
-    span {
-      background-color: $white-eval-color;
-      color: black;
-    }
-  }
-
-  .variationMoves {
-    float: left;
-    width: 450px;
-    height: 20px;
-    overflow: hidden;
-    
-    .variationMove {
-      float: left;
-      height: 20px;
-      margin-right: 10px;
-    }
-  }
+.variationLabel {
+  font-size: 0.7rem;
+  font-weight: bold;
 }
