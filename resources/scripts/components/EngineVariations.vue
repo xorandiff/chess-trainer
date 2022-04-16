@@ -27,21 +27,20 @@ const { evalFormat } = storeToRefs(engine);
                 </span>
             </template>
             <a-space>
-                <span v-for="(fullmove, index) in variation">
-                    {{ !fullmove[PIECE_COLOR.WHITE] ? `${movesLength + index}... ` : `${movesLength + index + 1}. ` }}
-                    <a-button class="moveButton" v-if="fullmove[PIECE_COLOR.WHITE]" type="text">
-                        <template #icon v-if="fullmove[PIECE_COLOR.WHITE]!.piece.type !== PIECE_TYPE.PAWN">
-                            <span :class="`chessFont f-${fullmove[PIECE_COLOR.WHITE]!.piece.type}w`"></span>
+                <template v-if="variation[0].piece.color === PIECE_COLOR.BLACK">
+                    {{ Math.floor(movesLength / 2) + 1 }}... 
+                </template>
+                <template v-for="(move, index) in variation">
+                    <template v-if="move.piece.color === PIECE_COLOR.WHITE">
+                        {{ Math.floor((movesLength + index) / 2) + 1 }}. 
+                    </template>
+                    <a-button class="moveButton" type="text">
+                        <template #icon v-if="move.piece.type !== PIECE_TYPE.PAWN">
+                            <span :class="`chessFont f-${move.piece.type}${move.piece.color}`"></span>
                         </template>
-                        {{ fullmove[PIECE_COLOR.WHITE]!.algebraicNotation }}
+                        {{ move.algebraicNotation }}
                     </a-button>
-                    <a-button class="moveButton" v-if="fullmove[PIECE_COLOR.BLACK]" type="text">
-                        <template #icon v-if="fullmove[PIECE_COLOR.BLACK]!.piece.type !== PIECE_TYPE.PAWN">
-                            <span :class="`chessFont f-${fullmove[PIECE_COLOR.BLACK]!.piece.type}b`"></span>
-                        </template>
-                        {{ fullmove[PIECE_COLOR.BLACK]!.algebraicNotation }}
-                    </a-button>
-                </span>
+                </template>
             </a-space>
         </a-descriptions-item>
     </a-descriptions>

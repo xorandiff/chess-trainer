@@ -411,10 +411,12 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
 
 .moveButton {
   padding: 1px 1px;
+  margin-left: 1px;
 }
 
 .moveNumber {
   color: gray;
+  padding-left: 8px;
 }
 
 .variationLabel {

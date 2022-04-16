@@ -10,7 +10,6 @@ stockfish.postMessage('setoption name MultiPV value 3');
 stockfish.addEventListener('message', function (e) {
     if (e.data) {
         const data = e.data as string;
-        console.log(data);
 
         if (data.startsWith('info')) {
             const infoRegexp = /depth\s+(?<depth>\d+)\s+seldepth\s+(?<seldepth>\d+)\s+multipv\s+(?<multipv>\d+)\s+score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;

@@ -5,7 +5,7 @@ import { useBoardStore } from "@/stores/board";
 
 const store = useBoardStore();
 
-const { movesReversed, movesLength } = storeToRefs(store);
+const { moves } = storeToRefs(store);
 const { showMove } = store;
 </script>
 
@@ -13,23 +13,17 @@ const { showMove } = store;
     <a-descriptions :column="1" size="small" bordered>
         <a-descriptions-item>
             <a-row justify="start" :gutter="16">
-                <a-col class="moveNumber" v-for="(fullmove, index) in movesReversed">
-                    {{ movesLength - index }}.  
-                    <a-button class="moveButton" type="text" @click="showMove(movesLength - index - 1, PIECE_COLOR.WHITE)">
-                        <template #icon v-if="fullmove[PIECE_COLOR.WHITE]!.piece.type !== PIECE_TYPE.PAWN">
-                            <span :class="`chessFont f-${fullmove[PIECE_COLOR.WHITE]!.piece.type}w`"></span>
+                <span v-for="(move, index) in moves">
+                    <span class="moveNumber" v-if="move.piece.color === PIECE_COLOR.WHITE">
+                        {{ Math.floor(index / 2) + 1 }}. 
+                    </span>
+                    <a-button class="moveButton" type="text" @click="showMove(index)">
+                        <template #icon v-if="move.piece.type !== PIECE_TYPE.PAWN">
+                            <span :class="`chessFont f-${move.piece.type}${move.piece.color}`"></span>
                         </template>
-                        {{ fullmove[PIECE_COLOR.WHITE]!.algebraicNotation }}
+                        {{ move.algebraicNotation }}
                     </a-button>
-                    <template v-if="fullmove[PIECE_COLOR.BLACK]">
-                        <a-button class="moveButton" type="text" @click="showMove(movesLength - index - 1, PIECE_COLOR.BLACK)">
-                            <template #icon v-if="fullmove[PIECE_COLOR.BLACK]!.piece.type !== PIECE_TYPE.PAWN">
-                                <span :class="`chessFont f-${fullmove[PIECE_COLOR.BLACK]!.piece.type}b`"></span>
-                            </template>
-                            {{ fullmove[PIECE_COLOR.BLACK]!.algebraicNotation }}
-                        </a-button>
-                    </template>
-                </a-col>
+                </span>
             </a-row>
         </a-descriptions-item>
     </a-descriptions>

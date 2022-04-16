@@ -356,12 +356,14 @@ export default class Chessboard {
     /**
      * Method for converting move history to PGN string
      */
-    public static getPGN(moves: Fullmove[]) : string {
+    public static getPGN(moves: Move[]) : string {
         let pgn = `[Site "Chess Trainer"]\n[Date "${moment().format('YYYY.MM.DD')}"]\n\n`;
+
         for (let i = 0; i < moves.length; i++) {
-            pgn += `${i + 1}. ${moves[i][PIECE_COLOR.WHITE]!.algebraicNotation} `;
-            if (moves[i][PIECE_COLOR.BLACK]) {
-                pgn += `${moves[i][PIECE_COLOR.BLACK]!.algebraicNotation} `;
+            if (moves[i].piece.color === PIECE_COLOR.WHITE) {
+                pgn += `${i + 1}. ${moves[i].algebraicNotation} `;
+            } else {
+                pgn += `${moves[i].algebraicNotation} `;
             }
         }
         return pgn;
@@ -750,13 +752,11 @@ export default class Chessboard {
      * Method for converting variation string returned from UCI into variation
      * display data
      */
-    public static getVariationData(pieces: Pieces, variation: string) : Fullmove[] {
+    public static getVariationData(pieces: Pieces, variation: string) : Move[] {
         let piecesCopy: Pieces = JSON.parse(JSON.stringify(pieces));
 
         const algebraicMoves = variation.split(' ');
-        let variationData: Fullmove[] = [];
-
-        let fullmove: Fullmove = {};
+        let variationData: Move[] = [];
 
         for (const algebraicMove of algebraicMoves) {
             const algebraicFrom = algebraicMove.substring(0, 2);
@@ -786,12 +786,8 @@ export default class Chessboard {
                 };
     
                 move.algebraicNotation = this.moveToAlgebraic(move, piecesCopy[color], true);
-                fullmove[color] = move;
     
-                if (fullmove[PIECE_COLOR.BLACK]) {
-                    variationData.push(fullmove);
-                    fullmove = {};
-                }
+                variationData.push(move);
     
                 this.makeMovePieces(piecesCopy, [a, b], [c, d]);
             } else {

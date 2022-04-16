@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
+import { storeToRefs } from 'pinia';
 import { SettingOutlined, RetweetOutlined, ExpandAltOutlined } from '@ant-design/icons-vue';
-import { PIECE_TYPE, PIECE_COLOR } from "@/enums";
+import { PIECE_TYPE } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 import BoardPiece from "./BoardPiece.vue";
 import BoardSquare from "./BoardSquare.vue";
@@ -34,7 +35,8 @@ const pieceLeft = ref(0);
 const pieceTop = ref(0);
 
 const store = useBoardStore();
-const { board, color, currentMove, pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
+const { currentMoveIndex } = storeToRefs(store);
+const { board, pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
 
 function handleMousemove(event: MouseEvent) {
   pieceLeft.value = event.pageX - (squareSize.value / 2);
@@ -56,18 +58,10 @@ function handleMousemove(event: MouseEvent) {
 function handleKeydown(event: KeyboardEvent) {
   switch (event.key) {
     case "ArrowLeft":
-      if (currentMove.color === PIECE_COLOR.BLACK) {
-        showMove(currentMove.index, PIECE_COLOR.WHITE);
-      } else {
-        showMove(currentMove.index - 1, PIECE_COLOR.BLACK);
-      }
+      showMove(currentMoveIndex.value - 1);
     break;
     case "ArrowRight": 
-      if (currentMove.color === PIECE_COLOR.WHITE) {
-        showMove(currentMove.index, PIECE_COLOR.BLACK);
-      } else {
-        showMove(currentMove.index + 1, PIECE_COLOR.WHITE);
-      }
+      showMove(currentMoveIndex.value + 1);
     break;
   }
 }
