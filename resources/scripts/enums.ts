@@ -9,7 +9,7 @@ export const enum SOUND_TYPE {
     GAME_END = 7,
 }
 
-export const enum PIECE_TYPE {
+export enum PIECE_TYPE {
     ROOK = "r",
     KNIGHT = "n",
     BISHOP = "b",
@@ -18,17 +18,17 @@ export const enum PIECE_TYPE {
     PAWN = "p",
 }
 
-export const enum PIECE_COLOR {
+export enum PIECE_COLOR {
     WHITE = "w",
     BLACK = "b",
 }
 
-export const enum CASTLING_SIDE {
+export enum CASTLING_SIDE {
     KINGSIDE = 'k',
     QUEENSIDE = 'q',
 }
 
-export const enum ENGINE {
+export enum ENGINE {
     STOCKFISH = 'stockfish',
     LC0 = 'lc0'
 }

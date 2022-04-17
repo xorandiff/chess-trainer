@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { SettingOutlined, RetweetOutlined, ExpandAltOutlined } from '@ant-design/icons-vue';
 import { PIECE_TYPE } from "@/enums";
 import { useBoardStore } from "@/stores/board";
+import Chessboard from "@/chessboard";
 import BoardPiece from "./BoardPiece.vue";
 import BoardSquare from "./BoardSquare.vue";
 import Eval from "./Eval.vue";
@@ -21,7 +22,7 @@ const flipped = ref<boolean>(false);
 
 const squareSize = computed(() => boardSize.value / 8);
 const labelFontSize = computed(() => boardSize.value * 0.027);
-const indexArray = computed(() => flipped.value ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]);
+const indexArray = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
 
 const boardSizeStyle = computed(() => {
   return { minWidth: `${boardSize.value}px`, minHeight: `${boardSize.value}px` };
@@ -35,8 +36,8 @@ const pieceLeft = ref(0);
 const pieceTop = ref(0);
 
 const store = useBoardStore();
-const { currentMoveIndex } = storeToRefs(store);
-const { board, pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
+const { currentMoveIndex, arrows, getPiece } = storeToRefs(store);
+const { pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
 
 function handleMousemove(event: MouseEvent) {
   pieceLeft.value = event.pageX - (squareSize.value / 2);
@@ -88,26 +89,26 @@ onUnmounted(() => {
     <Eval :size="boardSize" />
     <div id="chessboard" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
       <svg id="arrows" :style="{ width: `${boardSize}px`, height: `${boardSize}px` }" viewBox="0 0 100 100">
-        <template v-for="arrow in store.arrows">
+        <template v-for="arrow in arrows">
           <polygon :class="['arrow', arrow.color]" :transform="arrow.transform" :points="arrow.points"></polygon>
         </template>
       </svg>
       <div class="row" v-for="i in indexArray">
-        <BoardSquare v-for="j in indexArray" :rank="i" :file="j" :squareData="board[i][j]" :style="squareSizeStyle">
-          <template v-if="board[i][j].piece">
-            <template v-if="store.dragging === i*10 + j">
+        <BoardSquare v-for="j in indexArray" :index="i*10+j" :style="squareSizeStyle" :squareData="store.board[i*10+j]">
+          <template v-if="getPiece(i*10+j) !== undefined">
+            <template v-if="store.dragging === i*10+j">
               <Teleport to="body">
                 <BoardPiece
                   class="dragging"
-                  :piece="board[i][j].piece!"
+                  :piece="getPiece(i*10+j)!"
                   :style="{ ...squareSizeStyle, left: `${pieceLeft}px`, top: `${pieceTop}px` }"
                 ></BoardPiece>
               </Teleport>
             </template>
             <BoardPiece
               v-else
-              :piece="board[i][j].piece!"
-            ></BoardPiece>
+              :piece="getPiece(Chessboard.c2s(i, j))!"
+            ></BoardPiece>  
           </template>
         </BoardSquare>
         <div class="endRow"></div>

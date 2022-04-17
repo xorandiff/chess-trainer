@@ -10,24 +10,27 @@ type King = "k";
 type Queen = "q";
 type Pawn = "p";
 
-type Square = [number, number];
+type Patch<Type> = {
+    [Property in keyof Type]+?: Type[Property];
+};
 
 type Piece = {
     type: Rook | Bishop | Knight | King | Queen | Pawn;
     color: White | Black;
-    square: Square;
-    legalMoves: Square[];
+    square: number;
+    rank: number;
+    file: number;
+    legalMoves: number[];
 };
 
-type Pieces = {
-    w: Piece[],
-    b: Piece[]
-}
+type PiecePatch = Patch<Piece>;
+
+type Pieces = Piece[];
 
 type Move = {
     piece: Piece;
-    from: Square;
-    to: Square;
+    from: number;
+    to: number;
     isCapture: boolean;
     isCheck: boolean;
     isCheckmate: boolean;
@@ -38,28 +41,24 @@ type Move = {
     sound: number;
 }
 
-type Fullmove = {
-    w?: Move;
-    b?: Move;
-}
+type Square = [number, number];
 
 type Arrow = {
     color: string;
-    from: Square;
-    to: Square;
+    from: number;
+    to: number;
     transform: string;
     points: string;
 }
 
 type SquareData = {
-    piece?: Piece;
     active: boolean;
     legalMove: boolean;
     highlight: boolean;
     highlightColor: string;
 };
 
-type Board = SquareData[][];
+type Board = SquareData[];
 
 type EngineResponse = {
     bestmove: string;
@@ -67,10 +66,6 @@ type EngineResponse = {
     mate: number;
     eval?: number;
 }
-
-type Patch<Type> = {
-    [Property in keyof Type]+?: Type[Property];
-};
 
 interface EngineConfig {
     depth: number
