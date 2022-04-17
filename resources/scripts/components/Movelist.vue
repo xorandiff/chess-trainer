@@ -5,7 +5,7 @@ import { useBoardStore } from "@/stores/board";
 
 const store = useBoardStore();
 
-const { moves } = storeToRefs(store);
+const { moves, currentMoveIndex } = storeToRefs(store);
 const { showMove } = store;
 </script>
 
@@ -17,7 +17,7 @@ const { showMove } = store;
                     <span class="moveNumber" v-if="move.piece.color === PIECE_COLOR.WHITE">
                         {{ Math.floor(index / 2) + 1 }}. 
                     </span>
-                    <a-button class="moveButton" type="text" @click="showMove(index)">
+                    <a-button class="moveButton" :type="currentMoveIndex === index ? 'dashed' : 'text'" @click="showMove(index)">
                         <template #icon v-if="move.piece.type !== PIECE_TYPE.PAWN">
                             <span :class="`chessFont f-${move.piece.type}${move.piece.color}`"></span>
                         </template>

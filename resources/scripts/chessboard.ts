@@ -193,7 +193,7 @@ export default class Chessboard {
     }
 
     /**
-     * Method for getting the pieces of given color
+     * Method for getting pieces
      */
     public static getPieces(board: Board, color: PIECE_COLOR) {
         let pieces: Piece[] = [];
@@ -795,6 +795,6 @@ export default class Chessboard {
             }
         }
 
-        return variationData.splice(0, 5);
+        return variationData.splice(0, 8);
     }
 }

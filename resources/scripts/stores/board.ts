@@ -43,10 +43,6 @@ export const useBoardStore = defineStore({
       halfmoves,
       fullmoves,
       lastMove,
-      move: {
-        [PIECE_COLOR.WHITE]: {} as Move,
-        [PIECE_COLOR.BLACK]: {} as Move,
-      } as Fullmove,
       moves: [] as Move[],
       variations: [] as Move[][],
       promotionType: PIECE_TYPE.PAWN,
@@ -95,10 +91,6 @@ export const useBoardStore = defineStore({
       })
       this.halfmoves = 0;
       this.fullmoves = 1;
-      this.move = {
-        [PIECE_COLOR.WHITE]: {} as Move,
-        [PIECE_COLOR.BLACK]: {} as Move,
-      } as Fullmove;
       this.moves = [] as Move[];
       this.promotionType = PIECE_TYPE.PAWN;
       this.promotionModalVisible = false;

@@ -5,11 +5,11 @@ import { useBoardStore } from "@/stores/board";
 import { useEngineStore } from "@/stores/engine";
 import { PIECE_TYPE, PIECE_COLOR } from "@/enums";
 
-const store = useBoardStore();
-const engine = useEngineStore();
+const boardStore = useBoardStore();
+const engineStore = useEngineStore();
 
-const { variations, movesLength, engineWorking } = storeToRefs(store);
-const { evalFormat } = storeToRefs(engine);
+const { variations, movesLength, engineWorking } = storeToRefs(boardStore);
+const { evalFormat } = storeToRefs(engineStore);
 </script>
 
 <template>
@@ -34,7 +34,7 @@ const { evalFormat } = storeToRefs(engine);
                     <template v-if="move.piece.color === PIECE_COLOR.WHITE">
                         {{ Math.floor((movesLength + index) / 2) + 1 }}. 
                     </template>
-                    <a-button class="moveButton" type="text">
+                    <a-button class="moveButton" type="text" :style="{ marginLeft: move.piece.color === PIECE_COLOR.BLACK ? '-7px': '0' }">
                         <template #icon v-if="move.piece.type !== PIECE_TYPE.PAWN">
                             <span :class="`chessFont f-${move.piece.type}${move.piece.color}`"></span>
                         </template>
