@@ -116,7 +116,7 @@ onUnmounted(() => {
       <div id="labels" :style="boardSizeStyle">
         <div id="ranks" :style="{ width: `${squareSize}px`, height: `${boardSize}px` }">
           <div v-for="rank in indexArray" :style="{ height: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
-            {{ 8 - rank }}
+            {{ 9 - rank }}
           </div>
         </div>
         <div id="files" :style="{ width: `${boardSize}px` }">

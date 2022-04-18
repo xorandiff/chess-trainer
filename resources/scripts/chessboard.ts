@@ -35,8 +35,8 @@ export default class Chessboard {
     public static s2a(v: number) : string {
         const [rank, file] = this.s2c(v);
 
-        const algebraicRank = (7 - rank) + 1;
-        const algebraicFile = String.fromCharCode('a'.charCodeAt(0) + file);
+        const algebraicRank = 9 - rank;
+        const algebraicFile = String.fromCharCode('a'.charCodeAt(0) + file - 1);
 
         return `${algebraicFile}${algebraicRank}`;
     }
@@ -49,7 +49,7 @@ export default class Chessboard {
      */
     public static a2s(algebraicSquare: string) {
         const file = algebraicSquare.charCodeAt(0) - 'a'.charCodeAt(0) + 1;
-        const rank = 8 - (parseInt(algebraicSquare[1]) - 1);
+        const rank = 9 - parseInt(algebraicSquare[1]);
 
         return this.c2s(rank, file);
     }
@@ -428,7 +428,7 @@ export default class Chessboard {
 
         for (let i = 0; i < moves.length; i++) {
             if (moves[i].piece.color === PIECE_COLOR.WHITE) {
-                pgn += `${i + 1}. ${moves[i].algebraicNotation} `;
+                pgn += `${Math.floor(i / 2) + 1}. ${moves[i].algebraicNotation} `;
             } else {
                 pgn += `${moves[i].algebraicNotation} `;
             }
