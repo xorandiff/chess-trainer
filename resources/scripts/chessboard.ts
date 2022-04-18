@@ -368,6 +368,14 @@ export default class Chessboard {
 
     /**
      * Method returns FEN string based on given pieces
+     * 
+     * @param pieces 
+     * @param castlingRights 
+     * @param halfmoves 
+     * @param fullmoves 
+     * @param turnColor 
+     * @param lastMove 
+     * @returns 
      */
     public static getFen(pieces: Pieces, castlingRights: any, halfmoves: number, fullmoves: number, turnColor: PIECE_COLOR, lastMove: Move) {
         let ranks = [];
@@ -425,6 +433,9 @@ export default class Chessboard {
 
     /**
      * Method for converting move history to PGN string
+     * 
+     * @param moves 
+     * @returns 
      */
     public static getPGN(moves: Move[]) : string {
         let pgn = `[Site "Chess Trainer"]\n[Date "${moment().format('YYYY.MM.DD')}"]\n\n`;
@@ -473,6 +484,11 @@ export default class Chessboard {
     /**
      * Method for checking whether given color can perform castling 
      * on given side
+     * 
+     * @param pieces 
+     * @param color 
+     * @param side 
+     * @returns 
      */
     public static canCastle(pieces: Pieces, color: PIECE_COLOR, side: CASTLING_SIDE) {
         //Determine castling rank
@@ -511,6 +527,10 @@ export default class Chessboard {
 
     /**
      * Method for detecting if given color is in check
+     * 
+     * @param pieces 
+     * @param color 
+     * @returns 
      */
     public static detectCheck(pieces: Pieces, color: PIECE_COLOR) {
         const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
@@ -523,6 +543,10 @@ export default class Chessboard {
 
     /**
      * Method for getting the king's square of given color
+     * 
+     * @param pieces 
+     * @param color 
+     * @returns 
      */
     private static getKingSquare(pieces: Pieces, color: PIECE_COLOR) : Square {
         const filteredPieces = this.getFilteredPieces(pieces, { color, type: PIECE_TYPE.KING });
@@ -533,6 +557,12 @@ export default class Chessboard {
 
     /**
      * Method for computing legal moves and captures of a piece
+     * 
+     * @param pieces 
+     * @param v 
+     * @param castlingRights 
+     * @param lastMove 
+     * @returns 
      */
     public static computeLegalMoves(pieces: Pieces, v: number, castlingRights: CASTLING_SIDE[], lastMove: Move) {
         let legalMoves: number[] = [];
@@ -589,6 +619,12 @@ export default class Chessboard {
 
     /**
      * Method for computing pseudo-legal moves and captures of a piece
+     * 
+     * @param pieces 
+     * @param v 
+     * @param castlingRights 
+     * @param lastMove 
+     * @returns 
      */
     private static computePseudoLegalMoves(pieces: Pieces, v: number, castlingRights: CASTLING_SIDE[], lastMove: Move) : number[] {
         const [i, j] = this.s2c(v);
@@ -725,6 +761,9 @@ export default class Chessboard {
 
     /**
      * Method for finding square marked as active
+     * 
+     * @param board 
+     * @returns 
      */
     public static getActiveSquare(board: Board) {
         for (const square of board) {
@@ -737,6 +776,11 @@ export default class Chessboard {
 
     /**
      * Method for detecting any attack by given color on given square
+     * 
+     * @param pieces 
+     * @param color 
+     * @param param2 
+     * @returns 
      */
     private static isSquareAttacked(pieces: Pieces, color: PIECE_COLOR, [i, j]: Square) : boolean {
         const d = color === PIECE_COLOR.WHITE ? 1 : -1;
@@ -804,6 +848,10 @@ export default class Chessboard {
     /**
      * Method for converting variation string returned from UCI into variation
      * display data
+     * 
+     * @param pieces 
+     * @param variation 
+     * @returns 
      */
     public static getVariationData(pieces: Pieces, variation: string) : Move[] {
         let piecesCopy: Pieces = JSON.parse(JSON.stringify(pieces));
