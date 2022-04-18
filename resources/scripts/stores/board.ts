@@ -21,12 +21,7 @@ export const useBoardStore = defineStore({
   state: () => {
     const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     const chessboard = Chessboard.create(fen);
-    const { castlingRights, halfmoves, fullmoves, color } = chessboard;
-    let pieces = chessboard.pieces;
-
-    pieces.forEach(piece => {
-      piece.legalMoves = Chessboard.computeLegalMoves(pieces, piece.square, castlingRights[PIECE_COLOR.WHITE], {} as Move);
-    });
+    const { pieces, castlingRights, halfmoves, fullmoves, color } = chessboard;
 
     let board: Board = new Array(89).fill({});
     for (let i = 1; i <= 8; i++) {
@@ -129,11 +124,8 @@ export const useBoardStore = defineStore({
         }
       }
 
-      const piece = this.pieces.find(piece => piece.square === v && piece.color == this.currentTurnColor);
-      if (
-        (piece && this.currentMoveIndex < 0) || piece && this.currentMoveIndex === this.moves.length - 1 &&
-        (this.moves[this.moves.length - 1].piece.color !== this.currentTurnColor || !this.moves.length)
-      ) {
+      const piece = this.pieces.find(piece => piece.square === v && piece.color === this.currentTurnColor);
+      if (piece && this.currentMoveIndex === this.movesLength - 1) {
         //Set coordinates of current dragged piece
         this.dragging = v;
 
@@ -259,7 +251,7 @@ export const useBoardStore = defineStore({
           sound
         } as Move;
 
-        move.algebraicNotation = Chessboard.moveToAlgebraic(move, this.pieces, true);
+        move.algebraicNotation = Chessboard.moveToAlgebraic(move, this.pieces);
 
         //Highlight last move
         this.board[v].highlight = true;
@@ -293,7 +285,6 @@ export const useBoardStore = defineStore({
 
         //Switching turn for other color
         this.currentTurnColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-        const opponentColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
         //Compute all possible legal moves for the next turn
         this.pieces.forEach(piece => {
@@ -341,12 +332,12 @@ export const useBoardStore = defineStore({
         if (this.halfmoves >= 50 || !this.pieces.find(piece => piece.color === this.currentTurnColor && piece.legalMoves.length)) {
           if (this.halfmoves >= 50) {
             //50 move rule reached, draw
-          } else if (!!this.pieces.find(piece => piece.color === opponentColor && piece.legalMoves.length)) {
+          } else if (!!this.pieces.find(piece => piece.color === this.oppositeColor && piece.legalMoves.length)) {
             //Stalemate
           } else {
             //Checkmate
-            //let algebraicNotation = this.moves[this.moves.length - 1].algebraicNotation;
-            //this.moves[this.moves.length - 1].algebraicNotation = algebraicNotation.slice(0, -1) + '#';
+            let algebraicNotation = this.moves[this.moves.length - 1].algebraicNotation;
+            this.moves[this.moves.length - 1].algebraicNotation = algebraicNotation.slice(0, -1) + '#';
           }
 
           effects[SOUND_TYPE.GAME_END].play();
@@ -361,7 +352,6 @@ export const useBoardStore = defineStore({
     showMove(index: number) {
       if (index >= 0 && index < this.moves.length) {
         this.currentMoveIndex = index;
-        console.log(this.moves[index].fen);
         this.loadPosition(this.moves[index].fen);
         effects[this.moves[index].sound].play();
 
@@ -374,7 +364,7 @@ export const useBoardStore = defineStore({
       }
     },
     loadPosition(fen: string) {
-      const pieces = Chessboard.fenToPieces(fen);
+      const { pieces } = Chessboard.create(fen, this.lastMove);
       this.pieces = [ ...pieces ];
     },
     stockfishRun() {

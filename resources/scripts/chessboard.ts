@@ -73,7 +73,7 @@ export default class Chessboard {
      * @param fen 
      * @returns 
      */
-    public static create(fen: string) {
+    public static create(fen: string, lastMove?: Move) {
         const fields = fen.split(' ');
         const color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
         const castlingRightsString = fields[2];
@@ -106,7 +106,7 @@ export default class Chessboard {
         }
         
         return {
-            pieces: this.fenToPieces(fen),
+            pieces: this.fenToPieces(fen, castlingRights[PIECE_COLOR.WHITE], lastMove ?? {} as Move),
             color,
             castlingRights,
             halfmoves,
@@ -120,7 +120,7 @@ export default class Chessboard {
      * @param fen 
      * @returns 
      */
-    public static fenToPieces(fen: string) : Pieces {
+    public static fenToPieces(fen: string, castlingRights: CASTLING_SIDE[], lastMove: Move) : Pieces {
         const rows = fen.split(' ')[0].split('/');
 
         let pieces: Pieces = [];
@@ -145,6 +145,10 @@ export default class Chessboard {
                 }
             }
         }
+
+        pieces.forEach(piece => {
+            piece.legalMoves = Chessboard.computeLegalMoves(pieces, piece.square, castlingRights, lastMove);
+        });
         
         return pieces;
     }
@@ -292,13 +296,12 @@ export default class Chessboard {
      * 
      * @param move 
      * @param pieces 
-     * @param excludePieceType 
      * @returns 
      */
-    public static moveToAlgebraic(move: Move, pieces: Piece[], excludePieceType?: boolean) : string {
+    public static moveToAlgebraic(move: Move, pieces: Piece[]) : string {
         const { type } = move.piece;
 
-        let pieceString = excludePieceType ? '' : type.toUpperCase();
+        let pieceString = '';
         if (!move.isCapture && (type === PIECE_TYPE.PAWN || move.promotionType)) {
             pieceString = '';
         }
@@ -427,10 +430,11 @@ export default class Chessboard {
         let pgn = `[Site "Chess Trainer"]\n[Date "${moment().format('YYYY.MM.DD')}"]\n\n`;
 
         for (let i = 0; i < moves.length; i++) {
+            const pieceType = moves[i].piece.type === PIECE_TYPE.PAWN ? '' : moves[i].piece.type.toUpperCase();
             if (moves[i].piece.color === PIECE_COLOR.WHITE) {
-                pgn += `${Math.floor(i / 2) + 1}. ${moves[i].algebraicNotation} `;
+                pgn += `${Math.floor(i / 2) + 1}. ${pieceType}${moves[i].algebraicNotation} `;
             } else {
-                pgn += `${moves[i].algebraicNotation} `;
+                pgn += `${pieceType}${moves[i].algebraicNotation} `;
             }
         }
         return pgn;
@@ -834,7 +838,7 @@ export default class Chessboard {
                     sound: -1
                 };
     
-                move.algebraicNotation = this.moveToAlgebraic(move, piecesCopy, true);
+                move.algebraicNotation = this.moveToAlgebraic(move, piecesCopy);
     
                 variationData.push(move);
     
