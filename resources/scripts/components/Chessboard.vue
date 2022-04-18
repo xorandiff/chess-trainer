@@ -120,8 +120,8 @@ onUnmounted(() => {
           </div>
         </div>
         <div id="files" :style="{ width: `${boardSize}px` }">
-          <div v-for="file in indexArray" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px`, left: `${squareSize * (flipped ? 7-file : file)}px` }">
-            {{ String.fromCharCode('a'.charCodeAt(0) + file) }}
+          <div v-for="file in indexArray" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px`, left: `${squareSize * (flipped ? 8 - file - 1 : file - 1)}px` }">
+            {{ String.fromCharCode('a'.charCodeAt(0) + file - 1) }}
           </div>
         </div>
       </div>
