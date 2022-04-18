@@ -29,10 +29,13 @@ stockfish.addEventListener('message', function (e) {
 
             useEngineStore().response.eval = parseFloat(evaluation);
         } else if (data.startsWith('bestmove')) {
-            const bestmoveRegexp = /bestmove\s+(?<bestmove>.+)\s+ponder\s+(?<ponder>.+)/;
-            const { bestmove, ponder } = data.match(bestmoveRegexp)!.groups!;
-
-            useEngineStore().response.bestmove = bestmove;
+            const matches = data.match(/[a-h][1-8][a-h][1-8]/g);
+            if (matches) {
+                useEngineStore().response.bestmove = matches[0];
+                if (matches.length === 2) {
+                    //matches[1] is ponder
+                }
+            }
 
             const board = useBoardStore();
             board.stockfishDone();
