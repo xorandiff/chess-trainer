@@ -208,9 +208,9 @@ export const useBoardStore = defineStore({
         let isCheckmate = false;
 
         //Castling
-        if (i === r && (r === 8 || r === 1) && f === 5 && (Math.abs(f - j) === 2)) {
-          //Only possible files for king are 6 and 2
-          const rookFileFrom = j === 7 ? 8 : 0;
+        if (i === r && [1, 8].includes(r) && f === 5 && (Math.abs(f - j) === 2)) {
+          //Only possible files for king are 7 and 3
+          const rookFileFrom = j === 7 ? 8 : 1;
           const rookFileTo = j === 7 ? 6 : 4;
 
           //Move rook to castled square
@@ -265,22 +265,24 @@ export const useBoardStore = defineStore({
         this.board[v].highlight = true;
         this.board[w].highlight = true;
 
-        //Perform a move
-
-        Chessboard.makeMove(this.pieces, v, w);
-
+        //Set proper sound type
         if (sound === SOUND_TYPE.MOVE_SELF) {
           if (occupyingPiece) {
             sound = SOUND_TYPE.CAPTURE;
           } else {
             sound = this.currentTurnColor === this.color ? SOUND_TYPE.MOVE_SELF : SOUND_TYPE.MOVE_OPPONENT;
-          }
-            
+          } 
         }
 
+        //Perform a move
+        Chessboard.makeMove(this.pieces, v, w);
+
+        //Get reference to moved piece
+        const movedPiece = Chessboard.p(this.pieces, w)!;
+
         //Check wheter move triggers promotion
-        if (piece.type === PIECE_TYPE.PAWN && ((piece.color === PIECE_COLOR.WHITE && r === 1) || (piece.color === PIECE_COLOR.BLACK && r === 8))) {
-          this.pieces[this.pieces.indexOf(piece)].type = this.promotionType;
+        if (movedPiece.type === PIECE_TYPE.PAWN && [1, 8].includes(movedPiece.rank)) {
+          this.pieces[this.pieces.indexOf(movedPiece)].type = this.promotionType;
           move.promotionType = this.promotionType;
         }
 
@@ -293,7 +295,7 @@ export const useBoardStore = defineStore({
         this.currentTurnColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
         const opponentColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
-        //Compute all possible legal moves for next turn color
+        //Compute all possible legal moves for the next turn
         this.pieces.forEach(piece => {
           piece.legalMoves = Chessboard.computeLegalMoves(this.pieces, piece.square, this.castlingRights[this.currentTurnColor], move);
         })

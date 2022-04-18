@@ -575,7 +575,10 @@ export default class Chessboard {
             if (movingPiece) {
                 _.remove(pieces, piece => piece.square === w && piece.color !== movingPiece.color);
                 const index = pieces.indexOf(movingPiece);
+                const [r, f] = this.s2c(w);
                 pieces[index].square = w;
+                pieces[index].rank = r;
+                pieces[index].file = f;
             }
         }
     }
