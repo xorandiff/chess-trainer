@@ -542,6 +542,21 @@ export default class Chessboard {
     }
 
     /**
+     * Method for detecting if given color is checkmated, i. e. has no legal
+     * moves and at the same time opposite color has at least one legal move
+     * 
+     * @param pieces 
+     * @param color 
+     * @returns 
+     */
+    public static detectCheckmate(pieces: Pieces, color: PIECE_COLOR) {
+        const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+        const hasOpponentLegalMoves = pieces.find(piece => piece.color === oppositeColor && piece.legalMoves.length) !== undefined;
+        const hasLegalMoves = pieces.find(piece => piece.color === color && piece.legalMoves.length) !== undefined;
+        return hasOpponentLegalMoves && !hasLegalMoves;
+    }
+
+    /**
      * Method for getting the king's square of given color
      * 
      * @param pieces 
@@ -600,7 +615,7 @@ export default class Chessboard {
      * @param v 
      * @param w 
      */
-    public static makeMove(pieces: Pieces, x: number | Square, y: number | Square) {
+    public static makeMove(pieces: Pieces, x: number | Square, y: number | Square, castlingRights?: CASTLING_SIDE[]) {
         const v = Array.isArray(x) ? this.c2s(...x) : x;
         const w = Array.isArray(y) ? this.c2s(...y) : y;
 
@@ -613,6 +628,25 @@ export default class Chessboard {
                 pieces[index].square = w;
                 pieces[index].rank = r;
                 pieces[index].file = f;
+
+                if (castlingRights) {
+                    const lastMove: Move = {
+                        from: v,
+                        to: w,
+                        piece: movingPiece,
+                        isCapture: false,
+                        isCheck: false,
+                        isCheckmate: false,
+                        castlingSide: false,
+                        promotionType: false,
+                        algebraicNotation: '',
+                        fen: '',
+                        sound: 0
+                    };
+                    pieces.forEach(piece => {
+                        piece.legalMoves = this.computeLegalMoves(pieces, piece.square, castlingRights, lastMove);
+                    });
+                }
             }
         }
     }
@@ -853,7 +887,7 @@ export default class Chessboard {
      * @param variation 
      * @returns 
      */
-    public static getVariationData(pieces: Pieces, variation: string) : Move[] {
+    public static getVariationData(pieces: Pieces, variation: string, castlingRightsWhite: CASTLING_SIDE[], castlingRightsBlack: CASTLING_SIDE[]) : Move[] {
         let piecesCopy: Pieces = JSON.parse(JSON.stringify(pieces));
 
         const algebraicMoves = variation.split(' ');
@@ -868,7 +902,6 @@ export default class Chessboard {
             const piece = this.p(piecesCopy, v);
 
             if (piece) {
-                const index = piecesCopy.indexOf(piece);
                 const oppositeColor = piece.color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
                 const occupiedDestination = this.p(piecesCopy, w);
 
@@ -885,12 +918,21 @@ export default class Chessboard {
                     fen: '',
                     sound: -1
                 };
+
+                if (piece.color == PIECE_COLOR.WHITE) {
+                    this.makeMove(piecesCopy, v, w, castlingRightsWhite);
+                    castlingRightsWhite = this.updateCastlingRights(piecesCopy, PIECE_COLOR.WHITE, castlingRightsWhite);
+                } else {
+                    this.makeMove(piecesCopy, v, w, castlingRightsBlack);
+                    castlingRightsBlack = this.updateCastlingRights(piecesCopy, PIECE_COLOR.BLACK, castlingRightsBlack);
+                }
+
+                move.isCheck = this.detectCheck(piecesCopy, oppositeColor);
+                move.isCheckmate = this.detectCheckmate(piecesCopy, oppositeColor);
     
                 move.algebraicNotation = this.moveToAlgebraic(move, piecesCopy);
     
                 variationData.push(move);
-    
-                this.makeMove(piecesCopy, v, w);
             } else {
                 //Error
             }

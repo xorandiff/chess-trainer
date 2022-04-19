@@ -60,11 +60,18 @@ type SquareData = {
 
 type Board = SquareData[];
 
+type EngineResponseVariation = {
+    pv: string;
+    mate: boolean;
+    score: number;
+}
+
 type EngineResponse = {
     bestmove: string;
     depth: number;
     mate: number;
-    eval?: number;
+    eval: number;
+    variations: EngineResponseVariation[];
 }
 
 interface EngineConfig {
@@ -77,3 +84,9 @@ interface StockfishConfig extends EngineConfig {
 }
 
 type StockfishConfigPatch = Patch<StockfishConfig>;
+
+type Variation = {
+    moves: Move[];
+    eval: number;
+    mate: boolean;
+}

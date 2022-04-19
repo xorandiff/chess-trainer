@@ -46,7 +46,7 @@ export const useBoardStore = defineStore({
       fullmoves,
       lastMove: {} as Move,
       moves: [] as Move[],
-      variations: [] as Move[][],
+      variations: [] as Variation[],
       promotionType: PIECE_TYPE.PAWN,
       currentMoveIndex: -1,
       stockfish: false,
@@ -260,8 +260,8 @@ export const useBoardStore = defineStore({
           } 
         }
 
-        //Perform a move
-        Chessboard.makeMove(this.pieces, v, w);
+        //Perform a move with computing legal moves
+        Chessboard.makeMove(this.pieces, v, w, this.castlingRights[this.currentTurnColor]);
 
         //Get reference to moved piece
         const movedPiece = Chessboard.p(this.pieces, w)!;
@@ -278,12 +278,7 @@ export const useBoardStore = defineStore({
         }
 
         //Switching turn for other color
-        this.currentTurnColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-
-        //Compute all possible legal moves for the next turn
-        this.pieces.forEach(piece => {
-          piece.legalMoves = Chessboard.computeLegalMoves(this.pieces, piece.square, this.castlingRights[this.currentTurnColor], move);
-        })
+        this.currentTurnColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;        
 
         this.pieceMouseUp();
 
@@ -375,7 +370,15 @@ export const useBoardStore = defineStore({
       const engine = useEngineStore();
 
       for (let i = 0; i < engine.response.variations.length; i++) {
-        this.variations[i] = Chessboard.getVariationData(this.pieces, engine.response.variations[i]);
+        const { pv, score, mate } = engine.response.variations[i];
+
+        const evaluation = mate ? score : (score / 100); 
+
+        this.variations[i] = {
+          moves: Chessboard.getVariationData(this.pieces, pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK]),
+          eval: this.currentTurnColor === PIECE_COLOR.BLACK ? evaluation * (-1) : evaluation,
+          mate
+        };
       }
 
       if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {

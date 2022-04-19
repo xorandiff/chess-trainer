@@ -12,17 +12,18 @@ stockfish.addEventListener('message', function (e) {
         const data = e.data as string;
 
         if (data.startsWith('info')) {
-            const infoRegexp = /depth\s+(?<depth>\d+)\s+seldepth\s+(?<seldepth>\d+)\s+multipv\s+(?<multipv>\d+)\s+score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;
+            const infoRegexp = /depth\s+(?<depth>\d+)\s+seldepth\s+(?<seldepth>[\d]+)\s+multipv\s+(?<multipv>\d+)\s+score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;
             const { depth, seldepth, multipv, score, pv } = data.match(infoRegexp)!.groups!;
             const variationIndex = parseInt(multipv) - 1;
-
-            if (score.includes('mate')) {
-                const { mate } = score.match(/(?<mate>\-?\d+)/)!.groups!;
-                useEngineStore().response.mate = parseInt(mate);
-            }
+            
+            const cp = parseInt(score.match(/\-?\d+/)![0]);
             
             useEngineStore().response.depth = parseFloat(depth);
-            useEngineStore().response.variations[variationIndex] = pv;
+            useEngineStore().response.variations[variationIndex] = {
+                pv,
+                score: cp,
+                mate: score.includes('mate')
+            };
         } else if (data.startsWith('Total evaluation')) {
             const evalRegexp = /\s+(?<evaluation>[\-\.\d]+)\s+/;
             const { evaluation } = data.match(evalRegexp)!.groups!;
@@ -51,8 +52,8 @@ export const useEngineStore = defineStore({
             depth: 0,
             mate: 0,
             eval: 0,
-            variations: [] as string[]
-        },
+            variations: []
+        } as EngineResponse,
         stockfish: {
             config: {
                 elo: 300, //from 100 to 3000
