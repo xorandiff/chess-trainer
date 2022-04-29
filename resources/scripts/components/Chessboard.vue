@@ -95,12 +95,12 @@ onUnmounted(() => {
       </svg>
       <div class="row" v-for="i in indexArray">
         <BoardSquare v-for="j in indexArray" :index="i*10+j" :style="squareSizeStyle" :squareData="store.board[i*10+j]">
-          <template v-if="getPiece(i*10+j) !== undefined">
+          <template v-if="getPiece(Chessboard.c2s(i, j)) !== undefined">
             <template v-if="store.dragging === i*10+j">
               <Teleport to="body">
                 <BoardPiece
                   class="dragging"
-                  :piece="getPiece(i*10+j)!"
+                  :piece="getPiece(Chessboard.c2s(i, j))!"
                   :style="{ ...squareSizeStyle, left: `${pieceLeft}px`, top: `${pieceTop}px` }"
                 ></BoardPiece>
               </Teleport>

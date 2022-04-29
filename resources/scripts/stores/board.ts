@@ -54,7 +54,18 @@ export const useBoardStore = defineStore({
       arrowFrom: -1,
       arrows: [] as Arrow[],
       fen,
-      pgn: '',
+      pgn: {
+        value: '',
+        tags: {
+          event: '',
+          site: '',
+          date: '',
+          round: '',
+          white: '',
+          black: '',
+          result: ''
+        }
+      },
       eco: '',
       promotionModalVisible: false,
       promotionMove: {
@@ -104,7 +115,43 @@ export const useBoardStore = defineStore({
       this.fen = fen;
     },
     loadPGN(pgn: string) {
-      //TODO load game from PGN
+      const rows = pgn.split("\n");
+
+      for (const row of rows) {
+        if (row.length >= 0 && row.startsWith('[')) {
+          if (row.includes('Event ')) {
+            this.pgn.tags.event = row.split('"')[1];
+          }
+          if (row.includes('Site ')) {
+            this.pgn.tags.site = row.split('"')[1];
+          }
+          if (row.includes('Date ')) {
+            this.pgn.tags.date = row.split('"')[1];
+          }
+          if (row.includes('Round ')) {
+            this.pgn.tags.round = row.split('"')[1];
+          }
+          if (row.includes('White ')) {
+            this.pgn.tags.white = row.split('"')[1];
+          }
+          if (row.includes('Black ')) {
+            this.pgn.tags.black = row.split('"')[1];
+          }
+          if (row.includes('Result ')) {
+            this.pgn.tags.result = row.split('"')[1];
+          }
+        }
+      }
+      const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+      const chessboard = Chessboard.create(fen);
+      const { pieces, castlingRights, halfmoves, fullmoves, color } = chessboard;
+
+      this.color = color;
+      this.castlingRights = castlingRights;
+      this.halfmoves = halfmoves;
+      this.fullmoves = fullmoves;
+      this.pieces = pieces;
+      this.moves = Chessboard.loadPGN(this.pieces, pgn);
     },
     setHighlightColor(v: number, color: string) {
       if (!this.board[v].highlightColor || this.board[v].highlightColor !== color) {
@@ -293,11 +340,11 @@ export const useBoardStore = defineStore({
         move.fen = this.fen;
 
         //Update PGN
-        this.pgn = Chessboard.getPGN(this.moves);
+        this.pgn.value = Chessboard.getPGN(this.moves);
         
         let moveslength = 0;
         for (const opening of eco) {
-          if (this.pgn.split("\n\n")[1].startsWith(opening.moves)) {
+          if (this.pgn.value.split("\n\n")[1].startsWith(opening.moves)) {
             
             if (opening.moves.length > moveslength) {
               moveslength = opening.moves.length;

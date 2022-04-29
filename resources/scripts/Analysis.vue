@@ -9,6 +9,9 @@ import Chessboard from "./components/Chessboard.vue";
 import Movelist from "./components/Movelist.vue";
 import OpeningCode from "./components/OpeningCode.vue";
 import EngineVariations from "@/components/EngineVariations.vue";
+import Import from "@/components/Import.vue";
+import Export from "@/components/Export.vue";
+import PgnTags from "@/components/PgnTags.vue";
 
 const boardStore = useBoardStore();
 const engineStore = useEngineStore();
@@ -38,6 +41,16 @@ const activeKey = ref("analysis");
                         <Movelist />
                     </a-space>
                 </a-tab-pane>
+                <a-tab-pane key="details">
+                    <template #tab>
+                        <span>
+                            Details
+                        </span>
+                    </template>
+                    <a-space direction="vertical" :style="{ width: '100%' }">
+                        <PgnTags />
+                    </a-space>
+                </a-tab-pane>
                 <a-tab-pane key="options">
                     <template #tab>
                         <span>
@@ -60,6 +73,12 @@ const activeKey = ref("analysis");
                         </a-descriptions-item>
                         <a-descriptions-item label="Stockfish Depth" :span="2">
                             {{ boardStore.alwaysStockfish || boardStore.stockfish ? response.depth : '-' }}
+                        </a-descriptions-item>
+                        <a-descriptions-item>
+                            <a-space>
+                                <Import />
+                                <Export />
+                            </a-space>
                         </a-descriptions-item>
                     </a-descriptions>
                 </a-tab-pane>

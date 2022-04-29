@@ -10,10 +10,6 @@ type King = "k";
 type Queen = "q";
 type Pawn = "p";
 
-type Patch<Type> = {
-    [Property in keyof Type]+?: Type[Property];
-};
-
 type Piece = {
     type: Rook | Bishop | Knight | King | Queen | Pawn;
     color: White | Black;
@@ -23,7 +19,7 @@ type Piece = {
     legalMoves: number[];
 };
 
-type PiecePatch = Patch<Piece>;
+type PiecePartial = Partial<Piece>;
 
 type Pieces = Piece[];
 
@@ -83,10 +79,11 @@ interface StockfishConfig extends EngineConfig {
     skill: number
 }
 
-type StockfishConfigPatch = Patch<StockfishConfig>;
+type StockfishConfigPartial = Partial<StockfishConfig>;
 
 type Variation = {
     moves: Move[];
     eval: number;
     mate: boolean;
 }
+

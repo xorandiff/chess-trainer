@@ -1,28 +1,25 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, toRaw } from 'vue';
+import type { UnwrapRef } from 'vue';
 import { ImportOutlined } from '@ant-design/icons-vue';
 import { useBoardStore } from '@/stores/board';
+
+const store = useBoardStore();
+const { loadPGN } = store;
 
 interface FormState {
   code: string;
 };
 
-const formState = reactive<FormState>({
+const formState: UnwrapRef<FormState> = reactive({
     code: ''
 });
 
-const onFinish = (values: any) => {
-    console.log('Success:', values);
-    visible.value = false;
+const onSubmit = () => {
+    const { code } = toRaw(formState);
+    loadPGN(code);
 };
-
-const onFinishFailed = (errorInfo: any) => {
-    console.log('Failed:', errorInfo);
-};
-
 const visible = ref<boolean>(false);
-
-const store = useBoardStore();
 
 </script>
 
@@ -34,15 +31,12 @@ const store = useBoardStore();
         Import
     </a-button>
     <a-modal v-model:visible="visible" title="Import" :footer="null">
-        <a-form layout="vertical" :model="formState" @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item 
-                label="Paste FEN or PGN below"
-                :rules="[{ required: true, message: 'Please provide your FEN/PGN code' }]"
-            >
-                <a-textarea v-model:value="formState.code" />
+        <a-form layout="vertical" :model="formState">
+            <a-form-item  label="Paste FEN or PGN below">
+                <a-textarea :rows="10" v-model:value="formState.code" />
             </a-form-item>
             <a-form-item>
-                <a-button type="primary" html-type="submit">Import</a-button>
+                <a-button type="primary" @click="onSubmit">Import</a-button>
             </a-form-item>
         </a-form>        
     </a-modal>

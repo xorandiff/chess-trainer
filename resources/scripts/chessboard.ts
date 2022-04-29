@@ -254,12 +254,12 @@ export default class Chessboard {
      * returned
      * 
      * @param pieces 
-     * @param piecePatch 
+     * @param piecePartial 
      * @returns 
      */
-    public static getFilteredPieces(pieces: Pieces, piecePatch: PiecePatch) {
+    public static getFilteredPieces(pieces: Pieces, piecePartial: PiecePartial) {
         let filteredPieces = [ ...pieces ];
-        const { type, color, square, rank, file, legalMoves } = piecePatch;
+        const { type, color, square, rank, file, legalMoves } = piecePartial;
 
         filteredPieces = filteredPieces.filter(piece => {
             if (type !== undefined && piece.type !== type) {
@@ -298,7 +298,7 @@ export default class Chessboard {
      * @param pieces 
      * @returns 
      */
-    public static moveToAlgebraic(move: Move, pieces: Piece[]) : string {
+    public static moveToAlgebraic(move: Move, pieces: Pieces) : string {
         const { type } = move.piece;
 
         let pieceString = '';
@@ -364,6 +364,98 @@ export default class Chessboard {
         }
 
         return moveString;
+    }
+
+    /**
+     * Method for converting algebraic notation to move
+     * 
+     * @param algebraicMove 
+     * @param color 
+     * @returns 
+     */
+    public static algebraicToMove(pieces: Pieces, algebraicMove: string, color: PIECE_COLOR) : Move | undefined {
+        const groups = algebraicMove.match(/(N|K|R|B|Q)?([a-h]?[1-8]?)?(x)?([a-h][1-8])?(=[N|K|R|B|Q])?(O-O-O|O-O)?(\+|#)?/);
+        if (groups) {
+            console.log(groups);
+            let fen = '';
+            let sound = 0;
+            let piece: Piece = {
+                type: groups[1] !== undefined ? groups[1].toLowerCase() as PIECE_TYPE : PIECE_TYPE.PAWN,
+                color,
+                square: 0,
+                rank: 0,
+                file: 0,
+                legalMoves: []
+            };
+
+            let fromAlgebraic = groups[2];
+            const isCapture = groups[3] !== undefined;
+            let toAlgebraic = groups[4];
+            const promotionType = groups[5] !== undefined ? groups[5][1].toLowerCase() as PIECE_TYPE : false;
+            let castlingSide: boolean | CASTLING_SIDE = false;
+            if (groups[6]) {
+                castlingSide = groups[6] === 'O-O' ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
+                piece.type = PIECE_TYPE.PAWN;
+            }
+            const isCheck = groups[7] === '+';
+            const isCheckmate = groups[7] === '#';
+
+            let to = 0;
+
+            if (!toAlgebraic && fromAlgebraic) {
+                toAlgebraic = fromAlgebraic;
+                fromAlgebraic = '';
+            }
+            
+            if (fromAlgebraic) {
+                if (fromAlgebraic.length === 2) {
+                    piece = this.p(pieces, this.a2s(fromAlgebraic))!;
+                } else {
+                    if (parseInt(fromAlgebraic) !== NaN) {
+                        piece = this.getFilteredPieces(pieces, { rank: parseInt(fromAlgebraic), color, type: piece.type })![0];
+                    } else {
+                        piece = this.getFilteredPieces(pieces, { file: fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1, color, type: piece.type })![0];
+                    }
+                }
+            }
+
+            if (toAlgebraic) {
+                to = this.a2s(toAlgebraic);
+                const [toRank, toFile] = this.s2c(to);
+                console.log(`${toAlgebraic} => ${to} => [${toRank}, ${toFile}]`);
+
+                if (!piece.square) {
+                    console.log(`searching a piece by rank ${toRank} or file ${toFile}, type ${piece.type}, color ${color}`);
+                    const pieceByRank = this.getFilteredPieces(pieces, { rank: toRank, color, type: piece.type });
+                    const pieceByFile = this.getFilteredPieces(pieces, { file: toFile, color, type: piece.type });
+                    if (pieceByRank.length > 0) {
+                        piece = pieceByRank[0];
+                        console.log(`Found piece on rank ${toRank}`);
+                        console.log(pieceByRank);
+                    } else if (pieceByFile.length > 0) {
+                        piece = pieceByFile[0];
+                        console.log(`Found piece on file ${toFile}`);
+                        console.log(pieceByFile);
+                    } else {
+                        console.log(`No piece with a legal move has been found to go on square ${to}`);
+                    }
+                }
+            }
+
+            return ({
+                piece,
+                from: piece.square,
+                to,
+                isCapture,
+                isCheck,
+                isCheckmate,
+                castlingSide,
+                promotionType,
+                algebraicNotation: algebraicMove,
+                fen,
+                sound
+            });
+        }
     }
 
     /**
@@ -449,6 +541,31 @@ export default class Chessboard {
             }
         }
         return pgn;
+    }
+
+    /**
+     * Method for converting PGN string into move history
+     * 
+     * @param pgn 
+     * @returns 
+     */
+    //TODO rebuild loading from PGN/FEN structure
+    public static loadPGN(pieces: Pieces, pgn: string) : Move[] {
+        let moves: Move[] = [];
+        const movesAlgebraic = pgn.match(/ [BRKQN]?[a-h]?[1-8]?x?[BRKQN]?[a-h][1-8]=?[BRKQN]?\+?#?|O-O-O|O-O/g)!.map(x => x.trim());
+        console.log(movesAlgebraic);
+        let color = PIECE_COLOR.WHITE;
+
+        for (const moveAlgebraic of movesAlgebraic) {
+            let move = this.algebraicToMove(pieces, moveAlgebraic, color)!;
+            this.makeMove(pieces, move.from, move.to);
+            //move.fen = this.getFen(pieces);
+            moves.push(move);
+
+            color = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+        }
+
+        return moves;
     }
 
     /**

@@ -120,8 +120,8 @@ export const useEngineStore = defineStore({
             stockfish.postMessage(`go depth ${this[engine].config.depth}`);
             stockfish.postMessage(`eval`);
         },
-        setStockfishConfig(stockfishConfig: StockfishConfigPatch) {
-            this.stockfish.config = { ...this.stockfish.config, ...stockfishConfig };
+        setStockfishConfig(stockfishConfigPartial: StockfishConfigPartial) {
+            this.stockfish.config = { ...this.stockfish.config, ...stockfishConfigPartial };
         }
     }
 });
