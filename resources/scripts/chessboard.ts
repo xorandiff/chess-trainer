@@ -1,6 +1,7 @@
 import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE } from '@/enums';
 import _ from 'lodash';
 import moment from 'moment';
+import eco from "./eco.json";
 import { message } from 'ant-design-vue';
 
 export default class Chessboard {
@@ -1115,5 +1116,26 @@ export default class Chessboard {
         }
 
         return variationData.splice(0, 8);
+    }
+
+    /**
+     * Converts PGN string into ECO description string
+     * 
+     * @param pgn 
+     * @returns 
+     */
+    public static pgnToEco(pgn: string) {
+        let ecoString = ''
+        let moveslength = 0;
+        const pgnMoves = pgn.slice(pgn.lastIndexOf(']') + 1).trim();
+
+        for (const opening of eco) {
+          if (pgnMoves.startsWith(opening.moves) && opening.moves.length > moveslength) {
+            moveslength = opening.moves.length;
+            ecoString = opening.eco + ': ' + opening.name;
+          }
+        }
+        
+        return ecoString;
     }
 }

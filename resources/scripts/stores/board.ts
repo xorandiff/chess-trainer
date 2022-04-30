@@ -155,6 +155,7 @@ export const useBoardStore = defineStore({
       if (moves.length) {
         this.fen = moves[moves.length - 1].fen;
       }
+      this.eco = Chessboard.pgnToEco(pgn);
     },
     setHighlightColor(v: number, color: string) {
       if (!this.board[v].highlightColor || this.board[v].highlightColor !== color) {
@@ -345,16 +346,8 @@ export const useBoardStore = defineStore({
         //Update PGN
         this.pgn.value = Chessboard.getPGN(this.moves);
         
-        let moveslength = 0;
-        for (const opening of eco) {
-          if (this.pgn.value.split("\n\n")[1].startsWith(opening.moves)) {
-            
-            if (opening.moves.length > moveslength) {
-              moveslength = opening.moves.length;
-              this.eco = opening.eco + ': ' + opening.name;
-            }
-          }
-        }
+        //Update ECO
+        this.eco = Chessboard.pgnToEco(this.pgn.value);
 
         move.sound = sound;
 
