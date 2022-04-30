@@ -1,6 +1,7 @@
-import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE } from '@/enums';
+import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE } from '@/enums';
 import _ from 'lodash';
 import moment from 'moment';
+import { message } from 'ant-design-vue';
 
 export default class Chessboard {
     /**
@@ -68,49 +69,95 @@ export default class Chessboard {
     }
 
     /**
-     * Method for creating new store state from FEN
+     * Method for creating new store state from FEN or PGN
      * 
-     * @param fen 
+     * @param fenOrPgn 
      * @returns 
      */
-    public static create(fen: string, lastMove?: Move) {
-        const fields = fen.split(' ');
-        const color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
-        const castlingRightsString = fields[2];
-        //TODO load en passant target square
-        let enPassantTargetSquare = fields[3];
-        const halfmoves = parseInt(fields[4]);
-        const fullmoves = parseInt(fields[5]);
-
+    public static create(fenOrPgn?: string) {
+        let fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        let color = PIECE_COLOR.WHITE;
+        let halfmoves = 0;
+        let fullmoves = 1;
         let castlingRights = {
-            [PIECE_COLOR.WHITE]: [] as CASTLING_SIDE[],
-            [PIECE_COLOR.BLACK]: [] as CASTLING_SIDE[],
+            [PIECE_COLOR.WHITE]: [CASTLING_SIDE.KINGSIDE, CASTLING_SIDE.QUEENSIDE],
+            [PIECE_COLOR.BLACK]: [CASTLING_SIDE.KINGSIDE, CASTLING_SIDE.QUEENSIDE],
         };
+        //TODO load en passant target square
+        //let enPassantTargetSquare = fields[3];
 
-        for (let i = 0; i < castlingRightsString.length; i++) {
-            let l = castlingRightsString[i].toLowerCase();
-            if (l === CASTLING_SIDE.KINGSIDE) {
-                if (l === castlingRightsString[i]) {
-                    castlingRights[PIECE_COLOR.BLACK].push(CASTLING_SIDE.KINGSIDE);
-                } else {
-                    castlingRights[PIECE_COLOR.WHITE].push(CASTLING_SIDE.KINGSIDE);
-                }
+        if (fenOrPgn !== undefined && !fenOrPgn.includes('[')) {
+            fen = fenOrPgn;
+
+            const fields = fen.split(' ');
+            color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
+            halfmoves = parseInt(fields[4]);
+            fullmoves = parseInt(fields[5]);
+
+            if (!fields[2].includes('K')) {
+                _.remove(castlingRights[PIECE_COLOR.WHITE], right => right === CASTLING_SIDE.KINGSIDE);
             }
-            if (l === CASTLING_SIDE.QUEENSIDE) {
-                if (l === castlingRightsString[i]) {
-                    castlingRights[PIECE_COLOR.BLACK].push(CASTLING_SIDE.QUEENSIDE);
-                } else {
-                    castlingRights[PIECE_COLOR.WHITE].push(CASTLING_SIDE.QUEENSIDE);
+            if (!fields[2].includes('Q')) {
+                _.remove(castlingRights[PIECE_COLOR.WHITE], right => right === CASTLING_SIDE.QUEENSIDE);
+            }
+            if (!fields[2].includes('k')) {
+                _.remove(castlingRights[PIECE_COLOR.BLACK], right => right === CASTLING_SIDE.KINGSIDE);
+            }
+            if (!fields[2].includes('q')) {
+                _.remove(castlingRights[PIECE_COLOR.BLACK], right => right === CASTLING_SIDE.QUEENSIDE);
+            }
+        }
+
+        let pieces = this.fenToPieces(fen, castlingRights[PIECE_COLOR.WHITE], {} as Move);
+        let moves: Move[] = [];
+
+        if (fenOrPgn !== undefined && fenOrPgn.includes('[')) {
+            //PGN
+            const pgnMoves = fenOrPgn.slice(fenOrPgn.lastIndexOf(']') + 1).trim();
+
+            const movesAlgebraic = pgnMoves.match(/[BRKQN]?[a-h]?[1-8]?x?[BRKQN]?[a-h][1-8]=?[BRKQN]?\+?#?|O-O-O|O-O/g)!;
+            let currentTurnColor = color;
+
+            for (const moveAlgebraic of movesAlgebraic) {
+                if (currentTurnColor === PIECE_COLOR.BLACK) {
+                    fullmoves++;
                 }
+
+                let move = this.algebraicToMove(pieces, moveAlgebraic, currentTurnColor)!;
+                if (move.castlingSide) {
+                    let rookFromAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'h1' : 'a1';
+                    let rookToAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'f1' : 'd1';
+                    if (currentTurnColor === PIECE_COLOR.BLACK) {
+                        rookFromAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'h8' : 'a8';
+                        rookToAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'f8' : 'd8';
+                    }
+                    this.makeMove(pieces, this.a2s(rookFromAlgebraic), this.a2s(rookToAlgebraic));
+                }
+                this.makeMove(pieces, move.from, move.to, castlingRights[currentTurnColor]);
+
+                castlingRights[currentTurnColor] = this.updateCastlingRights(pieces, currentTurnColor, castlingRights[currentTurnColor]);
+
+                currentTurnColor = currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+
+                if (typeof move.promotionType == 'string') {
+                    //TODO check if promotion type doesn't cause bug
+                    //const movedPiece = this.p(pieces, move.to);
+                    //pieces[pieces.indexOf(movedPiece!)].type = move.promotionType;
+                }
+
+                move.fen = this.getFen(pieces, castlingRights, halfmoves, fullmoves, currentTurnColor, move);
+
+                moves.push(move);
             }
         }
         
         return {
-            pieces: this.fenToPieces(fen, castlingRights[PIECE_COLOR.WHITE], lastMove ?? {} as Move),
+            pieces,
             color,
             castlingRights,
             halfmoves,
-            fullmoves
+            fullmoves,
+            moves
         };
     }
 
@@ -376,9 +423,8 @@ export default class Chessboard {
     public static algebraicToMove(pieces: Pieces, algebraicMove: string, color: PIECE_COLOR) : Move | undefined {
         const groups = algebraicMove.match(/(N|K|R|B|Q)?([a-h]?[1-8]?)?(x)?([a-h][1-8])?(=[N|K|R|B|Q])?(O-O-O|O-O)?(\+|#)?/);
         if (groups) {
-            console.log(groups);
             let fen = '';
-            let sound = 0;
+            let sound = SOUND_TYPE.MOVE_SELF;
             let piece: Piece = {
                 type: groups[1] !== undefined ? groups[1].toLowerCase() as PIECE_TYPE : PIECE_TYPE.PAWN,
                 color,
@@ -390,15 +436,32 @@ export default class Chessboard {
 
             let fromAlgebraic = groups[2];
             const isCapture = groups[3] !== undefined;
+
             let toAlgebraic = groups[4];
             const promotionType = groups[5] !== undefined ? groups[5][1].toLowerCase() as PIECE_TYPE : false;
             let castlingSide: boolean | CASTLING_SIDE = false;
             if (groups[6]) {
-                castlingSide = groups[6] === 'O-O' ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
-                piece.type = PIECE_TYPE.PAWN;
+                castlingSide = groups[6] == 'O-O' ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
+                piece.type = PIECE_TYPE.KING;
+                sound = SOUND_TYPE.CASTLE;
+
+                if (color === PIECE_COLOR.WHITE) {
+                    toAlgebraic = castlingSide === CASTLING_SIDE.KINGSIDE ? 'g1' : 'c1';
+                } else {
+                    toAlgebraic = castlingSide === CASTLING_SIDE.KINGSIDE ? 'g8' : 'c8';
+                }
+                console.log(toAlgebraic);
             }
             const isCheck = groups[7] === '+';
             const isCheckmate = groups[7] === '#';
+
+            if (isCheckmate) {
+                sound = SOUND_TYPE.GAME_END;
+            } else if (isCheck) {
+                sound = SOUND_TYPE.MOVE_CHECK;
+            } else if (isCapture) {
+                sound = SOUND_TYPE.CAPTURE;
+            }
 
             let to = 0;
 
@@ -411,33 +474,29 @@ export default class Chessboard {
                 if (fromAlgebraic.length === 2) {
                     piece = this.p(pieces, this.a2s(fromAlgebraic))!;
                 } else {
-                    if (parseInt(fromAlgebraic) !== NaN) {
-                        piece = this.getFilteredPieces(pieces, { rank: parseInt(fromAlgebraic), color, type: piece.type })![0];
+                    if (fromAlgebraic.charCodeAt(0) >= '1'.charCodeAt(0) && fromAlgebraic.charCodeAt(0) <= '8'.charCodeAt(0)) {
+                        piece = this.getFilteredPieces(pieces, { rank: 9 - parseInt(fromAlgebraic), color, type: piece.type })![0];
                     } else {
-                        piece = this.getFilteredPieces(pieces, { file: fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1, color, type: piece.type })![0];
+                        piece = this.getFilteredPieces(pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color, type: piece.type })![0];
                     }
                 }
             }
 
             if (toAlgebraic) {
                 to = this.a2s(toAlgebraic);
-                const [toRank, toFile] = this.s2c(to);
-                console.log(`${toAlgebraic} => ${to} => [${toRank}, ${toFile}]`);
 
                 if (!piece.square) {
-                    console.log(`searching a piece by rank ${toRank} or file ${toFile}, type ${piece.type}, color ${color}`);
-                    const pieceByRank = this.getFilteredPieces(pieces, { rank: toRank, color, type: piece.type });
-                    const pieceByFile = this.getFilteredPieces(pieces, { file: toFile, color, type: piece.type });
-                    if (pieceByRank.length > 0) {
-                        piece = pieceByRank[0];
-                        console.log(`Found piece on rank ${toRank}`);
-                        console.log(pieceByRank);
-                    } else if (pieceByFile.length > 0) {
-                        piece = pieceByFile[0];
-                        console.log(`Found piece on file ${toFile}`);
-                        console.log(pieceByFile);
-                    } else {
-                        console.log(`No piece with a legal move has been found to go on square ${to}`);
+                    let pieceFilters: Partial<Piece> = {
+                        color,
+                        type: piece.type 
+                    };
+                    if (!castlingSide) {
+                        pieceFilters.legalMoves = [to];
+                    }
+                    const matchingPieces = this.getFilteredPieces(pieces, pieceFilters);
+
+                    if (matchingPieces.length > 0) {
+                        piece = matchingPieces[0];
                     }
                 }
             }
@@ -553,7 +612,6 @@ export default class Chessboard {
     public static loadPGN(pieces: Pieces, pgn: string) : Move[] {
         let moves: Move[] = [];
         const movesAlgebraic = pgn.match(/ [BRKQN]?[a-h]?[1-8]?x?[BRKQN]?[a-h][1-8]=?[BRKQN]?\+?#?|O-O-O|O-O/g)!.map(x => x.trim());
-        console.log(movesAlgebraic);
         let color = PIECE_COLOR.WHITE;
 
         for (const moveAlgebraic of movesAlgebraic) {
@@ -817,7 +875,8 @@ export default class Chessboard {
                 //Check if en passant is a pseudo-legal capture
                 const fromRank = isWhite ? 2 : 7;
                 const toRank = isWhite ? 4 : 5;
-                if (i === toRank && lastMove.piece.type === PIECE_TYPE.PAWN && lastMove.piece.color === oppositeColor) {
+
+                if (i === toRank && lastMove.piece &&  lastMove.piece.type === PIECE_TYPE.PAWN && lastMove.piece.color === oppositeColor) {
                     const fx = this.s2c(lastMove.from)[0];
                     const [tx, ty] = this.s2c(lastMove.to);
                     if (fx === fromRank && tx === toRank && (ty === j + 1 || ty === j - 1)) {

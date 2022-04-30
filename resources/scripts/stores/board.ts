@@ -142,16 +142,19 @@ export const useBoardStore = defineStore({
           }
         }
       }
-      const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-      const chessboard = Chessboard.create(fen);
-      const { pieces, castlingRights, halfmoves, fullmoves, color } = chessboard;
+      
+      const chessboard = Chessboard.create(pgn);
+      const { pieces, castlingRights, halfmoves, fullmoves, color, moves } = chessboard;
 
       this.color = color;
       this.castlingRights = castlingRights;
       this.halfmoves = halfmoves;
       this.fullmoves = fullmoves;
       this.pieces = pieces;
-      this.moves = Chessboard.loadPGN(this.pieces, pgn);
+      this.moves = moves;
+      if (moves.length) {
+        this.fen = moves[moves.length - 1].fen;
+      }
     },
     setHighlightColor(v: number, color: string) {
       if (!this.board[v].highlightColor || this.board[v].highlightColor !== color) {
@@ -404,7 +407,7 @@ export const useBoardStore = defineStore({
       }
     },
     loadPosition(fen: string) {
-      const { pieces } = Chessboard.create(fen, this.lastMove);
+      const { pieces } = Chessboard.create(fen);
       this.pieces = [ ...pieces ];
     },
     stockfishRun() {

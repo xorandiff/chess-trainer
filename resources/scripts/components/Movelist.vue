@@ -18,7 +18,7 @@ const { showMove } = store;
                         {{ Math.floor(index / 2) + 1 }}. 
                     </span>
                     <a-button class="moveButton" :type="currentMoveIndex === index ? 'dashed' : 'text'" @click="showMove(index)">
-                        <template #icon v-if="move.piece.type !== PIECE_TYPE.PAWN">
+                        <template #icon v-if="move.piece.type != PIECE_TYPE.PAWN && !move.promotionType && !move.algebraicNotation.includes('O')">
                             <span :class="`chessFont f-${move.piece.type}${move.piece.color}`"></span>
                         </template>
                         {{ move.algebraicNotation }}
