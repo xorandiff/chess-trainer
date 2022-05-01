@@ -32,3 +32,10 @@ export enum ENGINE {
     STOCKFISH = 'stockfish',
     LC0 = 'lc0'
 }
+
+export enum GAME_RESULT {
+    IN_PROGRESS,
+    WHITE_WON,
+    BLACK_WON,
+    DRAW
+}

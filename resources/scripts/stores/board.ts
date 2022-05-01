@@ -1,6 +1,6 @@
 import Chessboard from "@/chessboard";
 import { useEngineStore } from "@/stores/engine";
-import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE } from '@/enums';
+import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT } from '@/enums';
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
@@ -47,6 +47,7 @@ export const useBoardStore = defineStore({
       lastMove: {} as Move,
       moves: [] as Move[],
       variations: [] as Variation[],
+      result: GAME_RESULT.IN_PROGRESS,
       promotionType: PIECE_TYPE.PAWN,
       currentMoveIndex: -1,
       stockfish: false,
@@ -115,6 +116,7 @@ export const useBoardStore = defineStore({
       this.fen = fen;
     },
     loadPGN(pgn: string) {
+      this.result = GAME_RESULT.IN_PROGRESS;
       const rows = pgn.split("\n");
 
       for (const row of rows) {
@@ -156,6 +158,10 @@ export const useBoardStore = defineStore({
         this.fen = moves[moves.length - 1].fen;
       }
       this.eco = Chessboard.pgnToEco(pgn);
+      if (this.moves[this.moves.length - 1].isCheckmate) {
+        this.result = this.moves[this.moves.length - 1].piece.color === PIECE_COLOR.WHITE ? GAME_RESULT.WHITE_WON : GAME_RESULT.BLACK_WON;
+      }
+      this.currentMoveIndex = this.moves.length - 1;
     },
     setHighlightColor(v: number, color: string) {
       if (!this.board[v].highlightColor || this.board[v].highlightColor !== color) {
@@ -371,10 +377,13 @@ export const useBoardStore = defineStore({
         if (this.halfmoves >= 50 || move.isCheckmate || isStalemate) {
           if (this.halfmoves >= 50) {
             //50 move rule reached, draw
+            this.result = GAME_RESULT.DRAW;
           } else if (isStalemate) {
             //Stalemate
+            this.result = GAME_RESULT.DRAW;
           } else {
             //Checkmate
+            this.result = this.oppositeColor === PIECE_COLOR.WHITE ? GAME_RESULT.WHITE_WON : GAME_RESULT.BLACK_WON;
           }
           effects[SOUND_TYPE.GAME_END].play();
         } else {

@@ -15,11 +15,13 @@ const formState: UnwrapRef<FormState> = reactive({
     code: ''
 });
 
+const visible = ref<boolean>(false);
+
 const onSubmit = () => {
     const { code } = toRaw(formState);
     loadPGN(code);
+    visible.value = false;
 };
-const visible = ref<boolean>(false);
 
 </script>
 

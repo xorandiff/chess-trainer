@@ -419,6 +419,12 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
   padding-left: 8px;
 }
 
+.gameResult span {
+  font-size: 1rem;
+  margin-left: 5px;
+  line-height: 190%;
+}
+
 .variationLabel {
   font-size: 0.7rem;
   font-weight: bold;
