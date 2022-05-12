@@ -24,10 +24,10 @@ const activeKey = ref("analysis");
 
 <template>
     <a-row type="flex">
-        <a-col flex="auto">
+        <a-col flex="710px">
             <Chessboard :size="650" />
         </a-col>
-        <a-col flex="580px">
+        <a-col flex="200px">
             <a-tabs v-model:activeKey="activeKey">
                 <a-tab-pane key="analysis">
                     <template #tab>

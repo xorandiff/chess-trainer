@@ -429,3 +429,21 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
   font-size: 0.7rem;
   font-weight: bold;
 }
+
+#loginForm {
+  max-width: 300px;
+
+  #loginFormWrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    a {
+      margin-bottom: 24px;
+    }
+  }
+
+  #loginFormButton {
+    width: 100%;
+  }
+}

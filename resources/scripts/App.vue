@@ -2,6 +2,8 @@
 import { UserOutlined, ReadOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import { ref } from 'vue';
 import Analysis from "./Analysis.vue";
+import Openings from "./Openings.vue";
+import Profile from "./Profile.vue";
 
 const selectedKeys = ref<string[]>(['analysis']);
 </script>
@@ -27,13 +29,11 @@ const selectedKeys = ref<string[]>(['analysis']);
     <a-layout>
       <a-layout-content :style="{ margin: '16px 16px 0' }">
         <a-card :bordered="false">
-          <Analysis />
+          <Analysis v-if="selectedKeys.includes('analysis')" />
+          <Openings v-if="selectedKeys.includes('openings')" />
+          <Profile v-if="selectedKeys.includes('profile')" />
         </a-card>
       </a-layout-content>
     </a-layout>
   </a-layout>
 </template>
-
-<style lang="scss">
-@import "./assets/base.scss";
-</style>

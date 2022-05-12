@@ -6,7 +6,7 @@
         <title>Chess Trainer</title>
         @vite
     </head>
-    <body class="antialiased">
+    <body>
         <div id="app"></div>
     </body>
 </html>

@@ -156,6 +156,7 @@ export const useBoardStore = defineStore({
       this.moves = moves;
       if (moves.length) {
         this.fen = moves[moves.length - 1].fen;
+        this.stockfishRun();
       }
       this.eco = Chessboard.pgnToEco(pgn);
       if (this.moves[this.moves.length - 1].isCheckmate) {
@@ -171,6 +172,10 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMouseDown(v: number) {
+      if (this.result) {
+        return;
+      }
+      
       for (let i = 1; i <= 8; i++) {
         for (let j = 1; j <= 8; j++) {
           this.board[i*10 + j].active = false;
@@ -398,6 +403,7 @@ export const useBoardStore = defineStore({
       if (index >= 0 && index < this.moves.length) {
         this.currentMoveIndex = index;
         this.loadPosition(this.moves[index].fen);
+        this.stockfishRun(this.moves[index].fen);
         effects[this.moves[index].sound].play();
 
         const v = this.moves[index].from;
@@ -412,10 +418,10 @@ export const useBoardStore = defineStore({
       const { pieces } = Chessboard.create(fen);
       this.pieces = [ ...pieces ];
     },
-    stockfishRun() {
+    stockfishRun(fen?: string) {
       const engine = useEngineStore();
       this.engineWorking = true;
-      engine.run(ENGINE.STOCKFISH, this.fen);
+      engine.run(ENGINE.STOCKFISH, fen ?? this.fen);
     },
     stockfishDone() {
       this.engineWorking = false;
