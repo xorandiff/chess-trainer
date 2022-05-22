@@ -451,7 +451,6 @@ export default class Chessboard {
                 } else {
                     toAlgebraic = castlingSide === CASTLING_SIDE.KINGSIDE ? 'g8' : 'c8';
                 }
-                console.log(toAlgebraic);
             }
             const isCheck = groups[7] === '+';
             const isCheckmate = groups[7] === '#';

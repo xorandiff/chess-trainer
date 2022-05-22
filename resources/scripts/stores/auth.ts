@@ -29,7 +29,6 @@ export const useAuthStore = defineStore({
                 this.isLoggedIn = true;
                 return true;
             } catch (error) {
-                console.log(error);
                 return false;
             }
         },
@@ -40,7 +39,6 @@ export const useAuthStore = defineStore({
 
                 this.isLoggedIn = false;
             } catch (error) {
-                console.log(error);
                 message.error('Logging out failed');
             }
         },
@@ -62,7 +60,6 @@ export const useAuthStore = defineStore({
                     return { data: response.data };
                 }
             } catch (error) {
-                console.log(error);
                 return { data: {}, error: 'Registration failed' };
             }
         },

@@ -1,20 +1,28 @@
 <script setup lang="ts">
-import { UserOutlined, ReadOutlined, SearchOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons-vue';
 import { ref } from 'vue';
-import Analysis from "./Analysis.vue";
-import Openings from "./Openings.vue";
-import Profile from "./Profile.vue";
+import { useRouter, useRoute } from 'vue-router';
+import { UserOutlined, ReadOutlined, SearchOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons-vue';
 import { useAuthStore } from './stores/auth';
 
 const store = useAuthStore();
+const router = useRouter();
+const route = useRoute();
+
 const { logout } = store;
-const selectedKeys = ref<string[]>(['analysis']);
+
+const selectedKeys = ref([route.name]);
+
+const onSelect = (e: any) => {
+  if (e.key) {
+    router.push({ name: e.key });
+  }
+};
 </script>
 
 <template>
   <a-layout>
     <a-layout-sider width="140" :style="{ height: '100vh' }">
-      <a-menu v-model:selectedKeys="selectedKeys">
+      <a-menu v-model:selectedKeys="selectedKeys" @select="onSelect">
         <a-menu-item key="profile">
           <user-outlined />
           <span class="nav-text">Profile</span>
@@ -44,9 +52,7 @@ const selectedKeys = ref<string[]>(['analysis']);
     <a-layout>
       <a-layout-content :style="{ margin: '16px 16px 0' }">
         <a-card :bordered="false">
-          <Analysis v-if="selectedKeys.includes('analysis')" />
-          <Openings v-if="selectedKeys.includes('openings')" />
-          <Profile v-if="selectedKeys.includes('profile')" />
+          <router-view></router-view>
         </a-card>
       </a-layout-content>
     </a-layout>
