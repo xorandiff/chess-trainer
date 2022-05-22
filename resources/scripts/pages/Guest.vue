@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 
+const router = useRouter();
 const store = useAuthStore();
 
 const { login, register } = store;
@@ -41,14 +43,15 @@ const onFinish = async (values: any) => {
             message.success('Registration successfull, now you can login');
             isRegistration.value = false;
         }
+        isLoading.value = false;
     } else {
         const loginResult = await login(values.email, values.password, values.remember);
+        router.push({ name: 'app' });
         if (!loginResult) {
             message.error('Login failed. Incorrect email and/or password');
+            isLoading.value = false;
         }
     }
-
-    isLoading.value = false;
 };
 
 const disabled = computed(() => {

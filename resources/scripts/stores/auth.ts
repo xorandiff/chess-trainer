@@ -7,7 +7,6 @@ axios.defaults.withCredentials = true;
 export const useAuthStore = defineStore({
     id: 'auth',
     state: () => ({
-        isLoggedIn: false,
         user: {
             name: '',
             email: '',
@@ -26,7 +25,6 @@ export const useAuthStore = defineStore({
                 await axios.get('/sanctum/csrf-cookie');
                 await axios.post('/login', loginData);
 
-                this.isLoggedIn = true;
                 return true;
             } catch (error) {
                 return false;
@@ -36,8 +34,6 @@ export const useAuthStore = defineStore({
             try {
                 await axios.get('/sanctum/csrf-cookie');
                 await axios.get('/api/logout');
-
-                this.isLoggedIn = false;
             } catch (error) {
                 message.error('Logging out failed');
             }
@@ -63,19 +59,20 @@ export const useAuthStore = defineStore({
                 return { data: {}, error: 'Registration failed' };
             }
         },
-        async getUserData() {
+        async isLoggedIn() {
             try {
                 await axios.get('/sanctum/csrf-cookie');
                 const response = await axios.get('/api/users/auth');
 
-                this.user.name = response.data.data.name;
-                this.user.email = response.data.data.email;
-                this.user.emailVerified = response.data.data.emailVerified;
-                this.isLoggedIn = true;
-
-                return { data: response.data };
+                const { name, email, emailVerified } = response.data.data;
+                
+                this.user.name = name;
+                this.user.email = email;
+                this.user.emailVerified = emailVerified;
+                
+                return true;
             } catch (error) {
-                return { data: {}, error: 'Not logged in' };
+                return false;
             }            
         }
     }

@@ -40,7 +40,7 @@ const onSelect = (e: any) => {
             <setting-outlined />
           </template>
           <template #title>Settings</template>
-          <a-menu-item @click="logout">
+          <a-menu-item key="login" @click="logout">
             <template #icon>
               <logout-outlined />
             </template>

@@ -9,8 +9,11 @@ const routes = [
     {
         path: '/',
         redirect: '/analysis',
-        name: 'App',
+        name: 'app',
         component: App,
+        meta: {
+            requiresAuth: true
+        },
         children: [
             {
                 name: 'profile',
@@ -30,9 +33,12 @@ const routes = [
         ]
     },
     {
+        name: 'login',
         path: '/login',
-        name: 'Guest',
-        component: Guest
+        component: Guest,
+        meta: {
+            requiresAuth: false
+        }
     }
 ];
 
