@@ -23,4 +23,14 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./resources/scripts", import.meta.url)),
     },
   },
+  css: {
+    preprocessorOptions: {
+      less: {
+        javascriptEnabled: true,
+        modifyVars: {
+          'primary-color': '#FDC57B',
+        }
+      }
+    }
+  }
 });

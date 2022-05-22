@@ -4,7 +4,6 @@ import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
-import eco from "../eco.json";
 
 let effects : Howl[] = [];
 effects[SOUND_TYPE.MOVE_SELF] = new Howl({ src: ['sounds/move_self.mp3'], preload: true });
@@ -52,6 +51,7 @@ export const useBoardStore = defineStore({
       currentMoveIndex: -1,
       stockfish: false,
       alwaysStockfish: false,
+      showMoveAnnotations: false,
       arrowFrom: -1,
       arrows: [] as Arrow[],
       fen,
@@ -497,6 +497,13 @@ export const useBoardStore = defineStore({
       } else {
         this.setHighlightColor(w, color);
       }
+    },
+    async generateReport() {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve('ok');
+        }, 5000);
+      });
     }
   },
 });

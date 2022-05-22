@@ -7,7 +7,7 @@ export const enum SOUND_TYPE {
     PROMOTE = 5,
     GAME_START = 6,
     GAME_END = 7,
-}
+};
 
 export enum PIECE_TYPE {
     ROOK = "r",
@@ -16,26 +16,39 @@ export enum PIECE_TYPE {
     KING = "k",
     QUEEN = "q",
     PAWN = "p",
-}
+};
 
 export enum PIECE_COLOR {
     WHITE = "w",
     BLACK = "b",
-}
+};
 
 export enum CASTLING_SIDE {
     KINGSIDE = 'k',
     QUEENSIDE = 'q',
-}
+};
 
 export enum ENGINE {
     STOCKFISH = 'stockfish',
     LC0 = 'lc0'
-}
+};
 
 export enum GAME_RESULT {
     IN_PROGRESS,
     WHITE_WON,
     BLACK_WON,
     DRAW
-}
+};
+
+export enum MOVE_MARK {
+    BRILLIANT,
+    GREAT_MOVE,
+    BEST_MOVE,
+    EXCELLENT,
+    GOOD,
+    BOOK,
+    INACCURACY,
+    MISTAKE,
+    BLUNDER,
+    MISSED_WIN
+};

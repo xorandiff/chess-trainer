@@ -115,7 +115,9 @@ export const useEngineStore = defineStore({
         run(engine : ENGINE, fen: string) {
             this[engine].working = true;
 
-            stockfish.postMessage(`setoption name Skill Level value ${this[engine].config.skill}`);
+            if (this[engine].config.skill < 20) {
+                stockfish.postMessage(`setoption name Skill Level value ${this[engine].config.skill}`);
+            }
             stockfish.postMessage(`position fen ${fen}`);
             stockfish.postMessage(`go depth ${this[engine].config.depth}`);
             stockfish.postMessage(`eval`);

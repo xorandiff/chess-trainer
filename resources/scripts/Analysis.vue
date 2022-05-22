@@ -15,11 +15,18 @@ import PgnTags from "@/components/PgnTags.vue";
 
 const boardStore = useBoardStore();
 const engineStore = useEngineStore();
-const { switchAlwaysStockfish, switchStockfish } = boardStore;
+const { switchAlwaysStockfish, switchStockfish, generateReport } = boardStore;
 const { setStockfishConfig } = engineStore;
 const { stockfish, response } = storeToRefs(engineStore);
 
 const activeKey = ref("analysis");
+const isLoading = ref(false);
+
+const handleButtonClick = async () => {
+    isLoading.value = true;
+    await generateReport();
+    isLoading.value = false;
+}
 </script>
 
 <template>
@@ -27,7 +34,7 @@ const activeKey = ref("analysis");
         <a-col flex="710px">
             <Chessboard :size="650" />
         </a-col>
-        <a-col flex="200px">
+        <a-col flex="500px">
             <a-tabs v-model:activeKey="activeKey">
                 <a-tab-pane key="analysis">
                     <template #tab>
@@ -39,6 +46,7 @@ const activeKey = ref("analysis");
                         <EngineVariations />
                         <OpeningCode />
                         <Movelist />
+                        <!-- <a-button type="dashed" @click="handleButtonClick" :loading="isLoading">Generate report</a-button> -->
                     </a-space>
                 </a-tab-pane>
                 <a-tab-pane key="details">
@@ -58,6 +66,9 @@ const activeKey = ref("analysis");
                         </span>
                     </template>
                     <a-descriptions layout="vertical" :column="2" size="small" bordered>
+                        <a-descriptions-item label="Show move annotations" span="2">
+                            <a-switch :checked="boardStore.showMoveAnnotations" @click="boardStore.$patch({ showMoveAnnotations: !boardStore.showMoveAnnotations })" />
+                        </a-descriptions-item>
                         <a-descriptions-item label="Stockfish playing both sides">
                             <a-switch :checked="boardStore.alwaysStockfish" @click="switchAlwaysStockfish" />
                         </a-descriptions-item>

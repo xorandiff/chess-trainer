@@ -513,7 +513,8 @@ export default class Chessboard {
                 promotionType,
                 algebraicNotation: algebraicMove,
                 fen,
-                sound
+                sound,
+                mark: -1
             });
         }
     }
@@ -618,7 +619,6 @@ export default class Chessboard {
         for (const moveAlgebraic of movesAlgebraic) {
             let move = this.algebraicToMove(pieces, moveAlgebraic, color)!;
             this.makeMove(pieces, move.from, move.to);
-            //move.fen = this.getFen(pieces);
             moves.push(move);
 
             color = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
@@ -817,7 +817,8 @@ export default class Chessboard {
                         promotionType: false,
                         algebraicNotation: '',
                         fen: '',
-                        sound: 0
+                        sound: 0,
+                        mark: -1
                     };
                     pieces.forEach(piece => {
                         piece.legalMoves = this.computeLegalMoves(pieces, piece.square, castlingRights, lastMove);
@@ -1093,7 +1094,8 @@ export default class Chessboard {
                     promotionType: false,
                     algebraicNotation: '',
                     fen: '',
-                    sound: -1
+                    sound: -1,
+                    mark: -1
                 };
 
                 if (piece.color == PIECE_COLOR.WHITE) {
@@ -1125,7 +1127,7 @@ export default class Chessboard {
      * @returns 
      */
     public static pgnToEco(pgn: string) {
-        let ecoString = ''
+        let ecoString = '';
         let moveslength = 0;
         const pgnMoves = pgn.slice(pgn.lastIndexOf(']') + 1).trim();
 

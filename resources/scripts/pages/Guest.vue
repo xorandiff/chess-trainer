@@ -1,32 +1,63 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
+import { message } from 'ant-design-vue';
+import axios from 'axios';
+import { useAuthStore } from '../stores/auth';
+
+const store = useAuthStore();
+
+const { login, register } = store;
 
 interface FormState {
-  username: string;
+  email: string;
   password: string;
+  password_confirmation: string;
+  name: string;
   remember: boolean;
 };
 
 const formState = reactive<FormState>({
-    username: '',
+    email: '',
     password: '',
+    password_confirmation: '',
+    name: '',
     remember: true,
 });
 
-const onFinish = (values: any) => {
-    console.log('Success:', values);
-};
+const isRegistration = ref(false);
+const isLoading = ref(false);
 
-const onFinishFailed = (errorInfo: any) => {
-    console.log('Failed:', errorInfo);
+const onFinish = async (values: any) => {
+    axios.defaults.withCredentials = true;
+
+    isLoading.value = true;
+
+    if (isRegistration.value) {
+        const apiResponse = await register(values.name, values.email, values.password, values.password_confirmation);
+        if (apiResponse.error) {
+            message.error('Registration failed');
+        } else {
+            message.success('Registration successfull, now you can login');
+            isRegistration.value = false;
+        }
+    } else {
+        const loginResult = await login(values.email, values.password, values.remember);
+        if (!loginResult) {
+            message.error('Login failed. Incorrect email and/or password');
+        }
+    }
+
+    isLoading.value = false;
 };
 
 const disabled = computed(() => {
-    return !(formState.username && formState.password);
+    if (isRegistration.value === true) {
+        return !(formState.email && formState.password && formState.name && formState.password_confirmation);
+    } else {
+        return !(formState.email && formState.password);
+    }
 });
-
-const isRegistration = ref(false);
 </script>
 
 <template>
@@ -37,15 +68,23 @@ const isRegistration = ref(false);
                     :model="formState"
                     id="loginForm"
                     @finish="onFinish"
-                    @finishFailed="onFinishFailed"
                     hideRequiredMark
                 >
-                    <a-form-item
-                        label="Username"
-                        name="username"
-                        :rules="[{ required: true, message: 'Please input your username!' }]"
+                    <a-form-item 
+                        v-if="isRegistration"
+                        label="Name"
+                        name="name"
+                        :rules="[{ required: true, message: 'Please input your name' }]"
                     >
-                        <a-input v-model:value="formState.username">
+                        <a-input v-model:value="formState.name"/>
+                    </a-form-item>
+
+                    <a-form-item
+                        label="E-mail"
+                        name="email"
+                        :rules="[{ required: true, message: 'Please input your email' }]"
+                    >
+                        <a-input v-model:value="formState.email">
                             <template #prefix>
                                 <UserOutlined />
                             </template>
@@ -55,7 +94,7 @@ const isRegistration = ref(false);
                     <a-form-item
                         label="Password"
                         name="password"
-                        :rules="[{ required: true, message: 'Please input your password!' }]"
+                        :rules="[{ required: true, message: 'Please input your password' }]"
                     >
                         <a-input-password v-model:value="formState.password">
                             <template #prefix>
@@ -67,11 +106,13 @@ const isRegistration = ref(false);
                     <a-form-item 
                         v-if="isRegistration"
                         label="Confirm"
+                        name="password_confirmation"
+                        :rules="[{ required: true, message: 'Please confirm your password' }]"
                     >
-                        <a-input-password />
+                        <a-input-password v-model:value="formState.password_confirmation"/>
                     </a-form-item>
 
-                    <div id="loginFormWrap">
+                    <div v-if="!isRegistration" id="loginFormWrap">
                         <a-form-item name="remember" no-style>
                             <a-checkbox v-model:checked="formState.remember">Remember me</a-checkbox>
                         </a-form-item>
@@ -79,7 +120,7 @@ const isRegistration = ref(false);
                     </div>
 
                     <a-form-item>
-                        <a-button :disabled="disabled" type="primary" html-type="submit" id="loginFormButton">
+                        <a-button :disabled="disabled" type="primary" html-type="submit" id="loginFormButton" :loading="isLoading">
                             {{ isRegistration ? 'Register' : 'Log in' }}
                         </a-button>
                         <template v-if="isRegistration">

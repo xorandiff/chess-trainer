@@ -35,6 +35,7 @@ type Move = {
     algebraicNotation: string;
     fen: string;
     sound: number;
+    mark: number;
 }
 
 type Square = [number, number];
@@ -85,5 +86,10 @@ type Variation = {
     moves: Move[];
     eval: number;
     mate: boolean;
+}
+
+type ApiResponse = {
+    data: object;
+    error?: string;
 }
 

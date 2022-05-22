@@ -7,15 +7,16 @@ const app = createApp(Main);
 
 app.use(createPinia());
 
-/* import { useAuthStore } from './stores/auth';
+import { useAuthStore } from './stores/auth';
 
 router.beforeEach(async (to, from) => {
     const authStore = useAuthStore();
+    const userData = await authStore.getUserData();
 
     if (to.name !== 'Guest' && !authStore.isLoggedIn) {
         return { name: 'Guest' };
     }
-}); */
+});
 
 app.use(router);
 
