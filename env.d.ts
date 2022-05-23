@@ -36,6 +36,11 @@ type Move = {
     fen: string;
     sound: number;
     mark: number;
+    bestNextMove?: {
+        move: Move;
+        eval: number;
+        mate: boolean;
+    };
 }
 
 type Square = [number, number];

@@ -1,6 +1,6 @@
 import Chessboard from "@/chessboard";
 import { useEngineStore } from "@/stores/engine";
-import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT } from '@/enums';
+import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT, MOVE_MARK } from '@/enums';
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
@@ -369,6 +369,24 @@ export const useBoardStore = defineStore({
 
         move.algebraicNotation = Chessboard.moveToAlgebraic(move, this.pieces);
 
+        if (this.moves.length > 1 && this.lastMove.bestNextMove && !this.engineWorking) {
+          const engine = useEngineStore();
+          const evalDifference = Math.abs(this.lastMove.bestNextMove!.eval - engine.response.eval);
+
+          //TODO include move comparison
+          if (evalDifference < 0.2) {
+            move.mark = MOVE_MARK.BEST_MOVE;
+          } else if (evalDifference < 0.5) {
+            move.mark = MOVE_MARK.EXCELLENT;
+          } else if (evalDifference < 1) {
+            move.mark = MOVE_MARK.GOOD;
+          } else if (evalDifference < 1.5) {
+            move.mark = MOVE_MARK.MISTAKE;
+          } else {
+            move.mark = MOVE_MARK.BLUNDER;
+          }
+        }
+
         //Update move history
         this.moves.push(move);
 
@@ -437,6 +455,14 @@ export const useBoardStore = defineStore({
           eval: this.currentTurnColor === PIECE_COLOR.BLACK ? evaluation * (-1) : evaluation,
           mate
         };
+
+        if (this.moves.length > 0 && i === 0) {
+          this.moves[this.moves.length - 1].bestNextMove = {
+              move: this.variations[i].moves[0],
+              eval: this.variations[i].eval,
+              mate
+          };
+        }
       }
 
       if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {

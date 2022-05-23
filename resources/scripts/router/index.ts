@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import axios from 'axios';
 import App from '@/App.vue';
 import Guest from '@/pages/Guest.vue';
 import Profile from "@/Profile.vue";
@@ -46,5 +47,15 @@ const router = createRouter({
     history: createWebHistory(),
     routes,
 });
+
+axios.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response.status === 401 || error.response.status === 419) {
+            router.push({ name: 'login' });
+        }
+        return Promise.reject(error.response);
+    }
+);
 
 export default router;

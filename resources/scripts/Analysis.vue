@@ -12,12 +12,14 @@ import EngineVariations from "@/components/EngineVariations.vue";
 import Import from "@/components/Import.vue";
 import Export from "@/components/Export.vue";
 import PgnTags from "@/components/PgnTags.vue";
+import MoveMark from "@/components/MoveMark.vue";
 
 const boardStore = useBoardStore();
 const engineStore = useEngineStore();
 const { switchAlwaysStockfish, switchStockfish, generateReport } = boardStore;
 const { setStockfishConfig } = engineStore;
 const { stockfish, response } = storeToRefs(engineStore);
+const { showMoveAnnotations, lastMove } = storeToRefs(boardStore);
 
 const activeKey = ref("analysis");
 const isLoading = ref(false);
@@ -43,6 +45,7 @@ const handleButtonClick = async () => {
                         </span>
                     </template>
                     <a-space direction="vertical" :style="{ width: '100%' }">
+                        <MoveMark v-if="showMoveAnnotations && lastMove.mark" />
                         <EngineVariations />
                         <OpeningCode />
                         <Movelist />

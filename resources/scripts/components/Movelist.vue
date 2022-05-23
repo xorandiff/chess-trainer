@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { QuestionCircleOutlined } from '@ant-design/icons-vue';
-import { PIECE_COLOR, PIECE_TYPE, GAME_RESULT, MOVE_MARK } from "@/enums";
+import { PIECE_COLOR, PIECE_TYPE, GAME_RESULT } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 
 const store = useBoardStore();
@@ -18,7 +17,6 @@ const { showMove } = store;
                     <span class="moveNumber" v-if="move.piece.color === PIECE_COLOR.WHITE">
                         {{ Math.floor(index / 2) + 1 }}. 
                     </span>
-                    <question-circle-outlined v-if="move.mark == MOVE_MARK.MISTAKE" />
                     <a-button class="moveButton" :type="currentMoveIndex === index ? 'dashed' : 'text'" @click="showMove(index)" :style="{ borderColor: currentMoveIndex === index ? 'yellow' : '' }">
                         <template #icon v-if="move.piece.type != PIECE_TYPE.PAWN && !move.algebraicNotation.includes('O') && !move.promotionType">
                             <span :class="`chessFont f-${move.piece.type}${move.piece.color}`"></span>

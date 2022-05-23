@@ -38,8 +38,8 @@ stockfish.addEventListener('message', function (e) {
                 }
             }
 
-            const board = useBoardStore();
-            board.stockfishDone();
+            const boardStore = useBoardStore();
+            boardStore.stockfishDone();
         }
     }
 });

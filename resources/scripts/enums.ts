@@ -41,6 +41,7 @@ export enum GAME_RESULT {
 };
 
 export enum MOVE_MARK {
+    NONE,
     BRILLIANT,
     GREAT_MOVE,
     BEST_MOVE,
