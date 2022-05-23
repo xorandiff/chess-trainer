@@ -3,20 +3,13 @@
 </script>
 
 <template>
-    <a-row>
-        <a-col>
-            <a-card title="Vienna Game">
-                <p>Card content</p>
-                <p>Card content</p>
-                <p>Card content</p>
-            </a-card>
-        </a-col>
-        <a-col>
-            <a-card title="Italian Game">
-                <p>Card content</p>
-                <p>Card content</p>
-                <p>Card content</p>
-            </a-card>
-        </a-col>
-    </a-row>
+    <a-card hoverable style="width: 300px">
+        <template #actions>
+            <setting-outlined key="setting" />
+            <edit-outlined key="edit" />
+            <ellipsis-outlined key="ellipsis" />
+        </template>
+        <a-card-meta title="Vienna Game" description="This is the description">
+        </a-card-meta>
+    </a-card>
 </template>

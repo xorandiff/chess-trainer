@@ -11,18 +11,18 @@ const props = defineProps<{
 const highlight = ref(false);
 const store = useBoardStore();
 const { pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
-const { getPiece } = storeToRefs(store);
+const { getPiece, dragging } = storeToRefs(store);
 
 </script>
 
 <template>
   <div 
     class="square"
-    :class="{ highlight: squareData.active || squareData.highlight, dragging: store.dragging >= 11 }"
+    :class="{ highlight: squareData.active || squareData.highlight }"
     :style="{ cursor: getPiece(index) !== undefined ? 'pointer' : 'default' }"
     @mousedown.left="pieceMouseDown(index)"
     @mouseup.left="pieceMoveFromActive(index)"
-    @mouseenter="highlight = store.dragging >= 11"
+    @mouseenter="highlight = dragging >= 11"
     @mouseleave="highlight = false"
     @click.right.prevent
     @mousedown.right="setArrowFrom(index)"

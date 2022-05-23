@@ -5,9 +5,9 @@ import { storeToRefs } from 'pinia';
 import { useBoardStore } from "@/stores/board";
 import { useEngineStore } from "@/stores/engine";
 
-import Chessboard from "./components/Chessboard.vue";
-import Movelist from "./components/Movelist.vue";
-import OpeningCode from "./components/OpeningCode.vue";
+import Chessboard from "@/components/Chessboard.vue";
+import Movelist from "@/components/Movelist.vue";
+import OpeningCode from "@/components/OpeningCode.vue";
 import EngineVariations from "@/components/EngineVariations.vue";
 import Import from "@/components/Import.vue";
 import Export from "@/components/Export.vue";
@@ -32,12 +32,12 @@ const handleButtonClick = async () => {
 </script>
 
 <template>
-    <a-row type="flex">
-        <a-col flex="710px">
-            <Chessboard :size="650" />
+    <a-row>
+        <a-col>
+            <Chessboard />
         </a-col>
-        <a-col flex="500px">
-            <a-tabs v-model:activeKey="activeKey">
+        <a-col>
+            <a-tabs v-model:activeKey="activeKey" :style="{ width: '500px' }">
                 <a-tab-pane key="analysis">
                     <template #tab>
                         <span>

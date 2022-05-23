@@ -5,6 +5,10 @@ import Guest from '@/pages/Guest.vue';
 import Profile from "@/Profile.vue";
 import Openings from "@/Openings.vue";
 import Analysis from "@/Analysis.vue";
+import Play from "@/Play.vue";
+import Puzzle from "@/Puzzle.vue";
+import BotSelection from "@/components/BotSelection.vue";
+import SurvivalSelection from "@/components/SurvivalSelection.vue";
 
 const routes = [
     {
@@ -20,6 +24,30 @@ const routes = [
                 name: 'profile',
                 path: 'profile',
                 component: Profile
+            },
+            {
+                name: 'play',
+                path: 'play',
+                component: Play,
+                children: [
+                    {
+                        name: 'bot',
+                        path: 'bot',
+                        component: BotSelection
+                    }
+                ]
+            },
+            {
+                name: 'puzzle',
+                path: 'puzzle',
+                component: Puzzle,
+                children: [
+                    {
+                        name: 'survival',
+                        path: 'survival',
+                        component: SurvivalSelection
+                    }
+                ]
             },
             {
                 name: 'openings',

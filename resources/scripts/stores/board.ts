@@ -373,8 +373,9 @@ export const useBoardStore = defineStore({
           const engine = useEngineStore();
           const evalDifference = Math.abs(this.lastMove.bestNextMove!.eval - engine.response.eval);
 
-          //TODO include move comparison
-          if (evalDifference < 0.2) {
+          const bestMove = this.lastMove.bestNextMove!.move;
+
+          if (bestMove.from == move.from && bestMove.to == move.to) {
             move.mark = MOVE_MARK.BEST_MOVE;
           } else if (evalDifference < 0.5) {
             move.mark = MOVE_MARK.EXCELLENT;

@@ -22,6 +22,10 @@ $highlight-color-red: rgba(248, 85, 63, 0.8);
 $highlight-color-green: rgba(159, 207, 63, 0.8);
 $highlight-color-blue: rgba(72, 193, 249, 0.8);
 
+body {
+  overflow-x: hidden;
+}
+
 #chessboardContainer {
   #evalContainer {
     float: left;
@@ -213,7 +217,6 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
 }
 
 .dragging {
-  z-index: 5;
   cursor: grab !important;
 }
 
@@ -443,5 +446,22 @@ $highlight-color-blue: rgba(72, 193, 249, 0.8);
 
   #loginFormButton {
     width: 100%;
+  }
+}
+
+.promotionModal {
+  top: 20px;
+
+  button {
+    width: 85px;
+    height: 85px;
+    padding: 5px;
+  }
+}
+
+.bigButtonsModal {  
+  button {
+    width: 12em;
+    height: 12em;
   }
 }
