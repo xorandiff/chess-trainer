@@ -9,7 +9,7 @@ const store = useBoardStore();
 const { variations, movesLength, engineWorking } = storeToRefs(store);
 
 const labelStyleWhite = {
-    with: '50px',
+    width: '40px',
     textAlign: 'center',
     padding: '0px',
     backgroundColor: 'white',
@@ -17,7 +17,7 @@ const labelStyleWhite = {
 }
 
 const labelStyleBlack = {
-    with: '50px',
+    width: '40px',
     textAlign: 'center',
     padding: '0px',
     backgroundColor: '#403d39',
@@ -37,25 +37,27 @@ const labelStyleBlack = {
             <template #label>
                 <LoadingOutlined v-if="engineWorking" />
                 <span class="variationLabel" v-else>
-                    {{ variation.mate ? `M${Math.abs(variation.eval)}` : variation.eval }}
+                    {{ variation.mate ? `M${Math.abs(variation.eval)}` : (variation.eval > 0 ? `+${variation.eval}` : variation.eval) }}
                 </span>
             </template>
-            <a-space>
-                <template v-if="variation.moves[0].piece.color === PIECE_COLOR.BLACK">
-                    {{ Math.floor(movesLength / 2) + 1 }}... 
-                </template>
-                <template v-for="(move, index) in variation.moves">
-                    <template v-if="move.piece.color === PIECE_COLOR.WHITE">
-                        {{ Math.floor((movesLength + index) / 2) + 1 }}. 
+            <a-spin :spinning="engineWorking">
+                <a-space>
+                    <template v-if="variation.moves[0].piece.color === PIECE_COLOR.BLACK">
+                        {{ Math.floor(movesLength / 2) + 1 }}... 
                     </template>
-                    <a-button class="moveButton" type="text" :style="{ marginLeft: move.piece.color === PIECE_COLOR.BLACK ? '-7px': '0' }">
-                        <template #icon v-if="move.piece.type !== PIECE_TYPE.PAWN">
-                            <span :class="`chessFont f-${move.piece.type}${move.piece.color}`"></span>
+                    <template v-for="(move, index) in variation.moves">
+                        <template v-if="move.piece.color === PIECE_COLOR.WHITE">
+                            {{ Math.floor((movesLength + index) / 2) + 1 }}. 
                         </template>
-                        {{ move.algebraicNotation }}
-                    </a-button>
-                </template>
-            </a-space>
+                        <a-button class="moveButton" type="text" :style="{ marginLeft: move.piece.color === PIECE_COLOR.BLACK ? '-7px': '0' }">
+                            <template #icon v-if="move.piece.type !== PIECE_TYPE.PAWN">
+                                <span :class="`chessFont f-${move.piece.type}${move.piece.color}`"></span>
+                            </template>
+                            {{ move.algebraicNotation }}
+                        </a-button>
+                    </template>
+                </a-space>
+            </a-spin>
         </a-descriptions-item>
     </a-descriptions>
 </template>

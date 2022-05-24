@@ -19,7 +19,7 @@ const engineStore = useEngineStore();
 const { switchAlwaysStockfish, switchStockfish, generateReport } = boardStore;
 const { setStockfishConfig } = engineStore;
 const { stockfish, response } = storeToRefs(engineStore);
-const { showMoveAnnotations, lastMove } = storeToRefs(boardStore);
+const { showMoveAnnotations, lastMove, movesLength } = storeToRefs(boardStore);
 
 const activeKey = ref("analysis");
 const isLoading = ref(false);
@@ -45,10 +45,15 @@ const handleButtonClick = async () => {
                         </span>
                     </template>
                     <a-space direction="vertical" :style="{ width: '100%' }">
-                        <MoveMark v-if="showMoveAnnotations && lastMove.mark" />
-                        <EngineVariations />
-                        <OpeningCode />
-                        <Movelist />
+                        <template v-if="movesLength">
+                            <MoveMark v-if="showMoveAnnotations && lastMove.mark" />
+                            <EngineVariations />
+                            <OpeningCode />
+                            <Movelist />
+                        </template>
+                        <template v-else>
+                            <Import />
+                        </template>
                         <!-- <a-button type="dashed" @click="handleButtonClick" :loading="isLoading">Generate report</a-button> -->
                     </a-space>
                 </a-tab-pane>
@@ -90,7 +95,6 @@ const handleButtonClick = async () => {
                         </a-descriptions-item>
                         <a-descriptions-item>
                             <a-space>
-                                <Import />
                                 <Export />
                             </a-space>
                         </a-descriptions-item>

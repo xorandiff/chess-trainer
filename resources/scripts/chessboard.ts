@@ -1120,23 +1120,27 @@ export default class Chessboard {
     }
 
     /**
-     * Converts PGN string into ECO description string
+     * Finds opening data based on given algebraic move list
      * 
-     * @param pgn 
+     * @param movesAlgebraic 
      * @returns 
      */
-    public static pgnToEco(pgn: string) {
-        let ecoString = '';
+    public static getOpeningData(movesAlgebraic: string) {
+        let openingData : OpeningData = {
+            name: 'None',
+            eco: '',
+            fen: '',
+            movesAlgebraic: ''
+        };
         let moveslength = 0;
-        const pgnMoves = pgn.slice(pgn.lastIndexOf(']') + 1).trim();
 
         for (const opening of eco) {
-          if (pgnMoves.startsWith(opening.moves) && opening.moves.length > moveslength) {
-            moveslength = opening.moves.length;
-            ecoString = opening.eco + ': ' + opening.name;
+          if (movesAlgebraic.startsWith(opening.movesAlgebraic) && opening.movesAlgebraic.length > moveslength) {
+            moveslength = opening.movesAlgebraic.length;
+            openingData = opening;
           }
         }
         
-        return ecoString;
+        return openingData;
     }
 }

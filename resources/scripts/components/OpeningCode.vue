@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia';
 import { useBoardStore } from "@/stores/board";
 
 const store = useBoardStore();
-const { eco } = storeToRefs(store);
+const { openingData } = storeToRefs(store);
 </script>
 
 <template>
@@ -14,7 +14,7 @@ const { eco } = storeToRefs(store);
         bordered
     >
         <a-descriptions-item label="ECO">
-            {{ eco }}
+            {{ openingData.eco ? `${openingData.eco}: ${openingData.name}` : 'Unknown' }}
         </a-descriptions-item>
     </a-descriptions>
 </template>

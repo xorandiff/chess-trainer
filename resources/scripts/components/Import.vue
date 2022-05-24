@@ -26,7 +26,7 @@ const onSubmit = () => {
 </script>
 
 <template>
-    <a-button @click="visible = true">
+    <a-button @click="visible = true" block>
         <template #icon>
             <ImportOutlined />
         </template>

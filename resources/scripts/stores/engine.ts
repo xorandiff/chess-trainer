@@ -56,8 +56,8 @@ export const useEngineStore = defineStore({
         } as EngineResponse,
         stockfish: {
             config: {
-                elo: 300, //from 100 to 3000
-                depth: 12,
+                elo: 3000, //from 100 to 3000
+                depth: 20,
                 skill: 20 //from 0 to 20
             },
             working: false,

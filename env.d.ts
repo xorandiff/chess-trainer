@@ -98,3 +98,10 @@ type ApiResponse = {
     error?: string;
 }
 
+type OpeningData = {
+    name: string;
+    eco: string;
+    fen: string;
+    movesAlgebraic: string;
+}
+

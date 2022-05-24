@@ -45,13 +45,14 @@ export const useBoardStore = defineStore({
       fullmoves,
       lastMove: {} as Move,
       moves: [] as Move[],
+      movesAlgebraic: '',
       variations: [] as Variation[],
       result: GAME_RESULT.IN_PROGRESS,
       promotionType: PIECE_TYPE.PAWN,
       currentMoveIndex: -1,
       stockfish: false,
       alwaysStockfish: false,
-      showMoveAnnotations: false,
+      showMoveAnnotations: true,
       arrowFrom: -1,
       arrows: [] as Arrow[],
       fen,
@@ -67,7 +68,12 @@ export const useBoardStore = defineStore({
           result: ''
         }
       },
-      eco: '',
+      openingData: {
+        name: 'None',
+          eco: '',
+          fen: '',
+          movesAlgebraic: ''
+      } as OpeningData,
       promotionModalVisible: false,
       promotionMove: {
         from: -1,
@@ -158,7 +164,8 @@ export const useBoardStore = defineStore({
         this.fen = moves[moves.length - 1].fen;
         this.stockfishRun();
       }
-      this.eco = Chessboard.pgnToEco(pgn);
+      this.movesAlgebraic = pgn.slice(this.pgn.value.lastIndexOf(']') + 1).trim();
+      this.openingData = Chessboard.getOpeningData(this.movesAlgebraic);
       if (this.moves[this.moves.length - 1].isCheckmate) {
         this.result = this.moves[this.moves.length - 1].piece.color === PIECE_COLOR.WHITE ? GAME_RESULT.WHITE_WON : GAME_RESULT.BLACK_WON;
       }
@@ -356,9 +363,12 @@ export const useBoardStore = defineStore({
 
         //Update PGN
         this.pgn.value = Chessboard.getPGN(this.moves);
+
+        //Update algebraic move list
+        this.movesAlgebraic = this.pgn.value.slice(this.pgn.value.lastIndexOf(']') + 1).trim();
         
-        //Update ECO
-        this.eco = Chessboard.pgnToEco(this.pgn.value);
+        //Update opening data
+        this.openingData = Chessboard.getOpeningData(this.movesAlgebraic);
 
         move.sound = sound;
 
@@ -368,25 +378,6 @@ export const useBoardStore = defineStore({
         const isStalemate = !hasOpponentLegalMoves && !hasLegalMoves;
 
         move.algebraicNotation = Chessboard.moveToAlgebraic(move, this.pieces);
-
-        if (this.moves.length > 1 && this.lastMove.bestNextMove && !this.engineWorking) {
-          const engine = useEngineStore();
-          const evalDifference = Math.abs(this.lastMove.bestNextMove!.eval - engine.response.eval);
-
-          const bestMove = this.lastMove.bestNextMove!.move;
-
-          if (bestMove.from == move.from && bestMove.to == move.to) {
-            move.mark = MOVE_MARK.BEST_MOVE;
-          } else if (evalDifference < 0.5) {
-            move.mark = MOVE_MARK.EXCELLENT;
-          } else if (evalDifference < 1) {
-            move.mark = MOVE_MARK.GOOD;
-          } else if (evalDifference < 1.5) {
-            move.mark = MOVE_MARK.MISTAKE;
-          } else {
-            move.mark = MOVE_MARK.BLUNDER;
-          }
-        }
 
         //Update move history
         this.moves.push(move);
@@ -446,6 +437,9 @@ export const useBoardStore = defineStore({
       this.engineWorking = false;
       const engine = useEngineStore();
 
+      const currentMove = this.moves[this.currentMoveIndex];
+
+      //Update variations
       for (let i = 0; i < engine.response.variations.length; i++) {
         const { pv, score, mate } = engine.response.variations[i];
 
@@ -453,16 +447,44 @@ export const useBoardStore = defineStore({
 
         this.variations[i] = {
           moves: Chessboard.getVariationData(this.pieces, pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK]),
-          eval: this.currentTurnColor === PIECE_COLOR.BLACK ? evaluation * (-1) : evaluation,
+          eval: this.moves[this.currentMoveIndex].piece.color === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
           mate
         };
 
-        if (this.moves.length > 0 && i === 0) {
-          this.moves[this.moves.length - 1].bestNextMove = {
-              move: this.variations[i].moves[0],
-              eval: this.variations[i].eval,
-              mate
+        if (this.moves.length && !i) {
+          const bestMove = {
+            move: this.variations[i].moves[0],
+            eval: this.variations[i].eval,
+            mate
           };
+
+          //Update best next move
+          this.moves[this.currentMoveIndex].bestNextMove = bestMove;
+
+          //Update move mark
+          if (this.openingData.movesAlgebraic.includes(this.movesAlgebraic)) {
+            this.moves[this.currentMoveIndex].mark = MOVE_MARK.BOOK;
+          } else if (this.moves.length > 1 && this.moves[this.currentMoveIndex - 1].bestNextMove) {
+            const previousMove = this.moves[this.currentMoveIndex - 1].bestNextMove!;
+            const evalDifference = Math.abs(this.variations[i].eval - previousMove.eval);
+
+            console.log(`this.variations[i].eval: ${this.variations[i].eval}`);
+            console.log(`this.moves[this.moves.length - 2].bestNextMove!.eval: ${this.moves[this.currentMoveIndex - 1].bestNextMove!.eval}`);
+
+            if (previousMove.move.from == this.moves[this.currentMoveIndex].from && previousMove.move.to == this.moves[this.currentMoveIndex].to) {
+              this.moves[this.currentMoveIndex].mark = MOVE_MARK.BEST_MOVE;
+            } else if (evalDifference < 0.5) {
+              this.moves[this.currentMoveIndex].mark = MOVE_MARK.EXCELLENT;
+            } else if (evalDifference < 0.75) {
+              this.moves[this.currentMoveIndex].mark = MOVE_MARK.GOOD;
+            } else if (evalDifference < 1.1) {
+              this.moves[this.currentMoveIndex].mark = MOVE_MARK.INACCURACY;
+            } else if (evalDifference < 1.7) {
+              this.moves[this.currentMoveIndex].mark = MOVE_MARK.MISTAKE;
+            } else {
+              this.moves[this.currentMoveIndex].mark = MOVE_MARK.BLUNDER;
+            }
+          }
         }
       }
 
