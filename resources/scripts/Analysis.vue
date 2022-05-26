@@ -19,7 +19,7 @@ const engineStore = useEngineStore();
 const { switchAlwaysStockfish, switchStockfish, generateReport } = boardStore;
 const { setStockfishConfig } = engineStore;
 const { stockfish, response } = storeToRefs(engineStore);
-const { showMoveAnnotations, lastMove, movesLength } = storeToRefs(boardStore);
+const { showFeedback, showVariations, lastMove, movesLength } = storeToRefs(boardStore);
 
 const activeKey = ref("analysis");
 const isLoading = ref(false);
@@ -46,8 +46,8 @@ const handleButtonClick = async () => {
                     </template>
                     <a-space direction="vertical" :style="{ width: '100%' }">
                         <template v-if="movesLength">
-                            <MoveMark v-if="showMoveAnnotations && lastMove.mark" />
-                            <EngineVariations />
+                            <MoveMark v-if="showFeedback && lastMove.mark" />
+                            <EngineVariations v-if="showVariations" />
                             <OpeningCode />
                             <Movelist />
                         </template>
@@ -73,11 +73,17 @@ const handleButtonClick = async () => {
                             Options
                         </span>
                     </template>
-                    <a-descriptions layout="vertical" :column="2" size="small" bordered>
-                        <a-descriptions-item label="Show move annotations" span="2">
-                            <a-switch :checked="boardStore.showMoveAnnotations" @click="boardStore.$patch({ showMoveAnnotations: !boardStore.showMoveAnnotations })" />
+                    <a-descriptions layout="vertical" :column="3" size="small" bordered>
+                        <a-descriptions-item label="Show evaluation">
+                            <a-switch :checked="boardStore.showEvaluation" @click="boardStore.$patch({ showEvaluation: !boardStore.showEvaluation })" />
                         </a-descriptions-item>
-                        <a-descriptions-item label="Stockfish playing both sides">
+                        <a-descriptions-item label="Show variations">
+                            <a-switch :checked="boardStore.showVariations" @click="boardStore.$patch({ showVariations: !boardStore.showVariations })" />
+                        </a-descriptions-item>
+                        <a-descriptions-item label="Show feedback">
+                            <a-switch :checked="boardStore.showFeedback" @click="boardStore.$patch({ showFeedback: !boardStore.showFeedback })" />
+                        </a-descriptions-item>
+                        <a-descriptions-item label="Stockfish vs Stockfish">
                             <a-switch :checked="boardStore.alwaysStockfish" @click="switchAlwaysStockfish" />
                         </a-descriptions-item>
                         <a-descriptions-item label="Stockfish playing black">
@@ -93,7 +99,7 @@ const handleButtonClick = async () => {
                         <a-descriptions-item label="Stockfish Depth" :span="2">
                             {{ boardStore.alwaysStockfish || boardStore.stockfish ? response.depth : '-' }}
                         </a-descriptions-item>
-                        <a-descriptions-item>
+                        <a-descriptions-item label="Actions" :span="3">
                             <a-space>
                                 <Export />
                             </a-space>

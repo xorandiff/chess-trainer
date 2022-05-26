@@ -31,7 +31,7 @@ const pieceLeft = ref(0);
 const pieceTop = ref(0);
 
 const store = useBoardStore();
-const { currentMoveIndex, arrows, getPiece, dragging, promotionModalVisible } = storeToRefs(store);
+const { showEvaluation, currentMoveIndex, arrows, getPiece, dragging, promotionModalVisible } = storeToRefs(store);
 const { pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
 
 function handleMousemove(event: MouseEvent) {
@@ -81,7 +81,7 @@ onUnmounted(() => {
 
 <template>
   <div id="chessboardContainer">
-    <Eval :size="boardSize" />
+    <Eval v-if="showEvaluation" :size="boardSize" />
     <div id="chessboard" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
       <svg id="arrows" :style="boardSizeStyle" viewBox="0 0 100 100">
         <template v-for="arrow in arrows">

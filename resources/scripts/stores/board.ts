@@ -52,7 +52,9 @@ export const useBoardStore = defineStore({
       currentMoveIndex: -1,
       stockfish: false,
       alwaysStockfish: false,
-      showMoveAnnotations: true,
+      showFeedback: true,
+      showVariations: true,
+      showEvaluation: true,
       arrowFrom: -1,
       arrows: [] as Arrow[],
       fen,
@@ -437,8 +439,6 @@ export const useBoardStore = defineStore({
       this.engineWorking = false;
       const engine = useEngineStore();
 
-      const currentMove = this.moves[this.currentMoveIndex];
-
       //Update variations
       for (let i = 0; i < engine.response.variations.length; i++) {
         const { pv, score, mate } = engine.response.variations[i];
@@ -451,7 +451,7 @@ export const useBoardStore = defineStore({
           mate
         };
 
-        if (this.moves.length && !i) {
+        if (this.moves.length > 0 && !i) {
           const bestMove = {
             move: this.variations[i].moves[0],
             eval: this.variations[i].eval,
@@ -473,13 +473,13 @@ export const useBoardStore = defineStore({
 
             if (previousMove.move.from == this.moves[this.currentMoveIndex].from && previousMove.move.to == this.moves[this.currentMoveIndex].to) {
               this.moves[this.currentMoveIndex].mark = MOVE_MARK.BEST_MOVE;
-            } else if (evalDifference < 0.5) {
+            } else if (evalDifference < 0.7) {
               this.moves[this.currentMoveIndex].mark = MOVE_MARK.EXCELLENT;
-            } else if (evalDifference < 0.75) {
+            } else if (evalDifference < 1) {
               this.moves[this.currentMoveIndex].mark = MOVE_MARK.GOOD;
-            } else if (evalDifference < 1.1) {
+            } else if (evalDifference < 1.5) {
               this.moves[this.currentMoveIndex].mark = MOVE_MARK.INACCURACY;
-            } else if (evalDifference < 1.7) {
+            } else if (evalDifference < 2) {
               this.moves[this.currentMoveIndex].mark = MOVE_MARK.MISTAKE;
             } else {
               this.moves[this.currentMoveIndex].mark = MOVE_MARK.BLUNDER;
