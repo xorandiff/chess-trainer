@@ -15,39 +15,39 @@ import BlunderIcon from "@/components/icons/BlunderIcon.vue";
 
 const store = useBoardStore();
 
-const { lastMove } = storeToRefs(store);
+const { currentMove } = storeToRefs(store);
 </script>
 
 <template>
-    <a-descriptions class="moveMarkDescription" v-if="lastMove.mark" :column="1" size="small" bordered>
+    <a-descriptions class="moveMarkDescription" v-if="currentMove && currentMove.mark" :column="1" size="small" bordered>
         <a-descriptions-item>
             <a-typography-title :level="4">
-                <span v-if="lastMove.mark == MOVE_MARK.BOOK" :style="{ color: '#a88865' }">
-                   <BookIcon/> {{ lastMove.piece.type != 'p' ? lastMove.piece.type.toUpperCase() + lastMove.algebraicNotation : lastMove.algebraicNotation }} is a book move
+                <span v-if="currentMove.mark == MOVE_MARK.BOOK" :style="{ color: '#a88865' }">
+                   <BookIcon/> {{ currentMove.algebraicNotation }} is a book move
                 </span>
-                <span v-if="lastMove.mark == MOVE_MARK.BRILLIANT" :style="{ color: '#1baca6' }">
-                   <BrilliantMoveIcon/> {{ lastMove.piece.type != 'p' ? lastMove.piece.type.toUpperCase() + lastMove.algebraicNotation : lastMove.algebraicNotation }} is brilliant
+                <span v-if="currentMove.mark == MOVE_MARK.BRILLIANT" :style="{ color: '#1baca6' }">
+                   <BrilliantMoveIcon/> {{ currentMove.algebraicNotation }} is brilliant
                 </span>
-                <span v-if="lastMove.mark == MOVE_MARK.GREAT_MOVE" :style="{ color: '#5c8bb0' }">
-                   <GreatMoveIcon/> {{ lastMove.piece.type != 'p' ? lastMove.piece.type.toUpperCase() + lastMove.algebraicNotation : lastMove.algebraicNotation }} is a great move
+                <span v-if="currentMove.mark == MOVE_MARK.GREAT_MOVE" :style="{ color: '#5c8bb0' }">
+                   <GreatMoveIcon/> {{ currentMove.algebraicNotation }} is a great move
                 </span>
-                <span v-if="lastMove.mark == MOVE_MARK.BEST_MOVE" :style="{ color: '#96bc4b' }">
-                   <BestMoveIcon/> {{ lastMove.piece.type != 'p' ? lastMove.piece.type.toUpperCase() + lastMove.algebraicNotation : lastMove.algebraicNotation }} is best
+                <span v-if="currentMove.mark == MOVE_MARK.BEST_MOVE" :style="{ color: '#96bc4b' }">
+                   <BestMoveIcon/> {{ currentMove.algebraicNotation }} is best
                 </span>
-                <span v-if="lastMove.mark == MOVE_MARK.EXCELLENT" :style="{ color: '#96bc4b' }">
-                   <ExcellentMoveIcon/> {{ lastMove.piece.type != 'p' ? lastMove.piece.type.toUpperCase() + lastMove.algebraicNotation : lastMove.algebraicNotation }} is excellent
+                <span v-if="currentMove.mark == MOVE_MARK.EXCELLENT" :style="{ color: '#96bc4b' }">
+                   <ExcellentMoveIcon/> {{ currentMove.algebraicNotation }} is excellent
                 </span>
-                <span v-if="lastMove.mark == MOVE_MARK.GOOD" :style="{ color: '#96af8b' }">
-                   <GoodMoveIcon/> {{ lastMove.piece.type != 'p' ? lastMove.piece.type.toUpperCase() + lastMove.algebraicNotation : lastMove.algebraicNotation }} is good
+                <span v-if="currentMove.mark == MOVE_MARK.GOOD" :style="{ color: '#96af8b' }">
+                   <GoodMoveIcon/> {{ currentMove.algebraicNotation }} is good
                 </span>
-                <span v-if="lastMove.mark == MOVE_MARK.INACCURACY" :style="{ color: '#f0c15c' }">
-                   <InaccuracyIcon/> {{ lastMove.piece.type != 'p' ? lastMove.piece.type.toUpperCase() + lastMove.algebraicNotation : lastMove.algebraicNotation }} is an inaccuracy
+                <span v-if="currentMove.mark == MOVE_MARK.INACCURACY" :style="{ color: '#f0c15c' }">
+                   <InaccuracyIcon/> {{ currentMove.algebraicNotation }} is an inaccuracy
                 </span>
-                <span v-if="lastMove.mark == MOVE_MARK.MISTAKE" :style="{ color: '#e58f2a' }">
-                   <MistakeIcon/> {{ lastMove.piece.type != 'p' ? lastMove.piece.type.toUpperCase() + lastMove.algebraicNotation : lastMove.algebraicNotation }} is a mistake
+                <span v-if="currentMove.mark == MOVE_MARK.MISTAKE" :style="{ color: '#e58f2a' }">
+                   <MistakeIcon/> {{ currentMove.algebraicNotation }} is a mistake
                 </span>
-                <span v-if="lastMove.mark == MOVE_MARK.BLUNDER" :style="{ color: '#ca3431' }">
-                   <BlunderIcon/> {{ lastMove.piece.type != 'p' ? lastMove.piece.type.toUpperCase() + lastMove.algebraicNotation : lastMove.algebraicNotation }} is a blunder
+                <span v-if="currentMove.mark == MOVE_MARK.BLUNDER" :style="{ color: '#ca3431' }">
+                   <BlunderIcon/> {{ currentMove.algebraicNotation }} is a blunder
                 </span>
             </a-typography-title>
         </a-descriptions-item>

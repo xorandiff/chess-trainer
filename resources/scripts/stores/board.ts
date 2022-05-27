@@ -98,7 +98,8 @@ export const useBoardStore = defineStore({
     movesReversed: (state) => state.moves.slice().reverse(),
     getPiece: (state) => {
       return (index: number) : Piece | undefined => state.pieces.find(piece => piece.square === index);
-    }
+    },
+    currentMove: (state) => state.currentMoveIndex ? state.moves[state.currentMoveIndex] : false
   },
   actions: {
     newGame(fen: string) {
@@ -173,7 +174,7 @@ export const useBoardStore = defineStore({
         this.fen = moves[moves.length - 1].fen;
         this.stockfishRun();
       }
-      this.movesAlgebraic = pgn.slice(this.pgn.value.lastIndexOf(']') + 1).trim();
+      this.movesAlgebraic = pgn.slice(pgn.lastIndexOf(']') + 1).trim();
       this.openingData = Chessboard.getOpeningData(this.movesAlgebraic);
       if (this.moves[this.moves.length - 1].isCheckmate) {
         this.result = this.moves[this.moves.length - 1].piece.color === PIECE_COLOR.WHITE ? GAME_RESULT.WHITE_WON : GAME_RESULT.BLACK_WON;
@@ -473,12 +474,9 @@ export const useBoardStore = defineStore({
           //Update move mark
           if (this.openingData.movesAlgebraic.includes(this.movesAlgebraic)) {
             this.moves[this.currentMoveIndex].mark = MOVE_MARK.BOOK;
-          } else if (this.moves.length > 1 && this.moves[this.currentMoveIndex - 1].bestNextMove) {
+          } else if (this.moves.length > 1 && this.currentMoveIndex && this.moves[this.currentMoveIndex - 1].bestNextMove) {
             const previousMove = this.moves[this.currentMoveIndex - 1].bestNextMove!;
             const evalDifference = Math.abs(this.variations[i].eval - previousMove.eval);
-
-            console.log(`this.variations[i].eval: ${this.variations[i].eval}`);
-            console.log(`this.moves[this.moves.length - 2].bestNextMove!.eval: ${this.moves[this.currentMoveIndex - 1].bestNextMove!.eval}`);
 
             if (previousMove.move.from == this.moves[this.currentMoveIndex].from && previousMove.move.to == this.moves[this.currentMoveIndex].to) {
               this.moves[this.currentMoveIndex].mark = MOVE_MARK.BEST_MOVE;
@@ -556,12 +554,8 @@ export const useBoardStore = defineStore({
         this.setHighlightColor(w, color);
       }
     },
-    async generateReport() {
-      return new Promise(resolve => {
-        setTimeout(() => {
-          resolve('ok');
-        }, 5000);
-      });
+    generateReport() {
+      
     },
     toggleEvaluation() {
       this.options.visibility.evaluation = !this.options.visibility.evaluation;

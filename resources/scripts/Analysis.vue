@@ -18,13 +18,6 @@ const { generateReport } = boardStore;
 const { options, movesLength } = storeToRefs(boardStore);
 
 const activeKey = ref("analysis");
-const isLoading = ref(false);
-
-const handleButtonClick = async () => {
-    isLoading.value = true;
-    await generateReport();
-    isLoading.value = false;
-}
 </script>
 
 <template>
@@ -46,11 +39,11 @@ const handleButtonClick = async () => {
                             <EngineVariations v-if="options.visibility.variations" />
                             <OpeningCode />
                             <Movelist />
+                            <a-button type="dashed" @click="generateReport" block>Generate report</a-button>
                         </template>
                         <template v-else>
                             <Import />
                         </template>
-                        <!-- <a-button type="dashed" @click="handleButtonClick" :loading="isLoading">Generate report</a-button> -->
                     </a-space>
                 </a-tab-pane>
                 <a-tab-pane key="details">

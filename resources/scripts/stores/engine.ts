@@ -2,14 +2,13 @@ import { defineStore } from "pinia";
 import { useBoardStore } from "@/stores/board";
 import type { ENGINE } from '@/enums';
 
-const DEFAULT_DEPTH_STOCKFISH = 18;
+const DEFAULT_DEPTH_STOCKFISH = 20;
 const DEFAULT_DEPTH_LC0 = 18;
 
 let stockfish = new Worker('/build/stockfish11.js');
 
 stockfish.postMessage('uci');
 stockfish.postMessage('ucinewgame');
-stockfish.postMessage('setoption name MultiPV value 3');
 stockfish.postMessage('setoption name UCI_AnalyseMode value true');
 
 stockfish.addEventListener('message', function (e) {
@@ -21,7 +20,6 @@ stockfish.addEventListener('message', function (e) {
             const { depthString, seldepth, multipv, score, pv } = data.match(infoRegexp)!.groups!;
             const depth = parseInt(depthString);
 
-            console.log(data);
             const variationIndex = parseInt(multipv) - 1;
         
             const cp = parseInt(score.match(/\-?\d+/)![0]);
@@ -65,7 +63,8 @@ export const useEngineStore = defineStore({
             config: {
                 elo: 3000, //from 100 to 3000
                 depth: DEFAULT_DEPTH_STOCKFISH,
-                skill: 20 //from 0 to 20
+                skill: 20, //from 0 to 20
+                multipv: 3
             },
             working: false,
             active: false
@@ -74,7 +73,8 @@ export const useEngineStore = defineStore({
             config: {
                 elo: 300,
                 depth: DEFAULT_DEPTH_LC0,
-                skill: 20 //from 0 to 20
+                skill: 20, //from 0 to 20
+                multipv: 3
             },
             working: false,
             active: false
@@ -125,6 +125,7 @@ export const useEngineStore = defineStore({
             if (this[engine].config.skill < 20) {
                 stockfish.postMessage(`setoption name Skill Level value ${this[engine].config.skill}`);
             }
+            stockfish.postMessage(`setoption name MultiPV value ${this[engine].config.multipv}`);
             stockfish.postMessage(`position fen ${fen}`);
             stockfish.postMessage(`go depth ${this[engine].config.depth}`);
             stockfish.postMessage(`eval`);

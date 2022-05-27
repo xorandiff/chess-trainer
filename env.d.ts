@@ -77,7 +77,8 @@ type EngineResponse = {
 }
 
 interface EngineConfig {
-    depth: number
+    depth: number,
+    multipv: number
 }
 
 interface StockfishConfig extends EngineConfig {
