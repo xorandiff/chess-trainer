@@ -17,6 +17,7 @@ type Piece = {
     rank: number;
     file: number;
     legalMoves: number[];
+    captured: boolean;
 };
 
 type PiecePartial = Partial<Piece>;
@@ -25,6 +26,7 @@ type Pieces = Piece[];
 
 type Move = {
     piece: Piece;
+    capturedIndex: number;
     from: number;
     to: number;
     isCapture: boolean;

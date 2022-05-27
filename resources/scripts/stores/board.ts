@@ -97,7 +97,7 @@ export const useBoardStore = defineStore({
     movesLength: (state) => state.moves.length,
     movesReversed: (state) => state.moves.slice().reverse(),
     getPiece: (state) => {
-      return (index: number) : Piece | undefined => state.pieces.find(piece => piece.square === index);
+      return (index: number) : Piece | undefined => state.pieces.find(piece => !piece.captured && piece.square === index);
     },
     currentMove: (state) => state.currentMoveIndex ? state.moves[state.currentMoveIndex] : false
   },
@@ -314,10 +314,11 @@ export const useBoardStore = defineStore({
         }
 
         //Update last move
-        let move = {
+        let move: Move = {
           piece,
           from: v,
           to: w,
+          capturedIndex: occupyingPiece ? this.pieces.indexOf(occupyingPiece) : -1,
           isCapture: occupyingPiece !== undefined || isCapture ? true : false,
           isCheck,
           isCheckmate: false,
@@ -325,8 +326,9 @@ export const useBoardStore = defineStore({
           castlingSide,
           algebraicNotation: '',
           fen: '',
-          sound
-        } as Move;
+          sound,
+          mark: -1
+        };
 
         //Highlight last move
         this.board[v].highlight = true;
@@ -422,9 +424,18 @@ export const useBoardStore = defineStore({
       }
     },
     showMove(index: number) {
-      if (index >= 0 && index < this.moves.length) {
-        this.currentMoveIndex = index;
-        this.loadPosition(this.moves[index].fen);
+      if (index >= 0 && index < this.moves.length && index != this.currentMoveIndex) {
+        if (index < this.currentMoveIndex) {
+          while (this.currentMoveIndex > index) {
+            Chessboard.moveBackwards(this.pieces, this.moves, this.currentMoveIndex);
+            this.currentMoveIndex--;
+          }
+        } else {
+          while (this.currentMoveIndex < index) {
+            Chessboard.moveForwards(this.pieces, this.moves, this.currentMoveIndex);
+            this.currentMoveIndex++;
+          }
+        }
         this.stockfishRun(this.moves[index].fen);
         effects[this.moves[index].sound].play();
 

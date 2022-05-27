@@ -2,7 +2,6 @@ import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE } from '@/enums';
 import _ from 'lodash';
 import moment from 'moment';
 import eco from "./eco.json";
-import { message } from 'ant-design-vue';
 
 export default class Chessboard {
     /**
@@ -66,7 +65,7 @@ export default class Chessboard {
     public static p(pieces: Pieces, x: number | Square) {
         const v = Array.isArray(x) ? this.c2s(...x) : x;
 
-        return pieces.find(piece => piece.square === v);
+        return pieces.find(piece => !piece.captured && piece.square === v);
     }
 
     /**
@@ -186,7 +185,8 @@ export default class Chessboard {
                         square: this.c2s(i, j),
                         rank: i,
                         file: j,
-                        legalMoves: []
+                        legalMoves: [],
+                        captured: false
                     });
                 } else {
                     j += parseInt(c) - 1;
@@ -310,6 +310,9 @@ export default class Chessboard {
         const { type, color, square, rank, file, legalMoves } = piecePartial;
 
         filteredPieces = filteredPieces.filter(piece => {
+            if (piece.captured) {
+                return false;
+            }
             if (type !== undefined && piece.type !== type) {
                 return false;
             }
@@ -359,7 +362,7 @@ export default class Chessboard {
 
         let onSquare = '';
         if (type !== PIECE_TYPE.PAWN) {
-            let piecesOfType = pieces.filter(p => p.type === type);
+            let piecesOfType = pieces.filter(p => !p.captured && p.type === type);
 
             //We now check if there are at least two pieces of the same type
             if (piecesOfType.length > 1) {
@@ -432,7 +435,8 @@ export default class Chessboard {
                 square: 0,
                 rank: 0,
                 file: 0,
-                legalMoves: []
+                legalMoves: [],
+                captured: false
             };
 
             let fromAlgebraic = groups[2];
@@ -505,6 +509,7 @@ export default class Chessboard {
                 piece,
                 from: piece.square,
                 to,
+                capturedIndex: -1,
                 isCapture,
                 isCheck,
                 isCheckmate,
@@ -797,7 +802,10 @@ export default class Chessboard {
         if (v !== w) {
             const movingPiece = this.p(pieces, v);
             if (movingPiece) {
-                _.remove(pieces, piece => piece.square === w && piece.color !== movingPiece.color);
+                const capturedPieceIndex = _.findIndex(pieces, piece => piece.square === w && piece.color !== movingPiece.color);
+                if (capturedPieceIndex >= 0) {
+                    pieces[capturedPieceIndex].captured = true;
+                }
                 const index = pieces.indexOf(movingPiece);
                 const [r, f] = this.s2c(w);
                 pieces[index].square = w;
@@ -809,6 +817,7 @@ export default class Chessboard {
                         from: v,
                         to: w,
                         piece: movingPiece,
+                        capturedIndex: -1,
                         isCapture: false,
                         isCheck: false,
                         isCheckmate: false,
@@ -820,7 +829,9 @@ export default class Chessboard {
                         mark: -1
                     };
                     pieces.forEach(piece => {
-                        piece.legalMoves = this.computeLegalMoves(pieces, piece.square, castlingRights, lastMove);
+                        if (!piece.captured) {
+                            piece.legalMoves = this.computeLegalMoves(pieces, piece.square, castlingRights, lastMove);
+                        }
                     });
                 }
             }
@@ -1086,6 +1097,7 @@ export default class Chessboard {
                     piece,
                     from: v,
                     to: w,
+                    capturedIndex: occupiedDestination ? piecesCopy.indexOf(occupiedDestination) : -1,
                     isCapture: (occupiedDestination !== undefined && occupiedDestination.color === oppositeColor),
                     isCheck: false,
                     isCheckmate: false,
@@ -1142,5 +1154,39 @@ export default class Chessboard {
         }
         
         return openingData;
+    }
+
+    public static moveForwards(pieces: Pieces, moves: Move[], moveIndex: number) {
+        if (moveIndex < moves.length - 1) {
+            const piece = this.p(pieces, moves[moveIndex + 1].from);
+            if (piece) {
+                if (moves[moveIndex + 1].capturedIndex >= 0) {
+                    pieces[moves[moveIndex + 1].capturedIndex].captured = true;
+                }
+
+                const pieceIndex = pieces.indexOf(piece);
+                const [ rank, file ] = this.s2c(moves[moveIndex + 1].to);
+                pieces[pieceIndex].square = moves[moveIndex + 1].to;
+                pieces[pieceIndex].rank = rank;
+                pieces[pieceIndex].file = file;
+            }
+        }
+    }
+
+    public static moveBackwards(pieces: Pieces, moves: Move[], moveIndex: number) {
+        if (moveIndex > 0) {
+            const piece = this.p(pieces, moves[moveIndex].to);
+            if (piece) {
+                const pieceIndex = pieces.indexOf(piece);
+                const [ rank, file ] = this.s2c(moves[moveIndex].from);
+                pieces[pieceIndex].square = moves[moveIndex].from;
+                pieces[pieceIndex].rank = rank;
+                pieces[pieceIndex].file = file;
+
+                if (moves[moveIndex].capturedIndex >= 0) {
+                    pieces[moves[moveIndex].capturedIndex].captured = false;
+                }
+            }
+        }
     }
 }

@@ -205,6 +205,7 @@ body {
   background-position: center;
   pointer-events: none;
   z-index: 3;
+  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
 }
 
 .dragging {
