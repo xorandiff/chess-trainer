@@ -64,6 +64,8 @@ body {
     float: left;
     margin-left: 10px;
     user-select: none;
+    background: url('img/board/150.png');
+    background-size: contain;
   }
 
   #sidebar {
@@ -117,16 +119,12 @@ body {
 
 .row {
   .square:nth-of-type(even) {
-    background-color: $dark-square-color;
-
     .rankLabel, .fileLabel {
       color: $light-square-color;
     }
   }
 
   .square:nth-of-type(odd) {
-    background-color: $light-square-color;
-
     .rankLabel, .fileLabel {
       color: $dark-square-color;
     }
@@ -143,21 +141,17 @@ body {
 
 .row:nth-of-type(even) {
   .square:nth-of-type(even) {
-    background-color: $light-square-color;
-
     .rankLabel, .fileLabel {
       color: $dark-square-color;
     }
   }
 
   .square:nth-of-type(odd) {
-    background-color: $dark-square-color;
-
     .rankLabel, .fileLabel {
       color: $light-square-color;
     }
   }
-  
+
   .highlight:nth-of-type(even) {
     background-color: $light-square-active-color;
   }
@@ -171,11 +165,6 @@ body {
   border: $square-active-border-color solid 4px;
   position: absolute;
   opacity: 0.6;
-}
-
-.piece {
-  width: inherit;
-  height: inherit;
 }
 
 .square {
@@ -209,6 +198,8 @@ body {
 
 .piece {
   position: absolute;
+  top: 0;
+  left: 30px;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
