@@ -55,6 +55,13 @@ export const useBoardStore = defineStore({
       showFeedback: true,
       showVariations: true,
       showEvaluation: true,
+      options: {
+        visibility: {
+          evaluation: true,
+          variations: true,
+          feedback: false
+        }
+      },
       arrowFrom: -1,
       arrows: [] as Arrow[],
       fen,
@@ -184,6 +191,8 @@ export const useBoardStore = defineStore({
       if (this.result) {
         return;
       }
+
+      this.pieceMoveFromActive(v);
       
       for (let i = 1; i <= 8; i++) {
         for (let j = 1; j <= 8; j++) {
@@ -443,7 +452,7 @@ export const useBoardStore = defineStore({
       for (let i = 0; i < engine.response.variations.length; i++) {
         const { pv, score, mate } = engine.response.variations[i];
 
-        const evaluation = mate ? score : (score / 100); 
+        const evaluation = mate ? score : (score / 100);
 
         this.variations[i] = {
           moves: Chessboard.getVariationData(this.pieces, pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK]),
@@ -553,6 +562,15 @@ export const useBoardStore = defineStore({
           resolve('ok');
         }, 5000);
       });
+    },
+    toggleEvaluation() {
+      this.options.visibility.evaluation = !this.options.visibility.evaluation;
+    },
+    toggleVariations() {
+      this.options.visibility.variations = !this.options.visibility.variations;
+    },
+    toggleFeedback() {
+      this.options.visibility.feedback = !this.options.visibility.feedback;
     }
   },
 });

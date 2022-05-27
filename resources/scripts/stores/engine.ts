@@ -2,23 +2,31 @@ import { defineStore } from "pinia";
 import { useBoardStore } from "@/stores/board";
 import type { ENGINE } from '@/enums';
 
+const DEFAULT_DEPTH_STOCKFISH = 18;
+const DEFAULT_DEPTH_LC0 = 18;
+
 let stockfish = new Worker('/build/stockfish11.js');
 
+stockfish.postMessage('uci');
 stockfish.postMessage('ucinewgame');
 stockfish.postMessage('setoption name MultiPV value 3');
+stockfish.postMessage('setoption name UCI_AnalyseMode value true');
 
 stockfish.addEventListener('message', function (e) {
     if (e.data) {
         const data = e.data as string;
 
-        if (data.startsWith('info')) {
-            const infoRegexp = /depth\s+(?<depth>\d+)\s+seldepth\s+(?<seldepth>[\d]+)\s+multipv\s+(?<multipv>\d+)\s+score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;
-            const { depth, seldepth, multipv, score, pv } = data.match(infoRegexp)!.groups!;
+        if (data.startsWith(`info depth ${DEFAULT_DEPTH_STOCKFISH - 4}`) || data.startsWith(`info depth ${DEFAULT_DEPTH_STOCKFISH - 2}`) || data.startsWith(`info depth ${DEFAULT_DEPTH_STOCKFISH}`)) {
+            const infoRegexp = /depth\s+(?<depthString>\d+)\s+seldepth\s+(?<seldepth>[\d]+)\s+multipv\s+(?<multipv>\d+)\s+score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;
+            const { depthString, seldepth, multipv, score, pv } = data.match(infoRegexp)!.groups!;
+            const depth = parseInt(depthString);
+
+            console.log(data);
             const variationIndex = parseInt(multipv) - 1;
-            
+        
             const cp = parseInt(score.match(/\-?\d+/)![0]);
             
-            useEngineStore().response.depth = parseFloat(depth);
+            useEngineStore().response.depth = depth;
             useEngineStore().response.variations[variationIndex] = {
                 pv,
                 score: cp,
@@ -38,8 +46,7 @@ stockfish.addEventListener('message', function (e) {
                 }
             }
 
-            const boardStore = useBoardStore();
-            boardStore.stockfishDone();
+            useBoardStore().stockfishDone();
         }
     }
 });
@@ -57,7 +64,7 @@ export const useEngineStore = defineStore({
         stockfish: {
             config: {
                 elo: 3000, //from 100 to 3000
-                depth: 20,
+                depth: DEFAULT_DEPTH_STOCKFISH,
                 skill: 20 //from 0 to 20
             },
             working: false,
@@ -66,7 +73,7 @@ export const useEngineStore = defineStore({
         lc0: {
             config: {
                 elo: 300,
-                depth: 21,
+                depth: DEFAULT_DEPTH_LC0,
                 skill: 20 //from 0 to 20
             },
             working: false,
