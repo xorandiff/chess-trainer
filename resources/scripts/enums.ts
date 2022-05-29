@@ -53,3 +53,7 @@ export enum MOVE_MARK {
     BLUNDER,
     MISSED_WIN
 };
+
+export enum ERROR_TYPE {
+    PIECE_MISSING
+};

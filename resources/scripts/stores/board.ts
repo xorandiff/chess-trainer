@@ -162,16 +162,17 @@ export const useBoardStore = defineStore({
       this.fullmoves = fullmoves;
       this.pieces = pieces;
       this.moves = moves;
-      if (moves.length) {
-        this.fen = moves[moves.length - 1].fen;
-        this.stockfishRun();
-      }
       this.movesAlgebraic = pgn.slice(pgn.lastIndexOf(']') + 1).trim();
       this.openingData = Chessboard.getOpeningData(this.movesAlgebraic);
       if (this.moves[this.moves.length - 1].isCheckmate) {
         this.result = this.pieces[this.moves[this.moves.length - 1].pieceIndex].color === PIECE_COLOR.WHITE ? GAME_RESULT.WHITE_WON : GAME_RESULT.BLACK_WON;
       }
       this.currentMoveIndex = this.moves.length - 1;
+
+      if (moves.length) {
+        this.fen = moves[moves.length - 1].fen;
+        this.stockfishRun();
+      }
     },
     setHighlightColor(v: number, color: string) {
       if (!this.board[v].highlightColor || this.board[v].highlightColor !== color) {
@@ -433,10 +434,6 @@ export const useBoardStore = defineStore({
         }
       }
     },
-    loadPosition(fen: string) {
-      const { pieces } = Chessboard.create(fen);
-      this.pieces = [ ...pieces ];
-    },
     stockfishRun(fen?: string) {
       const engine = useEngineStore();
       this.engineWorking = true;
@@ -474,7 +471,11 @@ export const useBoardStore = defineStore({
               this.moves[this.currentMoveIndex].mark = MOVE_MARK.BOOK;
             } else if (this.moves.length > 1 && this.currentMoveIndex && this.moves[this.currentMoveIndex - 1].bestNextMove) {
               const previousMove = this.moves[this.currentMoveIndex - 1].bestNextMove!;
-              const evalDifference = Math.abs(this.variations[i].eval - previousMove.eval);
+
+              const previousEval = previousMove.mate ? previousMove.eval + 100 : previousMove.eval;
+              const currentEval = this.variations[i].mate ? this.variations[i].eval + 100 : this.variations[i].eval;
+
+              const evalDifference = Math.abs(currentEval - previousEval);
 
               if (previousMove.move.from == this.moves[this.currentMoveIndex].from && previousMove.move.to == this.moves[this.currentMoveIndex].to) {
                 this.moves[this.currentMoveIndex].mark = MOVE_MARK.BEST_MOVE;

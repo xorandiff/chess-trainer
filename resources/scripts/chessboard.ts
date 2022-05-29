@@ -1,4 +1,5 @@
-import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE } from '@/enums';
+import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE, ERROR_TYPE } from '@/enums';
+import Error from '@/errors';
 import _ from 'lodash';
 import moment from 'moment';
 import eco from "./eco.json";
@@ -86,7 +87,7 @@ export default class Chessboard {
         //TODO load en passant target square
         //let enPassantTargetSquare = fields[3];
 
-        if (fenOrPgn !== undefined && !fenOrPgn.includes('[')) {
+        if (fenOrPgn && !fenOrPgn.includes('[')) {
             fen = fenOrPgn;
 
             const fields = fen.split(' ');
@@ -111,7 +112,7 @@ export default class Chessboard {
         let pieces = this.fenToPieces(fen, castlingRights[PIECE_COLOR.WHITE], {} as Move);
         let moves: Move[] = [];
 
-        if (fenOrPgn !== undefined && fenOrPgn.includes('[')) {
+        if (fenOrPgn && fenOrPgn.includes('[')) {
             //PGN
             const pgnMoves = fenOrPgn.slice(fenOrPgn.lastIndexOf(']') + 1).trim();
 
@@ -509,7 +510,7 @@ export default class Chessboard {
                 pieceIndex,
                 from: pieces[pieceIndex].square,
                 to,
-                capturedIndex: _.findIndex(pieces, piece => piece.square == to),
+                capturedIndex: _.findIndex(pieces, piece => !piece.captured && piece.color != color && piece.square == to),
                 isCheck,
                 isCheckmate,
                 castlingSide,
@@ -714,7 +715,8 @@ export default class Chessboard {
      */
     public static detectCheck(pieces: Pieces, color: PIECE_COLOR) {
         const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-        if (this.isSquareAttacked(pieces, oppositeColor, this.getKingSquare(pieces, color))) {
+        const kingSquare = this.getKingSquare(pieces, color);
+        if (kingSquare && this.isSquareAttacked(pieces, oppositeColor, kingSquare)) {
             return true;
         } else {
             return false;
@@ -743,11 +745,19 @@ export default class Chessboard {
      * @param color 
      * @returns 
      */
-    private static getKingSquare(pieces: Pieces, color: PIECE_COLOR) : Square {
-        const filteredPieces = this.getFilteredPieces(pieces, { color, type: PIECE_TYPE.KING });
-        const [rank, file] = this.s2c(filteredPieces[0].square);
+    private static getKingSquare(pieces: Pieces, color: PIECE_COLOR) : Square | undefined {
+        try {
+            const filteredPieces = this.getFilteredPieces(pieces, { color, type: PIECE_TYPE.KING });
 
-        return [rank, file];
+            if (!filteredPieces) {
+                throw ERROR_TYPE.PIECE_MISSING;
+            }
+
+            const [rank, file] = this.s2c(filteredPieces[0].square);
+            return [rank, file];
+        } catch (errorType) {
+            Error.showMessage(errorType);
+        }
     }
 
     /**
@@ -780,7 +790,8 @@ export default class Chessboard {
 
             this.makeMove(piecesCopy, v, p);
 
-            if (!this.isSquareAttacked(piecesCopy, oppositeColor, this.getKingSquare(piecesCopy, color))) {
+            const kingSquare = this.getKingSquare(piecesCopy, color);
+            if (kingSquare && !this.isSquareAttacked(piecesCopy, oppositeColor, kingSquare)) {
                 legalMoves.push(p);
             }
         }
