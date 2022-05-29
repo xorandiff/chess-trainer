@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { useBoardStore } from "@/stores/board";
 import type { ENGINE } from '@/enums';
 
-const DEFAULT_DEPTH_STOCKFISH = 20;
+const DEFAULT_DEPTH_STOCKFISH = 16;
 const DEFAULT_DEPTH_LC0 = 18;
 
 let stockfish = new Worker('/build/stockfish11.js');

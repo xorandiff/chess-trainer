@@ -42,16 +42,16 @@ const labelStyleBlack = {
             </template>
             <a-spin :spinning="engineWorking">
                 <a-space>
-                    <template v-if="variation.moves[0].piece.color === PIECE_COLOR.BLACK">
+                    <template v-if="variation.moves[0] && variation.pieces[variation.moves[0].pieceIndex].color === PIECE_COLOR.BLACK">
                         {{ Math.floor(movesLength / 2) + 1 }}... 
                     </template>
                     <template v-for="(move, index) in variation.moves">
-                        <template v-if="move.piece.color === PIECE_COLOR.WHITE">
+                        <template v-if="variation.pieces[move.pieceIndex].color === PIECE_COLOR.WHITE">
                             {{ Math.floor((movesLength + index) / 2) + 1 }}. 
                         </template>
-                        <a-button class="moveButton" type="text" :style="{ marginLeft: move.piece.color === PIECE_COLOR.BLACK ? '-7px': '0' }">
-                            <template #icon v-if="move.piece.type !== PIECE_TYPE.PAWN">
-                                <span :class="`chessFont f-${move.piece.type}${move.piece.color}`"></span>
+                        <a-button class="moveButton" type="text" :style="{ marginLeft: variation.pieces[move.pieceIndex].color === PIECE_COLOR.BLACK ? '-7px': '0' }">
+                            <template #icon v-if="variation.pieces[move.pieceIndex].type !== PIECE_TYPE.PAWN">
+                                <span :class="`chessFont f-${variation.pieces[move.pieceIndex].type}${variation.pieces[move.pieceIndex].color}`"></span>
                             </template>
                             {{ move.algebraicNotation }}
                         </a-button>

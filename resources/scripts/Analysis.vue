@@ -21,19 +21,19 @@ const activeKey = ref("analysis");
 </script>
 
 <template>
-    <a-row>
+    <a-row :gutter="10" wrap>
         <a-col>
             <Chessboard />
         </a-col>
-        <a-col>
-            <a-tabs v-model:activeKey="activeKey" :style="{ width: '500px' }">
+        <a-col id="analysisColumn">
+            <a-tabs v-model:activeKey="activeKey">
                 <a-tab-pane key="analysis">
                     <template #tab>
                         <span>
                             Analysis
                         </span>
                     </template>
-                    <a-space direction="vertical" :style="{ width: '100%' }">
+                    <a-space direction="vertical">
                         <template v-if="movesLength">
                             <MoveMark v-if="options.visibility.feedback" />
                             <EngineVariations v-if="options.visibility.variations" />

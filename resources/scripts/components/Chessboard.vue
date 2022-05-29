@@ -8,34 +8,32 @@ import BoardPiece from "./BoardPiece.vue";
 import BoardSquare from "./BoardSquare.vue";
 import Eval from "./Eval.vue";
 
-const boardSizeMax = window.screen.height - 200;
-const boardSizeMin = 300;
-
-const boardSize = ref<number>(boardSizeMax);
+const boardScale = ref<number>(1);
 const isMouseDown = ref<boolean>(false);
 const flipped = ref<boolean>(false);
 
-const squareSize = computed<number>(() => boardSize.value / 8);
-const labelFontSize = computed<number>(() => boardSize.value * 0.027);
+const pieceLeft = ref(0);
+const pieceTop = ref(0);
+
 const indexArray = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
 
-const boardSizeStyle = computed(() => {
-  return { width: `${boardSize.value}px`, height: `${boardSize.value}px` };
-});
-
 const store = useBoardStore();
-const { showEvaluation, currentMoveIndex, arrows, pieces, promotionModalVisible } = storeToRefs(store);
+const { showEvaluation, currentMoveIndex, arrows, pieces, promotionModalVisible, dragging } = storeToRefs(store);
 const { pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
 
 function handleMousemove(event: MouseEvent) {
+  pieceLeft.value = event.pageX - 55;
+  pieceTop.value = event.pageY - 55;
+
   if (isMouseDown.value) {
-    if (boardSize.value >= boardSizeMin && boardSize.value <= boardSizeMax) {
-      if (boardSize.value + event.movementY > boardSizeMax) {
-        boardSize.value = boardSizeMax;
-      } else if (boardSize.value + event.movementY < boardSizeMin) {
-        boardSize.value = boardSizeMin;
+    if (boardScale.value >= 0.5 && boardScale.value <= 1) {
+      const d = event.movementY / 300;
+      if (boardScale.value + d > 1) {
+        boardScale.value = 1;
+      } else if (boardScale.value + d < 0.5) {
+        boardScale.value = 0.5;
       } else {
-        boardSize.value += event.movementY;
+        boardScale.value += d;
       }
     }
   }
@@ -71,37 +69,39 @@ onUnmounted(() => {
 
 <template>
   <div id="chessboardContainer">
-    <Eval v-if="showEvaluation" :size="boardSize" />
-    <div id="chessboard" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights">
+    <Eval v-if="showEvaluation" />
+    <div id="chessboard" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights" :style="{ transform: `scale(${boardScale})` }">
+      <template v-for="piece in pieces">
+        <BoardPiece v-if="dragging === piece.square" :posLeft="pieceLeft" :posTop="pieceTop" :piece="piece" />
+        <BoardPiece v-else :piece="piece" />
+      </template>
 
-      <BoardPiece v-for="piece in pieces" :piece="piece" :size="squareSize" />
-
-      <svg id="arrows" :style="boardSizeStyle" viewBox="0 0 100 100">
+      <svg id="arrows" viewBox="0 0 100 100">
         <template v-for="arrow in arrows">
           <polygon :class="['arrow', arrow.color]" :transform="arrow.transform" :points="arrow.points"></polygon>
         </template>
       </svg>
 
       <div class="row" v-for="i in indexArray">
-        <BoardSquare v-for="j in indexArray" :size="squareSize" :index="i*10+j" :squareData="store.board[i*10+j]" />
+        <BoardSquare v-for="j in indexArray" :index="i*10+j" :squareData="store.board[i*10+j]" />
         <div class="endRow"></div>
       </div>
 
-      <div id="labels" :style="boardSizeStyle">
-        <div id="ranks" :style="{ width: `${squareSize}px`, height: `${boardSize}px` }">
-          <div v-for="rank in indexArray" :style="{ height: `${squareSize}px`, fontSize: `${labelFontSize}px` }">
+      <div id="labels">
+        <div id="ranks">
+          <div v-for="rank in indexArray">
             {{ 9 - rank }}
           </div>
         </div>
-        <div id="files" :style="{ width: `${boardSize}px` }">
-          <div v-for="file in indexArray" :style="{ width: `${squareSize}px`, fontSize: `${labelFontSize}px`, left: `${squareSize * (flipped ? (9 - file - 1) : (file - 1))}px` }">
+        <div id="files">
+          <div v-for="file in indexArray" :style="{ left: `${12.5 * (flipped ? (9 - file - 1) : (file - 1))}%` }">
             {{ String.fromCharCode('a'.charCodeAt(0) + file - 1) }}
           </div>
         </div>
       </div>
 
     </div>
-    <div id="sidebar" :style="{ height: `${boardSize}px` }">
+    <div id="sidebar">
       <div id="settings">
         <a-button size="small" type="dashed">
             <template #icon>

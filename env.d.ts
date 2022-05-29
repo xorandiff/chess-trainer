@@ -25,11 +25,10 @@ type PiecePartial = Partial<Piece>;
 type Pieces = Piece[];
 
 type Move = {
-    piece: Piece;
+    pieceIndex: number;
     capturedIndex: number;
     from: number;
     to: number;
-    isCapture: boolean;
     isCheck: boolean;
     isCheckmate: boolean;
     castlingSide: boolean | "k" | "q";
@@ -92,6 +91,7 @@ type StockfishConfigPartial = Partial<StockfishConfig>;
 
 type Variation = {
     moves: Move[];
+    pieces: Pieces;
     eval: number;
     mate: boolean;
 }

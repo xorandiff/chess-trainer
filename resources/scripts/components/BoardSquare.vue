@@ -3,10 +3,9 @@ import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useBoardStore } from "@/stores/board";
 
-const props = defineProps<{
+defineProps<{
   index: number;
   squareData: SquareData;
-  size: number;
 }>();
 
 const highlight = ref(false);
@@ -19,7 +18,7 @@ const { dragging, getPiece } = storeToRefs(store);
   <div 
     class="square"
     :class="{ highlight: squareData.active || squareData.highlight }"
-    :style="{ width: `${size}px`, height: `${size}px`, cursor: getPiece(index) ? 'grab' : 'default' }"
+    :style="{ cursor: getPiece(index) ? 'grab' : 'default' }"
     @mousedown.left="pieceMouseDown(index)"
     @mouseup.left="pieceMoveFromActive(index)"
     @mouseenter="highlight = dragging >= 11"
@@ -32,7 +31,7 @@ const { dragging, getPiece } = storeToRefs(store);
     @mouseup.right.alt="setArrowTo(index, 'blue')"
   >
     <div v-if="squareData.highlightColor" :class="['highlight', squareData.highlightColor]"></div>
-    <div v-if="squareData.active || highlight" class="active" :style="{ width: `${size}px`, height: `${size}px` }"></div>
+    <div v-if="squareData.active || highlight" class="active"></div>
     <div v-if="squareData.legalMove" :class="getPiece(index) ? 'capture' : 'move'"></div>
   </div>
 </template>

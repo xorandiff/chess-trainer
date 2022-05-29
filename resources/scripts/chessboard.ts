@@ -313,19 +313,19 @@ export default class Chessboard {
             if (piece.captured) {
                 return false;
             }
-            if (type !== undefined && piece.type !== type) {
+            if (type !== undefined && piece.type != type) {
                 return false;
             }
-            if (color !== undefined && piece.color !== color) {
+            if (color !== undefined && piece.color != color) {
                 return false;
             }
-            if (square !== undefined && piece.square !== square) {
+            if (square !== undefined && piece.square != square) {
                 return false;
             }
-            if (rank !== undefined && piece.rank !== rank) {
+            if (rank !== undefined && piece.rank != rank) {
                 return false;
             }
-            if (file !== undefined && piece.file !== file) {
+            if (file !== undefined && piece.file != file) {
                 return false;
             }
             if (legalMoves !== undefined) {
@@ -350,13 +350,13 @@ export default class Chessboard {
      * @returns 
      */
     public static moveToAlgebraic(move: Move, pieces: Pieces) : string {
-        const { type } = move.piece;
+        const { type } = pieces[move.pieceIndex];
 
         let pieceString = '';
-        if (!move.isCapture && (type === PIECE_TYPE.PAWN || move.promotionType)) {
+        if (move.capturedIndex == -1 && (type === PIECE_TYPE.PAWN || move.promotionType)) {
             pieceString = '';
         }
-        if (move.isCapture && (type === PIECE_TYPE.PAWN || move.promotionType)) {
+        if (move.capturedIndex >= 0 && (type === PIECE_TYPE.PAWN || move.promotionType)) {
             pieceString = this.s2a(move.from)[0];
         }
 
@@ -367,7 +367,7 @@ export default class Chessboard {
             //We now check if there are at least two pieces of the same type
             if (piecesOfType.length > 1) {
                 //We exclude our current piece from this list
-                piecesOfType = piecesOfType.filter(p => p.square != move.piece.square);
+                piecesOfType = piecesOfType.filter(p => p.square != pieces[move.pieceIndex].square);
 
                 //We left only pieces which can go to the same square
                 piecesOfType = piecesOfType.filter(piece => piece.legalMoves.find(square => square === move.to));
@@ -396,7 +396,7 @@ export default class Chessboard {
             }
         }
 
-        let captureString = move.isCapture ? 'x' : '';
+        let captureString = move.capturedIndex >= 0 ? 'x' : '';
 
         let moveString = `${pieceString}${onSquare}${captureString}${this.s2a(move.to)}`;
 
@@ -429,25 +429,18 @@ export default class Chessboard {
         if (groups) {
             let fen = '';
             let sound = SOUND_TYPE.MOVE_SELF;
-            let piece: Piece = {
-                type: groups[1] !== undefined ? groups[1].toLowerCase() as PIECE_TYPE : PIECE_TYPE.PAWN,
-                color,
-                square: 0,
-                rank: 0,
-                file: 0,
-                legalMoves: [],
-                captured: false
-            };
+            let pieceIndex = -1;
 
+            let pieceType = groups[1] !== undefined ? groups[1].toLowerCase() as PIECE_TYPE : PIECE_TYPE.PAWN;
             let fromAlgebraic = groups[2];
-            const isCapture = groups[3] !== undefined;
-
             let toAlgebraic = groups[4];
+            const isCapture = groups[3] !== undefined;
             const promotionType = groups[5] !== undefined ? groups[5][1].toLowerCase() as PIECE_TYPE : false;
+
             let castlingSide: boolean | CASTLING_SIDE = false;
             if (groups[6]) {
                 castlingSide = groups[6] == 'O-O' ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
-                piece.type = PIECE_TYPE.KING;
+                pieceType = PIECE_TYPE.KING;
                 sound = SOUND_TYPE.CASTLE;
 
                 if (color === PIECE_COLOR.WHITE) {
@@ -473,26 +466,31 @@ export default class Chessboard {
                 toAlgebraic = fromAlgebraic;
                 fromAlgebraic = '';
             }
-            
-            if (fromAlgebraic) {
-                if (fromAlgebraic.length === 2) {
-                    piece = this.p(pieces, this.a2s(fromAlgebraic))!;
-                } else {
-                    if (fromAlgebraic.charCodeAt(0) >= '1'.charCodeAt(0) && fromAlgebraic.charCodeAt(0) <= '8'.charCodeAt(0)) {
-                        piece = this.getFilteredPieces(pieces, { rank: 9 - parseInt(fromAlgebraic), color, type: piece.type })![0];
-                    } else {
-                        piece = this.getFilteredPieces(pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color, type: piece.type })![0];
-                    }
-                }
-            }
 
             if (toAlgebraic) {
                 to = this.a2s(toAlgebraic);
 
-                if (!piece.square) {
+                if (fromAlgebraic) {
+                    if (fromAlgebraic.length === 2) {
+                        pieceIndex = _.findIndex(pieces, piece => piece.square == this.a2s(fromAlgebraic));
+                    } else {
+                        let filteredPieces: Piece[] = [];
+                        if (fromAlgebraic.charCodeAt(0) >= '1'.charCodeAt(0) && fromAlgebraic.charCodeAt(0) <= '8'.charCodeAt(0)) {
+                            filteredPieces = this.getFilteredPieces(pieces, { rank: 9 - parseInt(fromAlgebraic), color, type: pieceType });
+                        } else {
+                            filteredPieces = this.getFilteredPieces(pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color, type: pieceType });
+                        }
+                        
+                        if (filteredPieces) {
+                            pieceIndex = _.findIndex(pieces, piece => piece.square == filteredPieces[0].square);
+                        }
+                    }
+                }
+
+                if (pieceIndex == -1) {
                     let pieceFilters: Partial<Piece> = {
                         color,
-                        type: piece.type 
+                        type: pieceType 
                     };
                     if (!castlingSide) {
                         pieceFilters.legalMoves = [to];
@@ -500,17 +498,18 @@ export default class Chessboard {
                     const matchingPieces = this.getFilteredPieces(pieces, pieceFilters);
 
                     if (matchingPieces.length > 0) {
-                        piece = matchingPieces[0];
+                        pieceIndex = pieces.indexOf(matchingPieces[0]);
                     }
                 }
+            } else {
+                //Parsing algebraic move failed
             }
 
             return ({
-                piece,
-                from: piece.square,
+                pieceIndex,
+                from: pieces[pieceIndex].square,
                 to,
-                capturedIndex: -1,
-                isCapture,
+                capturedIndex: _.findIndex(pieces, piece => piece.square == to),
                 isCheck,
                 isCheckmate,
                 castlingSide,
@@ -578,8 +577,8 @@ export default class Chessboard {
         }
 
         let enPassantTargetSquare = '-';
-        if (lastMove.piece.type === PIECE_TYPE.PAWN && Math.abs(this.s2c(lastMove.from)[0] - this.s2c(lastMove.to)[0]) === 2) {
-            const d = lastMove.piece.color === PIECE_COLOR.WHITE ? 1 : -1;
+        if (pieces[lastMove.pieceIndex].type === PIECE_TYPE.PAWN && Math.abs(this.s2c(lastMove.from)[0] - this.s2c(lastMove.to)[0]) === 2) {
+            const d = pieces[lastMove.pieceIndex].color === PIECE_COLOR.WHITE ? 1 : -1;
             enPassantTargetSquare = this.s2a(lastMove.to);
         }
 
@@ -591,15 +590,16 @@ export default class Chessboard {
     /**
      * Method for converting move history to PGN string
      * 
+     * @param pieces
      * @param moves 
      * @returns 
      */
-    public static getPGN(moves: Move[]) : string {
+    public static getPGN(pieces: Pieces, moves: Move[]) : string {
         let pgn = `[Site "Chess Trainer"]\n[Date "${moment().format('YYYY.MM.DD')}"]\n\n`;
 
         for (let i = 0; i < moves.length; i++) {
-            const pieceType = moves[i].piece.type === PIECE_TYPE.PAWN ? '' : moves[i].piece.type.toUpperCase();
-            if (moves[i].piece.color === PIECE_COLOR.WHITE) {
+            const pieceType = pieces[moves[i].pieceIndex].type === PIECE_TYPE.PAWN ? '' : pieces[moves[i].pieceIndex].type.toUpperCase();
+            if (pieces[moves[i].pieceIndex].color === PIECE_COLOR.WHITE) {
                 pgn += `${Math.floor(i / 2) + 1}. ${pieceType}${moves[i].algebraicNotation} `;
             } else {
                 pgn += `${pieceType}${moves[i].algebraicNotation} `;
@@ -800,25 +800,23 @@ export default class Chessboard {
         const w = Array.isArray(y) ? this.c2s(...y) : y;
 
         if (v !== w) {
-            const movingPiece = this.p(pieces, v);
-            if (movingPiece) {
-                const capturedPieceIndex = _.findIndex(pieces, piece => piece.square === w && piece.color !== movingPiece.color);
-                if (capturedPieceIndex >= 0) {
-                    pieces[capturedPieceIndex].captured = true;
+            const pieceIndex = _.findIndex(pieces, piece => !piece.captured && piece.square === v);
+            if (pieceIndex >= 0) {
+                const capturedIndex = _.findIndex(pieces, piece => piece.square === w && piece.color !== pieces[pieceIndex].color);
+                if (capturedIndex >= 0) {
+                    pieces[capturedIndex].captured = true;
                 }
-                const index = pieces.indexOf(movingPiece);
                 const [r, f] = this.s2c(w);
-                pieces[index].square = w;
-                pieces[index].rank = r;
-                pieces[index].file = f;
+                pieces[pieceIndex].square = w;
+                pieces[pieceIndex].rank = r;
+                pieces[pieceIndex].file = f;
 
                 if (castlingRights) {
                     const lastMove: Move = {
+                        pieceIndex,
                         from: v,
                         to: w,
-                        piece: movingPiece,
-                        capturedIndex: -1,
-                        isCapture: false,
+                        capturedIndex,
                         isCheck: false,
                         isCheckmate: false,
                         castlingSide: false,
@@ -888,7 +886,7 @@ export default class Chessboard {
                 const fromRank = isWhite ? 2 : 7;
                 const toRank = isWhite ? 4 : 5;
 
-                if (i === toRank && lastMove.piece &&  lastMove.piece.type === PIECE_TYPE.PAWN && lastMove.piece.color === oppositeColor) {
+                if (i === toRank && lastMove.pieceIndex && pieces[lastMove.pieceIndex].type === PIECE_TYPE.PAWN && pieces[lastMove.pieceIndex].color === oppositeColor) {
                     const fx = this.s2c(lastMove.from)[0];
                     const [tx, ty] = this.s2c(lastMove.to);
                     if (fx === fromRank && tx === toRank && (ty === j + 1 || ty === j - 1)) {
@@ -1075,7 +1073,7 @@ export default class Chessboard {
      * @param variation 
      * @returns 
      */
-    public static getVariationData(pieces: Pieces, variation: string, castlingRightsWhite: CASTLING_SIDE[], castlingRightsBlack: CASTLING_SIDE[]) : Move[] {
+    public static getVariationData(pieces: Pieces, variation: string, castlingRightsWhite: CASTLING_SIDE[], castlingRightsBlack: CASTLING_SIDE[]) {
         let piecesCopy: Pieces = JSON.parse(JSON.stringify(pieces));
 
         const algebraicMoves = variation.split(' ');
@@ -1087,18 +1085,17 @@ export default class Chessboard {
             const v = this.a2s(algebraicFrom);
             const w = this.a2s(algebraicTo);
             
-            const piece = this.p(piecesCopy, v);
+            const pieceIndex = _.findIndex(piecesCopy, piece => !piece.captured && piece.square == v);
 
-            if (piece) {
-                const oppositeColor = piece.color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-                const occupiedDestination = this.p(piecesCopy, w);
+            if (pieceIndex >= 0) {
+                const oppositeColor = piecesCopy[pieceIndex].color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+                const capturedIndex = _.findIndex(piecesCopy, piece => !piece.captured && piece.square == w);
 
                 let move: Move = {
-                    piece,
+                    pieceIndex,
                     from: v,
                     to: w,
-                    capturedIndex: occupiedDestination ? piecesCopy.indexOf(occupiedDestination) : -1,
-                    isCapture: (occupiedDestination !== undefined && occupiedDestination.color === oppositeColor),
+                    capturedIndex,
                     isCheck: false,
                     isCheckmate: false,
                     castlingSide: false,
@@ -1109,7 +1106,7 @@ export default class Chessboard {
                     mark: -1
                 };
 
-                if (piece.color == PIECE_COLOR.WHITE) {
+                if (piecesCopy[pieceIndex].color == PIECE_COLOR.WHITE) {
                     this.makeMove(piecesCopy, v, w, castlingRightsWhite);
                     castlingRightsWhite = this.updateCastlingRights(piecesCopy, PIECE_COLOR.WHITE, castlingRightsWhite);
                 } else {
@@ -1128,7 +1125,10 @@ export default class Chessboard {
             }
         }
 
-        return variationData.splice(0, 8);
+        return ({
+            moves: variationData.splice(0, 8),
+            pieces: piecesCopy
+        });
     }
 
     /**
@@ -1156,28 +1156,53 @@ export default class Chessboard {
         return openingData;
     }
 
+    /**
+     * Updates pieces structure in accordance with one move
+     * forwards
+     * 
+     * @param pieces 
+     * @param moves 
+     * @param moveIndex 
+     */
     public static moveForwards(pieces: Pieces, moves: Move[], moveIndex: number) {
         if (moveIndex < moves.length - 1) {
-            const piece = this.p(pieces, moves[moveIndex + 1].from);
-            if (piece) {
+            const pieceIndex = moves[moveIndex + 1].pieceIndex;
+            if (pieceIndex >= 0) {
                 if (moves[moveIndex + 1].capturedIndex >= 0) {
                     pieces[moves[moveIndex + 1].capturedIndex].captured = true;
                 }
 
-                const pieceIndex = pieces.indexOf(piece);
                 const [ rank, file ] = this.s2c(moves[moveIndex + 1].to);
                 pieces[pieceIndex].square = moves[moveIndex + 1].to;
                 pieces[pieceIndex].rank = rank;
                 pieces[pieceIndex].file = file;
+
+                if (moves[moveIndex + 1].castlingSide) {
+                    const rookFileFrom = moves[moveIndex + 1].castlingSide == CASTLING_SIDE.KINGSIDE ? 8 : 1;
+                    const rookFileTo = moves[moveIndex + 1].castlingSide == CASTLING_SIDE.KINGSIDE ? 6 : 4;
+                    const rookIndex = _.findIndex(pieces, piece => !piece.captured && piece.type == PIECE_TYPE.ROOK && piece.rank == rank && piece.file == rookFileFrom);
+
+                    if (rookIndex >= 0) {
+                        pieces[rookIndex].square = this.c2s(rank, rookFileTo);
+                        pieces[rookIndex].file = rookFileTo;
+                    }
+                }
             }
         }
     }
 
+    /**
+     * Updates pieces structure in accordance with one move 
+     * backwards
+     * 
+     * @param pieces 
+     * @param moves 
+     * @param moveIndex 
+     */
     public static moveBackwards(pieces: Pieces, moves: Move[], moveIndex: number) {
         if (moveIndex > 0) {
-            const piece = this.p(pieces, moves[moveIndex].to);
-            if (piece) {
-                const pieceIndex = pieces.indexOf(piece);
+            const pieceIndex = moves[moveIndex].pieceIndex;
+            if (pieceIndex >= 0) {
                 const [ rank, file ] = this.s2c(moves[moveIndex].from);
                 pieces[pieceIndex].square = moves[moveIndex].from;
                 pieces[pieceIndex].rank = rank;
@@ -1185,6 +1210,17 @@ export default class Chessboard {
 
                 if (moves[moveIndex].capturedIndex >= 0) {
                     pieces[moves[moveIndex].capturedIndex].captured = false;
+                }
+
+                if (moves[moveIndex].castlingSide) {
+                    const rookFileFrom = moves[moveIndex].castlingSide == CASTLING_SIDE.KINGSIDE ? 6 : 4;
+                    const rookFileTo = moves[moveIndex].castlingSide == CASTLING_SIDE.KINGSIDE ? 8 : 1;
+                    const rookIndex = _.findIndex(pieces, piece => !piece.captured && piece.type == PIECE_TYPE.ROOK && piece.rank == rank && piece.file == rookFileFrom);
+
+                    if (rookIndex >= 0) {
+                        pieces[rookIndex].square = this.c2s(rank, rookFileTo);
+                        pieces[rookIndex].file = rookFileTo;
+                    }
                 }
             }
         }
