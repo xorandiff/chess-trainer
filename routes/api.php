@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/auth', AuthController::class);
+    //Route::get('/pgn/save', AuthController::class);
 });
 
 Route::post('/sanctum/token', TokenController::class);

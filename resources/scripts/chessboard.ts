@@ -1,4 +1,4 @@
-import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE, ERROR_TYPE } from '@/enums';
+import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE, MOVE_MARK, ERROR_TYPE } from '@/enums';
 import Error from '@/errors';
 import _ from 'lodash';
 import moment from 'moment';
@@ -1235,5 +1235,48 @@ export default class Chessboard {
                 }
             }
         }
+    }
+
+    /**
+     * Computes move feedback for given move
+     * 
+     * @param moves 
+     * @param movesAlgebraic 
+     * @param openingData 
+     * @param currentMoveIndex 
+     * @param variations 
+     * @returns 
+     */
+    public static getMoveFeedback(moves: Move[], movesAlgebraic: string, openingData: OpeningData, currentMoveIndex: number, variations: Variation[]) : MOVE_MARK {
+        if (openingData.movesAlgebraic.includes(movesAlgebraic)) {
+            return MOVE_MARK.BOOK;
+        } else if (moves.length > 1 && currentMoveIndex && moves[currentMoveIndex - 1].bestNextMove) {
+            const previousMove = moves[currentMoveIndex - 1].bestNextMove;
+
+            if (previousMove && previousMove.move) {
+                const previousEval = previousMove.mate ? previousMove.eval + 100 : previousMove.eval;
+                const currentEval = variations[0].mate ? variations[0].eval + 100 : variations[0].eval;
+
+                const evalDifference = Math.abs(currentEval - previousEval);
+
+                if (previousMove.move.from == moves[currentMoveIndex].from && previousMove.move.to == moves[currentMoveIndex].to) {
+                    return MOVE_MARK.BEST_MOVE;
+                } else if (evalDifference < 0.7) {
+                    return MOVE_MARK.EXCELLENT;
+                } else if (evalDifference < 1) {
+                    return MOVE_MARK.GOOD;
+                } else if (evalDifference < 1.5) {
+                    return MOVE_MARK.INACCURACY;
+                } else if (evalDifference < 2) {
+                    return MOVE_MARK.MISTAKE;
+                } else {
+                    return MOVE_MARK.BLUNDER;
+                }
+            } else {
+                console.log(`Error, moves[${currentMoveIndex - 1}].bestNextMove is undefined`);
+            }
+        }
+
+        return MOVE_MARK.NONE;
     }
 }

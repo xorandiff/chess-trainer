@@ -14,8 +14,8 @@ import PgnTags from "@/components/PgnTags.vue";
 import Import from "@/components/Import.vue";
 
 const boardStore = useBoardStore();
-const { generateReport } = boardStore;
-const { options, movesLength } = storeToRefs(boardStore);
+const { generateReport, saveAnalysis } = boardStore;
+const { options, movesLength, report } = storeToRefs(boardStore);
 
 const activeKey = ref("analysis");
 </script>
@@ -26,7 +26,7 @@ const activeKey = ref("analysis");
             <Chessboard />
         </a-col>
         <a-col id="analysisColumn">
-            <a-tabs v-model:activeKey="activeKey">
+            <a-tabs v-if="!report.generation.active" v-model:activeKey="activeKey">
                 <a-tab-pane key="analysis">
                     <template #tab>
                         <span>
@@ -39,6 +39,7 @@ const activeKey = ref("analysis");
                             <EngineVariations v-if="options.visibility.variations" />
                             <OpeningCode />
                             <Movelist />
+                            <a-button type="dashed" @click="saveAnalysis" block>Save</a-button>
                             <a-button type="dashed" @click="generateReport" block>Generate report</a-button>
                         </template>
                         <template v-else>
@@ -63,6 +64,14 @@ const activeKey = ref("analysis");
                     <BoardOptions />
                 </a-tab-pane>
             </a-tabs>
+            <a-row v-else type="flex" justify="space-around" align="middle" :style="{ height: '100%' }">
+                <a-col>
+                    <a-space direction="vertical" align="center" size="middle">
+                        <a-typography-title :level="3">Generating report...</a-typography-title>
+                        <a-progress type="circle" :percent="report.generation.progress" />
+                    </a-space>
+                </a-col>
+            </a-row>
         </a-col>
     </a-row>
 </template>

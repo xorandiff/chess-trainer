@@ -1,3 +1,4 @@
+import { message } from 'ant-design-vue';
 import Chessboard from "@/chessboard";
 import { useEngineStore } from "@/stores/engine";
 import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT, MOVE_MARK } from '@/enums';
@@ -55,6 +56,13 @@ export const useBoardStore = defineStore({
       showFeedback: true,
       showVariations: true,
       showEvaluation: true,
+      report: {
+        enabled: false,
+        generation: {
+          active: false,
+          progress: 0 //From 0 to 100, as percents
+        }
+      },
       options: {
         visibility: {
           evaluation: true,
@@ -364,9 +372,6 @@ export const useBoardStore = defineStore({
 
         //Update PGN
         this.pgn.value = Chessboard.getPGN(this.pieces, this.moves);
-
-        //Update algebraic move list
-        this.movesAlgebraic = this.pgn.value.slice(this.pgn.value.lastIndexOf(']') + 1).trim();
         
         //Update opening data
         this.openingData = Chessboard.getOpeningData(this.movesAlgebraic);
@@ -379,6 +384,13 @@ export const useBoardStore = defineStore({
         const isStalemate = !hasOpponentLegalMoves && !hasLegalMoves;
 
         move.algebraicNotation = Chessboard.moveToAlgebraic(move, this.pieces);
+
+        //Update algebraic move list
+        if (this.pieces[pieceIndex].color == PIECE_COLOR.WHITE) {
+          this.movesAlgebraic += `${Math.floor((this.currentMoveIndex + 1) / 2) + 1}. ${move.algebraicNotation}`;
+        } else {
+          this.movesAlgebraic += ` ${move.algebraicNotation}`;
+        }
 
         //Update move history
         this.moves.push(move);
@@ -423,7 +435,9 @@ export const useBoardStore = defineStore({
             this.currentMoveIndex++;
           }
         }
+        
         this.stockfishRun(this.moves[index].fen);
+
         effects[this.moves[index].sound].play();
 
         const v = this.moves[index].from;
@@ -438,6 +452,12 @@ export const useBoardStore = defineStore({
       const engine = useEngineStore();
       this.engineWorking = true;
       engine.run(ENGINE.STOCKFISH, fen ?? this.fen);
+    },
+    async stockfishRunAsync(fen?: string) {
+      const engine = useEngineStore();
+      return new Promise(resolve => {
+        engine.runAsync(resolve, ENGINE.STOCKFISH, fen ?? this.fen);
+      });
     },
     stockfishDone() {
       this.engineWorking = false;
@@ -456,7 +476,7 @@ export const useBoardStore = defineStore({
             mate
           };
 
-          if (this.moves.length > 0 && !i) {
+          if (!this.report.enabled && this.moves.length > 0 && !i) {
             const bestMove = {
               move: this.variations[i].moves[0],
               eval: this.variations[i].eval,
@@ -467,30 +487,9 @@ export const useBoardStore = defineStore({
             this.moves[this.currentMoveIndex].bestNextMove = bestMove;
 
             //Update move mark
-            if (this.openingData.movesAlgebraic.includes(this.movesAlgebraic)) {
-              this.moves[this.currentMoveIndex].mark = MOVE_MARK.BOOK;
-            } else if (this.moves.length > 1 && this.currentMoveIndex && this.moves[this.currentMoveIndex - 1].bestNextMove) {
-              const previousMove = this.moves[this.currentMoveIndex - 1].bestNextMove!;
-
-              const previousEval = previousMove.mate ? previousMove.eval + 100 : previousMove.eval;
-              const currentEval = this.variations[i].mate ? this.variations[i].eval + 100 : this.variations[i].eval;
-
-              const evalDifference = Math.abs(currentEval - previousEval);
-
-              if (previousMove.move.from == this.moves[this.currentMoveIndex].from && previousMove.move.to == this.moves[this.currentMoveIndex].to) {
-                this.moves[this.currentMoveIndex].mark = MOVE_MARK.BEST_MOVE;
-              } else if (evalDifference < 0.7) {
-                this.moves[this.currentMoveIndex].mark = MOVE_MARK.EXCELLENT;
-              } else if (evalDifference < 1) {
-                this.moves[this.currentMoveIndex].mark = MOVE_MARK.GOOD;
-              } else if (evalDifference < 1.5) {
-                this.moves[this.currentMoveIndex].mark = MOVE_MARK.INACCURACY;
-              } else if (evalDifference < 2) {
-                this.moves[this.currentMoveIndex].mark = MOVE_MARK.MISTAKE;
-              } else {
-                this.moves[this.currentMoveIndex].mark = MOVE_MARK.BLUNDER;
-              }
-            }
+            if (this.showFeedback) {
+              this.moves[this.currentMoveIndex].mark = Chessboard.getMoveFeedback(this.moves, this.movesAlgebraic, this.openingData, this.currentMoveIndex, this.variations);
+            } 
           }
         }
       }
@@ -554,8 +553,94 @@ export const useBoardStore = defineStore({
         this.setHighlightColor(w, color);
       }
     },
-    generateReport() {
-      
+    async generateReport() {
+      const engine = useEngineStore();
+
+      //Set report generation to true
+      this.report.generation.active = true;
+
+      //Store current Stockfish configuration
+      let stockfishConfig: StockfishConfig = engine.stockfish.config;
+
+      //Set Stockfish config for report generation
+      engine.setStockfishConfig({ depth: 16 });
+
+      //Prepare game data for report computations
+      let pieces: Pieces = JSON.parse(JSON.stringify(this.pieces));
+      let movesLength = this.moves.length;
+      let variations: Variation[] = [];
+      let movesAlgebraic = '';
+      let openingData: OpeningData = {
+        name: 'None',
+          eco: '',
+          fen: '',
+          movesAlgebraic: ''
+      };
+      let currentMoveIndex = this.currentMoveIndex;
+
+      //Set pieces structure as in first move
+      while (currentMoveIndex > 0) {
+        Chessboard.moveBackwards(pieces, this.moves, currentMoveIndex);
+        currentMoveIndex--;
+      }
+
+      //Do report computations for each move
+      for (let i = 0; i < movesLength; i++) {
+        const currentColor = pieces[this.moves[i].pieceIndex].color as PIECE_COLOR;
+        
+        this.report.generation.progress = Math.floor(i / movesLength * 100);
+
+        await this.stockfishRunAsync(this.moves[i].fen);
+
+        variations = [];
+
+        //Update algebraic move list
+        if (currentColor == PIECE_COLOR.WHITE) {
+          movesAlgebraic += `${Math.floor(i / 2) + 1}. ${this.moves[i].algebraicNotation}`;
+        } else {
+          movesAlgebraic += ` ${this.moves[i].algebraicNotation}`;
+        }
+
+        openingData = Chessboard.getOpeningData(movesAlgebraic);
+
+        for (let j = 0; j < engine.response.variations.length; j++) {
+          const { pv, score, mate } = engine.response.variations[j];
+          const evaluation = mate ? score : (score / 100);
+
+          variations[j] = {
+            ...Chessboard.getVariationData(pieces, pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK]),
+            eval: currentColor === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
+            mate
+          };
+
+          if (!j) {
+            this.moves[i].bestNextMove = {
+              move: variations[j].moves[0],
+              eval: variations[j].eval,
+              mate
+            };
+            this.moves[i].mark = Chessboard.getMoveFeedback(this.moves, movesAlgebraic, openingData, i, variations);
+          }
+        }
+
+        if (i < movesLength - 1) {
+          Chessboard.moveForwards(pieces, this.moves, i);
+        }
+      }
+      this.report.enabled = true;
+
+      this.pieces = pieces;
+      this.variations = variations;
+      this.movesAlgebraic = movesAlgebraic;
+      this.openingData = openingData;
+
+      //Restore Stockfish configuration
+      engine.setStockfishConfig(stockfishConfig);
+
+      this.options.visibility.feedback = true;
+      this.report.generation.active = false;
+
+      message.success('Report successfully generated');
     },
     toggleEvaluation() {
       this.options.visibility.evaluation = !this.options.visibility.evaluation;
@@ -565,6 +650,9 @@ export const useBoardStore = defineStore({
     },
     toggleFeedback() {
       this.options.visibility.feedback = !this.options.visibility.feedback;
+    },
+    saveAnalysis() {
+      
     }
   },
 });
