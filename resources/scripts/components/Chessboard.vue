@@ -18,23 +18,23 @@ const pieceTop = ref(0);
 const indexArray = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
 
 const store = useBoardStore();
-const { showEvaluation, currentMoveIndex, arrows, pieces, promotionModalVisible, dragging } = storeToRefs(store);
+const { showEvaluation, currentMoveIndex, arrows, pieces, promotionModalVisible, dragging, occupiedSquares } = storeToRefs(store);
 const { pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
 
 function handleMousemove(event: MouseEvent) {
   pieceLeft.value = event.pageX - 55;
   pieceTop.value = event.pageY - 55;
+}
 
-  if (isMouseDown.value) {
-    if (boardScale.value >= 0.5 && boardScale.value <= 1) {
-      const d = event.movementY / 300;
-      if (boardScale.value + d > 1) {
-        boardScale.value = 1;
-      } else if (boardScale.value + d < 0.5) {
-        boardScale.value = 0.5;
-      } else {
-        boardScale.value += d;
-      }
+function handleMouseMoveScale(event: MouseEvent) {
+  if (boardScale.value >= 0.5 && boardScale.value <= 1) {
+    const d = event.movementY / 300;
+    if (boardScale.value + d > 1) {
+      boardScale.value = 1;
+    } else if (boardScale.value + d < 0.5) {
+      boardScale.value = 0.5;
+    } else {
+      boardScale.value += d;
     }
   }
 }
@@ -51,7 +51,11 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 function handleMouseUp(event: MouseEvent) {
-  isMouseDown.value = false;
+  window.removeEventListener('mousemove', handleMouseMoveScale);
+}
+
+function handleMouseDown(event: MouseEvent) {
+  window.addEventListener('mousemove', handleMouseMoveScale);
 }
 
 onMounted(() => {
@@ -70,11 +74,8 @@ onUnmounted(() => {
 <template>
   <div id="chessboardContainer">
     <Eval v-if="showEvaluation" />
-    <div id="chessboard" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights" :style="{ transform: `scale(${boardScale})` }">
-      <template v-for="piece in pieces">
-        <BoardPiece v-if="dragging === piece.square" :posLeft="pieceLeft" :posTop="pieceTop" :piece="piece" />
-        <BoardPiece v-else :piece="piece" />
-      </template>
+    <div id="chessboard" :class="{ dragging: dragging }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights" :style="{ transform: `scale(${boardScale})` }">
+      <BoardPiece v-for="piece in pieces" :posLeft="dragging === piece.square ? pieceLeft : 0" :posTop="dragging === piece.square ? pieceTop : 0" :piece="piece" />
 
       <svg id="arrows" viewBox="0 0 100 100">
         <template v-for="arrow in arrows">
@@ -83,7 +84,7 @@ onUnmounted(() => {
       </svg>
 
       <div class="row" v-for="i in indexArray">
-        <BoardSquare v-for="j in indexArray" :index="i*10+j" :squareData="store.board[i*10+j]" />
+        <BoardSquare v-for="j in indexArray" :index="i*10+j" :squareData="store.board[i*10+j]" :occupied="occupiedSquares.includes(i*10+j)" />
         <div class="endRow"></div>
       </div>
 
@@ -118,7 +119,7 @@ onUnmounted(() => {
           </a-button>
         </div>
         <div id="resize">
-            <a-button size="small" type="dashed" @mousedown="isMouseDown = true">
+            <a-button size="small" type="dashed" @mousedown="handleMouseDown">
                 <template #icon>
                     <ExpandAltOutlined />
                 </template>

@@ -64,6 +64,13 @@ body {
       }
     }
   }
+  
+  .dragging {
+    .square:hover {
+      box-sizing: border-box;
+      border: $square-active-border-color solid 4px;
+    }
+  }
 
   #chessboard {
     width: calc(100vh - 100px);
@@ -222,6 +229,11 @@ body {
   pointer-events: none;
   z-index: 3;
   transition: transform 0.15s linear;
+}
+
+.piece.captured {
+  z-index: 2;
+  opacity: 0;
 }
 
 .move {

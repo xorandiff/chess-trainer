@@ -1,7 +1,7 @@
 import { message } from 'ant-design-vue';
 import Chessboard from "@/chessboard";
 import { useEngineStore } from "@/stores/engine";
-import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT, MOVE_MARK } from '@/enums';
+import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT } from '@/enums';
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
@@ -96,7 +96,7 @@ export const useBoardStore = defineStore({
         from: -1,
         to: -1
       },
-      dragging: -1,
+      dragging: 0,
       engineWorking: false
     });
   },
@@ -104,10 +104,8 @@ export const useBoardStore = defineStore({
     oppositeColor: (state) => state.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE,
     movesLength: (state) => state.moves.length,
     movesReversed: (state) => state.moves.slice().reverse(),
-    getPiece: (state) => {
-      return (index: number) : Piece | undefined => state.pieces.find(piece => !piece.captured && piece.square === index);
-    },
-    currentMove: (state) => state.currentMoveIndex ? state.moves[state.currentMoveIndex] : false
+    currentMove: (state) => state.currentMoveIndex ? state.moves[state.currentMoveIndex] : false,
+    occupiedSquares: (state) => state.pieces.map(piece => piece.square)
   },
   actions: {
     newGame(fen: string) {
@@ -219,7 +217,7 @@ export const useBoardStore = defineStore({
     },
     pieceMouseUp() {
       //Set non-existing dragging coordinates
-      this.dragging = -1;
+      this.dragging = 0;
     },
     clearHighlights() {
       for (let i = 11; i < 89; i++) {
@@ -596,6 +594,9 @@ export const useBoardStore = defineStore({
 
         //Update algebraic move list
         if (currentColor == PIECE_COLOR.WHITE) {
+          if (i > 0) {
+            movesAlgebraic += ` `;
+          }
           movesAlgebraic += `${Math.floor(i / 2) + 1}. ${this.moves[i].algebraicNotation}`;
         } else {
           movesAlgebraic += ` ${this.moves[i].algebraicNotation}`;
@@ -613,7 +614,7 @@ export const useBoardStore = defineStore({
             mate
           };
 
-          if (!j) {
+          if (j == 0) {
             this.moves[i].bestNextMove = {
               move: variations[j].moves[0],
               eval: variations[j].eval,
@@ -652,7 +653,7 @@ export const useBoardStore = defineStore({
       this.options.visibility.feedback = !this.options.visibility.feedback;
     },
     saveAnalysis() {
-      
+
     }
   },
 });
