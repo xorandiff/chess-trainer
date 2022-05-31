@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch, onMounted } from "vue";
+import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 
 import { useBoardStore } from "@/stores/board";
@@ -13,11 +14,29 @@ import BoardOptions from "@/components/BoardOptions.vue";
 import PgnTags from "@/components/PgnTags.vue";
 import Import from "@/components/Import.vue";
 
+const router = useRouter();
+const route = useRoute();
+
 const boardStore = useBoardStore();
-const { generateReport, saveAnalysis } = boardStore;
-const { options, movesLength, report } = storeToRefs(boardStore);
+const { generateReport, saveAnalysis, loadPGN, loadAnalysis } = boardStore;
+const { options, movesLength, report, gameId, pgn } = storeToRefs(boardStore);
 
 const activeKey = ref("analysis");
+
+const handleSaveAnalysis = async () => {
+    await saveAnalysis();
+    router.replace({ path: `/analysis/game/${gameId.value}` });
+};
+
+onMounted(async () => {
+    if (route.params.gameId) {
+        await loadAnalysis(route.params.gameId as string);
+    }
+});
+
+watch(() => route.params.gameId, async (gameId) => {
+    await loadAnalysis(gameId as string);
+});
 </script>
 
 <template>
@@ -39,7 +58,7 @@ const activeKey = ref("analysis");
                             <EngineVariations v-if="options.visibility.variations" />
                             <OpeningCode />
                             <Movelist />
-                            <a-button type="dashed" @click="saveAnalysis" block>Save</a-button>
+                            <a-button v-if="!route.params.gameId" type="dashed" @click="handleSaveAnalysis" block>Save</a-button>
                             <a-button type="dashed" @click="generateReport" block>Generate report</a-button>
                         </template>
                         <template v-else>

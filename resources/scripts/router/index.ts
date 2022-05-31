@@ -57,7 +57,13 @@ const routes = [
             {
                 name: 'analysis',
                 path: 'analysis',
-                component: Analysis
+                component: Analysis,
+                children: [
+                    {
+                        path: 'game/:gameId',
+                        component: Analysis
+                    }
+                ]
             }
         ]
     },

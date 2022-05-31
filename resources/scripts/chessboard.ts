@@ -1249,8 +1249,6 @@ export default class Chessboard {
      * @returns 
      */
     public static getMoveFeedback(moves: Move[], movesAlgebraic: string, openingData: OpeningData, currentMoveIndex: number, variations: Variation[]) : MOVE_MARK {
-        console.log(openingData);
-        console.log(movesAlgebraic);
         if (openingData.movesAlgebraic.includes(movesAlgebraic)) {
             return MOVE_MARK.BOOK;
         } else if (moves.length > 1 && currentMoveIndex && moves[currentMoveIndex - 1].bestNextMove) {

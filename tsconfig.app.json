@@ -4,6 +4,7 @@
   "exclude": ["resources/scripts/**/__tests__/*"],
   "compilerOptions": {
     "composite": true,
+    "lib": ["ES2021"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./resources/scripts/*"]

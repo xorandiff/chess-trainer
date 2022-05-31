@@ -1,6 +1,6 @@
 @font-face {
   font-family: "Chess";
-  src: url("./fonts/chessGlyphRegular.woff2") format("woff2");
+  src: url("/fonts/chessGlyphRegular.woff2") format("woff2");
 }
 
 /* ==========================================================================
@@ -78,7 +78,7 @@ body {
     float: left;
     margin-left: 10px;
     user-select: none;
-    background: url('img/board/150.png');
+    background: url('/img/board/150.png');
     background-size: contain;
   }
 
@@ -109,6 +109,8 @@ body {
     position: absolute;
     width: inherit;
     height: inherit;
+    left: 0;
+    top: 0;
     pointer-events: none;
     z-index: 4;
 
@@ -134,55 +136,9 @@ body {
   }
 }
 
-.row {
-  width: 100%;
-  height: 12.5%;
-  .square:nth-of-type(even) {
-    .rankLabel, .fileLabel {
-      color: $light-square-color;
-    }
-  }
-
-  .square:nth-of-type(odd) {
-    .rankLabel, .fileLabel {
-      color: $dark-square-color;
-    }
-  }
-
-  .highlight:nth-of-type(even) {
-    background-color: $dark-square-active-color;
-  }
-
-  .highlight:nth-of-type(odd) {
-    background-color: $light-square-active-color;
-  }
-}
-
-.row:nth-of-type(even) {
-  .square:nth-of-type(even) {
-    .rankLabel, .fileLabel {
-      color: $dark-square-color;
-    }
-  }
-
-  .square:nth-of-type(odd) {
-    .rankLabel, .fileLabel {
-      color: $light-square-color;
-    }
-  }
-
-  .highlight:nth-of-type(even) {
-    background-color: $light-square-active-color;
-  }
-
-  .highlight:nth-of-type(odd) {
-    background-color: $dark-square-active-color;
-  }
-}
-
 .square {
   width: 12.5%;
-  height: 100%;
+  height: 12.5%;
   position: relative;
   padding: 0;
   float: left;
@@ -266,27 +222,27 @@ body {
    ========================================================================== */
 
 .wr {
-  background-image: url('./img/pieces/wr.png');
+  background-image: url('/img/pieces/wr.png');
 }
 
 .wb {
-  background-image: url('./img/pieces/wb.png');
+  background-image: url('/img/pieces/wb.png');
 }
 
 .wn {
-  background-image: url('./img/pieces/wn.png');
+  background-image: url('/img/pieces/wn.png');
 }
 
 .wk {
-  background-image: url('./img/pieces/wk.png');
+  background-image: url('/img/pieces/wk.png');
 }
 
 .wq {
-  background-image: url('./img/pieces/wq.png');
+  background-image: url('/img/pieces/wq.png');
 }
 
 .wp {
-  background-image: url('./img/pieces/wp.png');
+  background-image: url('/img/pieces/wp.png');
 }
 
 
@@ -294,27 +250,27 @@ body {
    ========================================================================== */
 
 .br {
-  background-image: url('./img/pieces/br.png');
+  background-image: url('/img/pieces/br.png');
 }
 
 .bb {
-  background-image: url('./img/pieces/bb.png');
+  background-image: url('/img/pieces/bb.png');
 }
 
 .bn {
-  background-image: url('./img/pieces/bn.png');
+  background-image: url('/img/pieces/bn.png');
 }
 
 .bk {
-  background-image: url('./img/pieces/bk.png');
+  background-image: url('/img/pieces/bk.png');
 }
 
 .bq {
-  background-image: url('./img/pieces/bq.png');
+  background-image: url('/img/pieces/bq.png');
 }
 
 .bp {
-  background-image: url('./img/pieces/bp.png');
+  background-image: url('/img/pieces/bp.png');
 }
 
 /* Labels

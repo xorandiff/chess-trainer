@@ -4,7 +4,6 @@ import { ref } from 'vue';
 const visible = ref<boolean>(true);
 
 const handleOk = (e: MouseEvent) => {
-    console.log(e);
     visible.value = false;
 };
 </script>

@@ -5,6 +5,9 @@ import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
+import axios from "axios";
+
+axios.defaults.withCredentials = true;
 
 let effects : Howl[] = [];
 effects[SOUND_TYPE.MOVE_SELF] = new Howl({ src: ['sounds/move_self.mp3'], preload: true });
@@ -97,7 +100,8 @@ export const useBoardStore = defineStore({
         to: -1
       },
       dragging: 0,
-      engineWorking: false
+      engineWorking: false,
+      gameId: ''
     });
   },
   getters: {
@@ -138,6 +142,7 @@ export const useBoardStore = defineStore({
       this.fen = fen;
     },
     loadPGN(pgn: string) {
+      this.pgn.value = pgn;
       this.result = GAME_RESULT.IN_PROGRESS;
 
       for (const row of pgn.split("\n")) {
@@ -652,8 +657,29 @@ export const useBoardStore = defineStore({
     toggleFeedback() {
       this.options.visibility.feedback = !this.options.visibility.feedback;
     },
-    saveAnalysis() {
+    async saveAnalysis() {
+      try {
+        await axios.get('/sanctum/csrf-cookie');
+        const response = await axios.post('/api/games', { pgn: this.pgn.value });
 
+        const { id } = response.data.data;
+        
+        this.gameId = id;
+      } catch (error) {
+          console.log(error);
+      }               
+    },
+    async loadAnalysis(gameId: string) {
+      try {
+        await axios.get('/sanctum/csrf-cookie');
+        const response = await axios.get(`/api/games/${gameId}`);
+
+        const { pgn } = response.data.data;
+        
+        this.loadPGN(pgn);
+      } catch (error) {
+          console.log(error);
+      }               
     }
   },
 });

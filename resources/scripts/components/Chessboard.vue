@@ -9,13 +9,14 @@ import BoardSquare from "./BoardSquare.vue";
 import Eval from "./Eval.vue";
 
 const boardScale = ref<number>(1);
-const isMouseDown = ref<boolean>(false);
 const flipped = ref<boolean>(false);
 
 const pieceLeft = ref(0);
 const pieceTop = ref(0);
 
-const indexArray = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
+const orderedRow = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
+
+const indexArray = computed(() => orderedRow.value.map(row => orderedRow.value.map(file => row*10+file)).flat());
 
 const store = useBoardStore();
 const { showEvaluation, currentMoveIndex, arrows, pieces, promotionModalVisible, dragging, occupiedSquares } = storeToRefs(store);
@@ -74,28 +75,48 @@ onUnmounted(() => {
 <template>
   <div id="chessboardContainer">
     <Eval v-if="showEvaluation" />
-    <div id="chessboard" :class="{ dragging: dragging }" @mouseup.left="pieceMouseUp" @mousedown.left="clearColoredHighlights" :style="{ transform: `scale(${boardScale})` }">
-      <BoardPiece v-for="piece in pieces" :posLeft="dragging === piece.square ? pieceLeft : 0" :posTop="dragging === piece.square ? pieceTop : 0" :piece="piece" />
+    <div 
+      id="chessboard" 
+      :class="{ dragging: dragging }" 
+      @mouseup.left="pieceMouseUp" 
+      @mousedown.left="clearColoredHighlights" 
+      :style="{ transform: `scale(${boardScale})` }"
+    >
+      <BoardPiece 
+        v-for="(piece, i) in pieces" 
+        :key="i" 
+        :posLeft="dragging === piece.square ? pieceLeft : 0" 
+        :posTop="dragging === piece.square ? pieceTop : 0" 
+        :piece="piece" 
+      />
 
       <svg id="arrows" viewBox="0 0 100 100">
-        <template v-for="arrow in arrows">
-          <polygon :class="['arrow', arrow.color]" :transform="arrow.transform" :points="arrow.points"></polygon>
-        </template>
+        <polygon 
+          v-for="arrow in arrows" 
+          :class="['arrow', arrow.color]" 
+          :transform="arrow.transform" 
+          :points="arrow.points"
+        ></polygon>
       </svg>
 
-      <div class="row" v-for="i in indexArray">
-        <BoardSquare v-for="j in indexArray" :index="i*10+j" :squareData="store.board[i*10+j]" :occupied="occupiedSquares.includes(i*10+j)" />
-        <div class="endRow"></div>
-      </div>
+      <BoardSquare 
+        v-for="square in indexArray" 
+        :index="square" 
+        :squareData="store.board[square]" 
+        :occupied="occupiedSquares.includes(square)" 
+      />
 
       <div id="labels">
         <div id="ranks">
-          <div v-for="rank in indexArray">
+          <div v-for="rank in orderedRow">
             {{ 9 - rank }}
           </div>
         </div>
         <div id="files">
-          <div v-for="file in indexArray" :style="{ left: `${12.5 * (flipped ? (9 - file - 1) : (file - 1))}%` }">
+          <div 
+            v-for="file in orderedRow" 
+            :style="{ left: `${12.5 * (flipped ? (9 - file - 1) : (file - 1))}%` }"
+          >
             {{ String.fromCharCode('a'.charCodeAt(0) + file - 1) }}
           </div>
         </div>
