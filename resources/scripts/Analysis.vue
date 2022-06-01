@@ -18,8 +18,8 @@ const router = useRouter();
 const route = useRoute();
 
 const boardStore = useBoardStore();
-const { generateReport, saveAnalysis, loadPGN, loadAnalysis } = boardStore;
-const { options, movesLength, report, gameId, pgn } = storeToRefs(boardStore);
+const { generateReport, saveAnalysis, loadAnalysis } = boardStore;
+const { options, movesLength, report, gameId } = storeToRefs(boardStore);
 
 const activeKey = ref("analysis");
 
@@ -60,6 +60,7 @@ watch(() => route.params.gameId, async (gameId) => {
                             <Movelist />
                             <a-button v-if="!route.params.gameId" type="dashed" @click="handleSaveAnalysis" block>Save</a-button>
                             <a-button type="dashed" @click="generateReport" block>Generate report</a-button>
+                            <a-button type="dashed" @click="router.push({ name: 'saved-analysis' })" block>Saved analysis</a-button>
                         </template>
                         <template v-else>
                             <Import />

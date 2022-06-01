@@ -9,6 +9,7 @@ import Play from "@/Play.vue";
 import Puzzle from "@/Puzzle.vue";
 import BotSelection from "@/components/BotSelection.vue";
 import SurvivalSelection from "@/components/SurvivalSelection.vue";
+import SavedAnalysis from "@/pages/SavedAnalysis.vue";
 
 const routes = [
     {
@@ -64,6 +65,11 @@ const routes = [
                         component: Analysis
                     }
                 ]
+            },
+            {
+                name: 'saved-analysis',
+                path: 'analysis/saved',
+                component: SavedAnalysis
             }
         ]
     },

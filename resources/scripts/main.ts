@@ -10,13 +10,13 @@ app.use(createPinia());
 import { useAuthStore } from './stores/auth';
 
 router.beforeEach(async (to, from) => {
-    const authStore = useAuthStore();
-    const authorized = await authStore.isLoggedIn();
+    if (to.meta.requiresAuth) {
+        const authStore = useAuthStore();
+        const authorized = await authStore.isLoggedIn();
 
-    if (to.meta.requiresAuth && !authorized) {
-        return { name: 'login' };
-    } else if (to.name === 'login' && authorized) {
-        return { name: 'app' };
+        if (!authorized) {
+            return { name: 'login' };
+        }
     }
 });
 

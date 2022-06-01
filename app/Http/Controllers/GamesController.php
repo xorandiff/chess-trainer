@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ChessParser\PgnParser;
 use App\Http\Resources\GameResource;
 use App\Models\User;
 use App\Models\Game;
@@ -9,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
-class GameController extends Controller
+class GamesController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -20,7 +21,7 @@ class GameController extends Controller
     {
         $user = User::find(Auth::id());
 
-        return new GameResource($user->games);
+        return GameResource::collection($user->games->keyBy->id);
     }
 
     /**
@@ -33,9 +34,24 @@ class GameController extends Controller
     {
         $user = User::find(Auth::id());
 
+        $pgnParser = new PgnParser($request->pgn);
+
+        if (!$pgnParser->isValid()) {
+            return response()->json(['error' => 'Bad PGN format', 400]);
+        }
+
+        $pgnParser->parseTags();
+
         $game = $user->games()->create([
             'id' => (string) Str::uuid(),
-            'pgn' => $request->pgn
+            'pgn' => $request->pgn,
+            'event' => $pgnParser->event,
+            'site' => $pgnParser->site,
+            'date' => $pgnParser->date,
+            'round' => $pgnParser->round,
+            'white' => $pgnParser->white,
+            'black' => $pgnParser->black,
+            'result' => $pgnParser->result
         ]);
 
         return new GameResource($game);
@@ -67,9 +83,23 @@ class GameController extends Controller
     {
         $game->pgn = $request->pgn;
 
+        $pgnParser = new PgnParser($game->pgn);
+
+        if (!$pgnParser->isValid()) {
+            return response()->json(['error' => 'Bad PGN format', 400]);
+        }
+
+        $game->event = $pgnParser->event;
+        $game->site = $pgnParser->site;
+        $game->date = $pgnParser->date;
+        $game->round = $pgnParser->round;
+        $game->white = $pgnParser->white;
+        $game->black = $pgnParser->black;
+        $game->result = $pgnParser->result;
+
         $game->save();
 
-        return response()->json(['id' => $game->id]);
+        return new GameResource($game);
     }
 
     /**

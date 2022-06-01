@@ -101,7 +101,8 @@ export const useBoardStore = defineStore({
       },
       dragging: 0,
       engineWorking: false,
-      gameId: ''
+      gameId: '',
+      savedAnalysis: [] as any[]
     });
   },
   getters: {
@@ -677,6 +678,31 @@ export const useBoardStore = defineStore({
         const { pgn } = response.data.data;
         
         this.loadPGN(pgn);
+      } catch (error) {
+          console.log(error);
+      }               
+    },
+    async loadAnalysisList() {
+      try {
+        await axios.get('/sanctum/csrf-cookie');
+        const response = await axios.get('/api/games');
+
+        const analysisList = response.data.data;
+
+        this.savedAnalysis = [];
+        let i = 1;
+        for (const id in analysisList) {
+          this.savedAnalysis.push({
+            key: `${i}`,
+            id: analysisList[id]['id'],
+            white: analysisList[id]['white'],
+            black: analysisList[id]['black'],
+            site: analysisList[id]['site'],
+            event: analysisList[id]['event'],
+            date: analysisList[id]['date'],
+          });
+          i++;
+        }
       } catch (error) {
           console.log(error);
       }               

@@ -20,6 +20,13 @@ class Game extends Model
     protected $fillable = [
         'id',
         'pgn',
+        'event',
+        'site',
+        'date',
+        'round',
+        'white',
+        'black',
+        'result'
     ];
 
     public function user()

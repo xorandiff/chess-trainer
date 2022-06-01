@@ -4,13 +4,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\GameController;
+use App\Http\Controllers\GamesController;
 use Illuminate\Support\Facades\Auth;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/auth', AuthController::class);
     Route::apiResources([
-        '/games' => GameController::class,
+        '/games' => GamesController::class,
     ]);
 });
 
