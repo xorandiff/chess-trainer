@@ -670,13 +670,14 @@ export const useBoardStore = defineStore({
           console.log(error);
       }               
     },
-    async loadAnalysis(gameId: string) {
+    async loadAnalysis(gameId?: string) {
       try {
         await axios.get('/sanctum/csrf-cookie');
-        const response = await axios.get(`/api/games/${gameId}`);
+        const response = await axios.get(gameId ? `/api/games/${gameId}` : '/api/game');
 
-        const { pgn } = response.data.data;
+        const { id, pgn } = response.data.data;
         
+        this.gameId = id;
         this.loadPGN(pgn);
       } catch (error) {
           console.log(error);

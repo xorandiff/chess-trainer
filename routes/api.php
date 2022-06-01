@@ -12,6 +12,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResources([
         '/games' => GamesController::class,
     ]);
+    Route::get('/game', [GamesController::class, 'previous']);
 });
 
 Route::post('/sanctum/token', TokenController::class);

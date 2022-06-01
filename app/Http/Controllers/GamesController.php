@@ -58,7 +58,7 @@ class GamesController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified game.
      *
      * @param  \App\Models\Game  $game
      * @return \Illuminate\Http\Response
@@ -69,6 +69,23 @@ class GamesController extends Controller
             return new GameResource($game);
         } else {
             return response()->json(['error' => 'Unauthorized', 401]);
+        }
+    }
+
+    /**
+     * Display the most recent game.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function previous()
+    {
+        $user = User::find(Auth::id());
+
+        $game = $user->games->last();
+        if ($game) {
+            return new GameResource($game);
+        } else {
+            return response()->json();
         }
     }
 
@@ -112,6 +129,6 @@ class GamesController extends Controller
     {
         $game->delete();
 
-        return response()->json([]);
+        return response()->json();
     }
 }

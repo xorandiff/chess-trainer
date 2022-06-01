@@ -21,6 +21,13 @@ class PgnParser {
 
     public function __construct(string $pgn) {
         $this->pgn = $pgn;
+        $this->event = '';
+        $this->site = '';
+        $this->date = '';
+        $this->round = '';
+        $this->white = '';
+        $this->black = '';
+        $this->result = '';
     }
 
     public function isValid() {

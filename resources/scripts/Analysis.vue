@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from "vue";
+import { ref, onMounted } from "vue";
+import { FileSearchOutlined, FolderOpenOutlined, HistoryOutlined } from '@ant-design/icons-vue';
+
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 
@@ -22,20 +24,38 @@ const { generateReport, saveAnalysis, loadAnalysis } = boardStore;
 const { options, movesLength, report, gameId } = storeToRefs(boardStore);
 
 const activeKey = ref("analysis");
+const loadingAnalysis = ref(false);
+const loadingPreviousAnalysis = ref(false);
+const loadingSaveAnalysis = ref(false);
 
 const handleSaveAnalysis = async () => {
+    loadingSaveAnalysis.value = true;
+
     await saveAnalysis();
     router.replace({ path: `/analysis/game/${gameId.value}` });
+
+    loadingSaveAnalysis.value = false;
 };
+
+const handleLoadPreviousAnalysis = async () => {
+    loadingPreviousAnalysis.value = true;
+
+    await loadAnalysis();
+    router.replace({ path: `/analysis/game/${gameId.value}` });
+
+    loadingPreviousAnalysis.value = false;
+}
 
 onMounted(async () => {
     if (route.params.gameId) {
-        await loadAnalysis(route.params.gameId as string);
-    }
-});
+        loadingAnalysis.value = true;
 
-watch(() => route.params.gameId, async (gameId) => {
-    await loadAnalysis(gameId as string);
+        await loadAnalysis(route.params.gameId as string);
+
+        loadingAnalysis.value = false;
+    } else {
+        router.push({ name: 'analysis' });
+    }
 });
 </script>
 
@@ -58,12 +78,52 @@ watch(() => route.params.gameId, async (gameId) => {
                             <EngineVariations v-if="options.visibility.variations" />
                             <OpeningCode />
                             <Movelist />
-                            <a-button v-if="!route.params.gameId" type="dashed" @click="handleSaveAnalysis" block>Save</a-button>
-                            <a-button type="dashed" @click="generateReport" block>Generate report</a-button>
-                            <a-button type="dashed" @click="router.push({ name: 'saved-analysis' })" block>Saved analysis</a-button>
+                            <a-button 
+                                v-if="!route.params.gameId" 
+                                type="dashed" 
+                                @click="handleSaveAnalysis" 
+                                block
+                            >
+                                Save
+                            </a-button>
+                            <a-button 
+                                type="dashed" 
+                                @click="generateReport"
+                                :style="{ marginTop: '30%' }" 
+                                block
+                            >
+                                <template #icon>
+                                    <FileSearchOutlined />
+                                </template>
+                                Generate report
+                            </a-button>
+
+                            <a-button 
+                                type="dashed" 
+                                @click="router.push({ name: 'saved-analysis' })" 
+                                :loading="loadingSaveAnalysis" 
+                                :disabled="loadingPreviousAnalysis"
+                                block
+                            >
+                                <template #icon>
+                                    <FolderOpenOutlined />
+                                </template>
+                                Saved analysis
+                            </a-button>
                         </template>
                         <template v-else>
                             <Import />
+                            <a-button 
+                                @click="handleLoadPreviousAnalysis" 
+                                :loading="loadingPreviousAnalysis" 
+                                :disabled="loadingSaveAnalysis"
+                                block
+                            >
+                                <template #icon>
+                                    <HistoryOutlined />
+                                </template>
+                                Load previous analysis
+                            </a-button>
                         </template>
                     </a-space>
                 </a-tab-pane>
