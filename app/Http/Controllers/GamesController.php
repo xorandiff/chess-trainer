@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 class GamesController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display all stored games of current user.
      *
      * @return \Illuminate\Http\Response
      */
@@ -25,7 +25,7 @@ class GamesController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created game for the current user.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
@@ -58,7 +58,7 @@ class GamesController extends Controller
     }
 
     /**
-     * Display the specified game.
+     * Display the specified game which belongs to current user.
      *
      * @param  \App\Models\Game  $game
      * @return \Illuminate\Http\Response
@@ -73,7 +73,7 @@ class GamesController extends Controller
     }
 
     /**
-     * Display the most recent game.
+     * Display the most recent game of current user.
      *
      * @return \Illuminate\Http\Response
      */
@@ -90,7 +90,7 @@ class GamesController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified game of current user.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Game  $game
@@ -120,7 +120,7 @@ class GamesController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified game of current user.
      *
      * @param  \App\Models\Game  $game
      * @return \Illuminate\Http\Response
