@@ -25,7 +25,7 @@ const { fen, pgn } = storeToRefs(store);
                 {{ fen }}
             </a-tab-pane>
             <a-tab-pane class="exportImportTabPane" key="pgn" tab="PGN" force-render>
-                <a-textarea id="pgn" v-model:value="pgn.value" />
+                <a-textarea id="pgn" v-model:value="pgn.current" />
             </a-tab-pane>
         </a-tabs>
     </a-modal>

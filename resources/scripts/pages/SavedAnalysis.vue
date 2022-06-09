@@ -7,10 +7,18 @@ import { useBoardStore } from "@/stores/board";
 const router = useRouter();
 const boardStore = useBoardStore();
 
-const { loadAnalysisList } = boardStore;
+const { loadAnalysisList, deleteAnalysis } = boardStore;
 const { savedAnalysis } = storeToRefs(boardStore);
 
 const loading = ref(true);
+
+const handleDeleteAnalysis = async (gameId: string) => {
+    loading.value = true;
+
+    await deleteAnalysis(gameId);
+
+    loading.value = false;
+};
 
 onMounted(async () => {
     await loadAnalysisList();
@@ -87,7 +95,7 @@ const columns = [
                 <span>
                     <a @click="router.push({ path: `/analysis/game/${record.id}` })">Open</a>
                     <a-divider type="vertical" />
-                    <a>Delete</a>
+                    <a @click="handleDeleteAnalysis(record.id)">Delete</a>
                 </span>
             </template>
         </template>

@@ -108,3 +108,14 @@ type OpeningData = {
     movesAlgebraic: string;
 }
 
+type PgnTags = {
+    event: string;
+    site: string;
+    date: string;
+    round: string;
+    white: string;
+    black: string;
+    result: string;
+    fen?: string;
+}
+

@@ -2,6 +2,7 @@ import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE, MOVE_MARK, ERROR_TY
 import Error from '@/errors';
 import _ from 'lodash';
 import moment from 'moment';
+import PgnTagsVue from './components/PgnTags.vue';
 import eco from "./eco.json";
 
 export default class Chessboard {
@@ -589,14 +590,32 @@ export default class Chessboard {
     }
 
     /**
-     * Method for converting move history to PGN string
+     * Method for converting PGN tags into PGN tags string
      * 
+     * @param tags 
+     */
+    public static getPgnTags(tags: PgnTags) : string {
+        let pgnTags = `[Event "${tags.event ?? '-'}"]\n`;
+        pgnTags    += `[Site "${tags.site ?? 'Chess Trainer'}"]\n`;
+        pgnTags    += `[Date "${tags.date ?? moment().format('YYYY.MM.DD')}"]\n`;
+        pgnTags    += `[Round "${tags.round}"]\n`;
+        pgnTags    += `[White "${tags.white}"]\n`;
+        pgnTags    += `[Black "${tags.black}"]\n`;
+        pgnTags    += `[Result "${tags.result ?? '-'}"]\n`;
+        
+        return pgnTags;
+    }
+
+    /**
+     * Method for converting PGN tags and moves history into PGN string
+     * 
+     * @param tags
      * @param pieces
-     * @param moves 
+     * @param moves
      * @returns 
      */
-    public static getPGN(pieces: Pieces, moves: Move[]) : string {
-        let pgn = `[Site "Chess Trainer"]\n[Date "${moment().format('YYYY.MM.DD')}"]\n\n`;
+    public static getPGN(tags: PgnTags, pieces: Pieces, moves: Move[]) : string {
+        let pgn = this.getPgnTags(tags) + '\n';
 
         for (let i = 0; i < moves.length; i++) {
             const pieceType = pieces[moves[i].pieceIndex].type === PIECE_TYPE.PAWN ? '' : pieces[moves[i].pieceIndex].type.toUpperCase();
@@ -606,7 +625,7 @@ export default class Chessboard {
                 pgn += `${pieceType}${moves[i].algebraicNotation} `;
             }
         }
-        return pgn;
+        return pgn.trimEnd();
     }
 
     /**

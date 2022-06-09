@@ -77,16 +77,17 @@ export const useBoardStore = defineStore({
       arrows: [] as Arrow[],
       fen,
       pgn: {
-        value: '',
+        current: '',
+        saved: '',
         tags: {
-          event: '',
-          site: '',
-          date: '',
-          round: '',
-          white: '',
-          black: '',
-          result: ''
-        }
+            event: '',
+            site: '',
+            date: '',
+            round: '',
+            white: '',
+            black: '',
+            result: ''
+          } as PgnTags
       },
       openingData: {
         name: 'None',
@@ -143,7 +144,7 @@ export const useBoardStore = defineStore({
       this.fen = fen;
     },
     loadPGN(pgn: string) {
-      this.pgn.value = pgn;
+      this.pgn.current = pgn;
       this.result = GAME_RESULT.IN_PROGRESS;
 
       for (const row of pgn.split("\n")) {
@@ -182,6 +183,7 @@ export const useBoardStore = defineStore({
       this.currentMoveIndex = this.moves.length - 1;
 
       if (moves.length) {
+        this.currentTurnColor = moves.length % 2 ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
         this.fen = moves[moves.length - 1].fen;
         this.stockfishRun();
       }
@@ -374,12 +376,6 @@ export const useBoardStore = defineStore({
           effects[SOUND_TYPE.MOVE_CHECK].play();
         }
 
-        //Update PGN
-        this.pgn.value = Chessboard.getPGN(this.pieces, this.moves);
-        
-        //Update opening data
-        this.openingData = Chessboard.getOpeningData(this.movesAlgebraic);
-
         move.sound = sound;
 
         const hasOpponentLegalMoves = this.pieces.find(piece => !piece.captured && piece.color === this.currentTurnColor && piece.legalMoves.length) !== undefined;
@@ -404,6 +400,12 @@ export const useBoardStore = defineStore({
 
         //Update currently displayed move from history
         this.currentMoveIndex++;
+
+        //Update PGN
+        this.pgn.current = Chessboard.getPGN(this.pgn.tags, this.pieces, this.moves);
+
+        //Update opening data
+        this.openingData = Chessboard.getOpeningData(this.movesAlgebraic);
 
         //Detect if checkmate/stalemate/50 move rule occured
         if (this.halfmoves >= 50 || move.isCheckmate || isStalemate) {
@@ -658,16 +660,54 @@ export const useBoardStore = defineStore({
     toggleFeedback() {
       this.options.visibility.feedback = !this.options.visibility.feedback;
     },
+    updatePgnTags() {
+      let pgnMoves = this.pgn.current.split('\n\n')[1];
+      this.pgn.current = Chessboard.getPgnTags(this.pgn.tags) + '\n' + pgnMoves;
+    },
     async saveAnalysis() {
       try {
+        this.pgn.current = Chessboard.getPGN(this.pgn.tags, this.pieces, this.moves);
+        
         await axios.get('/sanctum/csrf-cookie');
-        const response = await axios.post('/api/games', { pgn: this.pgn.value });
+        const response = await axios.post('/api/games', { pgn: this.pgn.current });
 
         const { id } = response.data.data;
         
         this.gameId = id;
+
+        message.success('Analysis successfully saved');
       } catch (error) {
           console.log(error);
+          message.error('An error occured during saving your analysis');
+      }               
+    },
+    async updateAnalysis() {
+      try {
+        this.pgn.current = Chessboard.getPGN(this.pgn.tags, this.pieces, this.moves);
+
+        await axios.get('/sanctum/csrf-cookie');
+        const response = await axios.patch(`/api/games/${this.gameId}`, { pgn: this.pgn.current, ...this.pgn.tags });
+
+        const { pgn } = response.data.data;
+
+        this.pgn.saved = pgn;
+        
+        message.success('Analysis successfully saved');
+      } catch (error) {
+          console.log(error);
+          message.error('An error occured during saving your analysis');
+      }               
+    },
+    async deleteAnalysis(gameId: string) {
+      try {
+        await axios.get('/sanctum/csrf-cookie');
+        await axios.delete(`/api/games/${gameId}`);
+        await this.loadAnalysisList();
+        
+        message.success('Analysis successfully deleted');
+      } catch (error) {
+          console.log(error);
+          message.error('An error occured during deletion of your analysis');
       }               
     },
     async loadAnalysis(gameId?: string) {
@@ -678,6 +718,8 @@ export const useBoardStore = defineStore({
         const { id, pgn } = response.data.data;
         
         this.gameId = id;
+        this.pgn.saved = pgn;
+
         this.loadPGN(pgn);
       } catch (error) {
           console.log(error);

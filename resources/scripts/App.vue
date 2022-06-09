@@ -12,7 +12,7 @@ const { logout } = store;
 
 const selectedKeys = ref([route.name]);
 
-const onSelect = (e: any) => {
+const onClick = (e: any) => {
   if (e.key) {
     router.push({ name: e.key });
   }
@@ -22,7 +22,7 @@ const onSelect = (e: any) => {
 <template>
   <a-layout>
     <a-layout-sider width="140" :style="{ height: '100vh' }">
-      <a-menu v-model:selectedKeys="selectedKeys" @select="onSelect">
+      <a-menu v-model:selectedKeys="selectedKeys" @click="onClick">
         <a-menu-item key="profile">
           <template #icon><user-outlined /></template>
           Profile

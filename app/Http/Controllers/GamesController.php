@@ -106,6 +106,8 @@ class GamesController extends Controller
             return response()->json(['error' => 'Bad PGN format', 400]);
         }
 
+        $pgnParser->parseTags();
+
         $game->event = $pgnParser->event;
         $game->site = $pgnParser->site;
         $game->date = $pgnParser->date;

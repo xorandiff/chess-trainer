@@ -20,8 +20,8 @@ const router = useRouter();
 const route = useRoute();
 
 const boardStore = useBoardStore();
-const { generateReport, saveAnalysis, loadAnalysis } = boardStore;
-const { options, movesLength, report, gameId } = storeToRefs(boardStore);
+const { updatePgnTags, generateReport, saveAnalysis, updateAnalysis, loadAnalysis } = boardStore;
+const { options, movesLength, report, gameId, pgn } = storeToRefs(boardStore);
 
 const activeKey = ref("analysis");
 const loadingAnalysis = ref(false);
@@ -31,8 +31,12 @@ const loadingSaveAnalysis = ref(false);
 const handleSaveAnalysis = async () => {
     loadingSaveAnalysis.value = true;
 
-    await saveAnalysis();
-    router.replace({ path: `/analysis/game/${gameId.value}` });
+    if (gameId.value && pgn.value.current != pgn.value.saved) {
+        await updateAnalysis();
+    } else {
+        await saveAnalysis();
+        router.replace({ path: `/analysis/game/${gameId.value}` });
+    }
 
     loadingSaveAnalysis.value = false;
 };
@@ -44,7 +48,13 @@ const handleLoadPreviousAnalysis = async () => {
     router.replace({ path: `/analysis/game/${gameId.value}` });
 
     loadingPreviousAnalysis.value = false;
-}
+};
+
+const handleTabChange = (activeKey: string) => {
+    if (activeKey == 'analysis') {
+        updatePgnTags();
+    }
+};
 
 onMounted(async () => {
     if (route.params.gameId) {
@@ -54,7 +64,7 @@ onMounted(async () => {
 
         loadingAnalysis.value = false;
     } else {
-        router.push({ name: 'analysis' });
+        boardStore.$reset();
     }
 });
 </script>
@@ -65,31 +75,32 @@ onMounted(async () => {
             <Chessboard />
         </a-col>
         <a-col id="analysisColumn">
-            <a-tabs v-if="!report.generation.active" v-model:activeKey="activeKey">
+            <a-tabs v-if="!report.generation.active" v-model:activeKey="activeKey" @change="handleTabChange">
                 <a-tab-pane key="analysis">
                     <template #tab>
                         <span>
                             Analysis
                         </span>
                     </template>
-                    <a-space direction="vertical">
-                        <template v-if="movesLength">
+                    <template v-if="movesLength">
+                        <a-space direction="vertical" :style="{ width: '100%' }">
                             <MoveMark v-if="options.visibility.feedback" />
                             <EngineVariations v-if="options.visibility.variations" />
                             <OpeningCode />
                             <Movelist />
                             <a-button 
-                                v-if="!route.params.gameId" 
                                 type="dashed" 
                                 @click="handleSaveAnalysis" 
                                 block
+                                :disabled="pgn.current == pgn.saved"
                             >
-                                Save
+                                {{ pgn.current != pgn.saved ? 'Save' : 'Saved' }}
                             </a-button>
+                        </a-space>
+                        <a-space direction="vertical" :style="{ width: '100%', bottom: '0px', position: 'absolute', left: '0px' }">
                             <a-button 
                                 type="dashed" 
                                 @click="generateReport"
-                                :style="{ marginTop: '30%' }" 
                                 block
                             >
                                 <template #icon>
@@ -97,7 +108,6 @@ onMounted(async () => {
                                 </template>
                                 Generate report
                             </a-button>
-
                             <a-button 
                                 type="dashed" 
                                 @click="router.push({ name: 'saved-analysis' })" 
@@ -110,8 +120,10 @@ onMounted(async () => {
                                 </template>
                                 Saved analysis
                             </a-button>
-                        </template>
-                        <template v-else>
+                        </a-space>
+                    </template>
+                    <template v-else>
+                        <a-space direction="vertical" :style="{ width: '100%' }">
                             <Import />
                             <a-button 
                                 @click="handleLoadPreviousAnalysis" 
@@ -124,8 +136,8 @@ onMounted(async () => {
                                 </template>
                                 Load previous analysis
                             </a-button>
-                        </template>
-                    </a-space>
+                        </a-space>
+                    </template>
                 </a-tab-pane>
                 <a-tab-pane key="details">
                     <template #tab>
