@@ -12,9 +12,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/auth', AuthController::class);
     Route::apiResources([
         '/games' => GamesController::class,
-        '/puzzles' => PuzzlesController::class,
     ]);
     Route::get('/game', [GamesController::class, 'previous']);
+    Route::get('/puzzles/random/{from}/{to}', [PuzzlesController::class, 'randomInRange']);
 });
 
 Route::post('/sanctum/token', TokenController::class);

@@ -117,5 +117,7 @@ type PgnTags = {
     black: string;
     result: string;
     fen?: string;
+    firstMove?: string;
+    solution?: string;
 }
 

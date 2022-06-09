@@ -14,11 +14,11 @@ class PuzzlesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function randomInRange(int $from, int $to)
     {
         $puzzle = DB::table('puzzles')
-                        ->where('rating', '>=', $request->from)
-                        ->where('rating', '<=', $request->to)
+                        ->where('rating', '>=', $from)
+                        ->where('rating', '<=', $to)
                         ->inRandomOrder()
                         ->first();
         return new PuzzleResource($puzzle);

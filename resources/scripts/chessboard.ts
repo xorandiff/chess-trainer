@@ -2,7 +2,6 @@ import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE, MOVE_MARK, ERROR_TY
 import Error from '@/errors';
 import _ from 'lodash';
 import moment from 'moment';
-import PgnTagsVue from './components/PgnTags.vue';
 import eco from "./eco.json";
 
 export default class Chessboard {

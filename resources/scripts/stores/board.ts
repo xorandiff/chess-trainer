@@ -143,10 +143,7 @@ export const useBoardStore = defineStore({
       };
       this.fen = fen;
     },
-    loadPGN(pgn: string) {
-      this.pgn.current = pgn;
-      this.result = GAME_RESULT.IN_PROGRESS;
-
+    loadPgnTags(pgn: string) {
       for (const row of pgn.split("\n")) {
         const matches = row.match(/\[(\w+)\s+"(.+)"\]/i);
         if (matches) {
@@ -161,10 +158,19 @@ export const useBoardStore = defineStore({
             case 'white': this.pgn.tags.white = tagValue; break;
             case 'black': this.pgn.tags.black = tagValue; break;
             case 'result': this.pgn.tags.result = tagValue; break;
+            case 'fen': this.pgn.tags.fen = tagValue; break;
+            case 'firstmove': this.pgn.tags.firstMove = tagValue; break;
+            case 'full': this.pgn.tags.solution = tagValue; break;
             default: break;
           }
         }
       }
+    },
+    loadPGN(pgn: string) {
+      this.pgn.current = pgn;
+      this.result = GAME_RESULT.IN_PROGRESS;
+
+      this.loadPgnTags(pgn);
       
       const chessboard = Chessboard.create(pgn);
       const { pieces, castlingRights, halfmoves, fullmoves, color, moves } = chessboard;

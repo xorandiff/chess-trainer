@@ -1,28 +1,26 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { storeToRefs } from 'pinia';
+import { onMounted } from "vue";
 
 import { useBoardStore } from "@/stores/board";
-import { useEngineStore } from "@/stores/engine";
-
+import { usePuzzleStore } from "@/stores/puzzle";
 import Chessboard from "@/components/Chessboard.vue";
 
 const boardStore = useBoardStore();
-const engineStore = useEngineStore();
-const { switchAlwaysStockfish, switchStockfish } = boardStore;
-const { setStockfishConfig } = engineStore;
-const { stockfish, response } = storeToRefs(engineStore);
+const puzzleStore = usePuzzleStore();
+
+onMounted(() => {
+    boardStore.$reset();
+    puzzleStore.$reset();
+});
 </script>
 
 <template>
-    <a-row>
+    <a-row :gutter="10">
         <a-col>
             <Chessboard />
         </a-col>
-        <a-col>
-            <a-card>
-                <router-view></router-view>
-            </a-card>
+        <a-col id="analysisColumn">
+            <router-view></router-view>
         </a-col>
     </a-row>
     
