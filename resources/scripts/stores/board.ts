@@ -270,11 +270,19 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMove(n: number, m: number) {
-      const pieceIndex = _.findIndex(this.pieces, piece => !piece.captured && piece.square == v);
-      let capturedIndex = _.findIndex(this.pieces, piece => !piece.captured && piece.square == w);
-
-      if (n >= 0 && this.fenMoves[n] != 'X' && this.pieces[pieceIndex].color === this.currentTurnColor && this.pieces[pieceIndex].legalMoves.includes(w)) {
+      const color = this.fenMoves[n].toLowerCase() == this.fenMoves[n] ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+      if (n >= 0 && this.fenMoves[n] != 'X' && color === this.currentTurnColor && this.pieces[pieceIndex].legalMoves.includes(w)) {
         this.clearHighlights();
+
+        const pieceType = this.fenMoves[n].toLowerCase() as PIECE_TYPE;
+
+        let fen = this.fen;
+
+        const i = (n/8 >> 0) + 1;
+        const j = n%8 + 1;
+
+        const r = (m/8 >> 0) + 1;
+        const f = m&8 + 1;
         
         let sound = SOUND_TYPE.MOVE_SELF;
 
@@ -300,15 +308,14 @@ export const useBoardStore = defineStore({
           }
         }
 
-        if (this.pieces[pieceIndex].type === PIECE_TYPE.PAWN && capturedIndex == -1 && j != f) {
+        if (pieceType === PIECE_TYPE.PAWN && this.fenMoves[m] == 'X' && j != f) {
           //En passant capture
           isCapture = true;
           if (this.currentTurnColor === this.color) {
-            capturedIndex = _.findIndex(this.pieces, piece => !piece.captured && piece.square == Chessboard.c2s(i + 1, j));
+            //remove Chessboard.c2i(i + 1, j)
           } else {
-            capturedIndex = _.findIndex(this.pieces, piece => !piece.captured && piece.square == Chessboard.c2s(i - 1, j));
+            //remove Chessboard.c2i(i - 1, j)
           }
-          this.pieces[capturedIndex].captured = true;
         }
 
         //Increment fullmoves and halfmoves counters if black is moving
@@ -318,22 +325,20 @@ export const useBoardStore = defineStore({
         }
 
         //Reset halfmoves counter if pawn is moving or piece is being captured
-        if (this.pieces[pieceIndex].type === PIECE_TYPE.PAWN || capturedIndex >= 0) {
+        if (pieceType === PIECE_TYPE.PAWN || this.fenMoves[m] != 'X') {
           this.halfmoves = 0;
         }
 
         //Update last move
         let move: Move = {
-          pieceIndex,
-          from: v,
-          to: w,
-          capturedIndex,
+          fen: '',
+          from: n,
+          to: m,
           isCheck,
           isCheckmate: false,
-          promotionType,
           castlingSide,
+          promotionType,
           algebraicNotation: '',
-          fen: '',
           sound,
           mark: -1
         };
@@ -352,11 +357,11 @@ export const useBoardStore = defineStore({
         }
 
         //Perform a move with computing legal moves
-        Chessboard.makeMove(this.pieces, v, w, this.castlingRights[this.currentTurnColor]);
+        Chessboard.makeMove(this.pieces, n, m, this.castlingRights[this.currentTurnColor]);
 
 
         //Check wheter move triggers promotion
-        if (this.pieces[pieceIndex].type === PIECE_TYPE.PAWN && [1, 8].includes(this.pieces[pieceIndex].rank)) {
+        if (pieceType === PIECE_TYPE.PAWN && [1, 8].includes(i)) {
           this.pieces[pieceIndex].type = this.promotionType;
           move.promotionType = this.promotionType;
         }
@@ -387,7 +392,7 @@ export const useBoardStore = defineStore({
         move.algebraicNotation = Chessboard.moveToAlgebraic(move, this.pieces);
 
         //Update algebraic move list
-        if (this.pieces[pieceIndex].color == PIECE_COLOR.WHITE) {
+        if (color == PIECE_COLOR.WHITE) {
           this.movesAlgebraic += `${Math.floor((this.currentMoveIndex + 1) / 2) + 1}. ${move.algebraicNotation}`;
         } else {
           this.movesAlgebraic += ` ${move.algebraicNotation}`;
