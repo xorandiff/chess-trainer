@@ -25,8 +25,7 @@ type PiecePartial = Partial<Piece>;
 type Pieces = Piece[];
 
 type Move = {
-    pieceIndex: number;
-    capturedIndex: number;
+    fen: string;
     from: number;
     to: number;
     isCheck: boolean;
@@ -34,7 +33,6 @@ type Move = {
     castlingSide: boolean | "k" | "q";
     promotionType: boolean | Piece["type"];
     algebraicNotation: string;
-    fen: string;
     sound: number;
     mark: number;
     bestNextMove?: {

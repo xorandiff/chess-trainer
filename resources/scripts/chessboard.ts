@@ -6,6 +6,17 @@ import eco from "./eco.json";
 
 export default class Chessboard {
     /**
+     * Converts rank and file coordinates into index coordinate
+     * 
+     * @param rank 
+     * @param file 
+     * @returns 
+     */
+     public static c2i(rank: number, file: number) {
+        return ((rank - 1) * 8 + (file - 1));
+    }
+
+    /**
      * Converts rank and file coordinates into square number
      * 
      * @param rank 
