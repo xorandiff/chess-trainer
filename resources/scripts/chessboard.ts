@@ -307,29 +307,28 @@ export default class Chessboard {
      * @returns 
      */
     public static getFilteredPieces(pieces: Pieces, piecePartial: PiecePartial) {
-        let filteredPieces = [ ...pieces ];
         const { type, color, square, rank, file, legalMoves } = piecePartial;
 
-        filteredPieces = filteredPieces.filter(piece => {
+        return pieces.filter(piece => {
             if (piece.captured) {
                 return false;
             }
-            if (type !== undefined && piece.type != type) {
+            if (type && piece.type != type) {
                 return false;
             }
-            if (color !== undefined && piece.color != color) {
+            if (color && piece.color != color) {
                 return false;
             }
-            if (square !== undefined && piece.square != square) {
+            if (square && piece.square != square) {
                 return false;
             }
-            if (rank !== undefined && piece.rank != rank) {
+            if (rank && piece.rank != rank) {
                 return false;
             }
-            if (file !== undefined && piece.file != file) {
+            if (file && piece.file != file) {
                 return false;
             }
-            if (legalMoves !== undefined) {
+            if (legalMoves) {
                 for (const legalMove of legalMoves) {
                     if (!piece.legalMoves.includes(legalMove)) {
                         return false;
@@ -339,8 +338,6 @@ export default class Chessboard {
             
             return true;
         });
-
-        return filteredPieces;
     }
 
     /**
@@ -467,23 +464,23 @@ export default class Chessboard {
                 toAlgebraic = fromAlgebraic;
                 fromAlgebraic = '';
             }
-
+            
             if (toAlgebraic) {
                 to = this.a2s(toAlgebraic);
 
                 if (fromAlgebraic) {
                     if (fromAlgebraic.length === 2) {
-                        pieceIndex = _.findIndex(pieces, piece => piece.square == this.a2s(fromAlgebraic));
+                        pieceIndex = _.findIndex(pieces, piece => !piece.captured && piece.square == this.a2s(fromAlgebraic));
                     } else {
                         let filteredPieces: Piece[] = [];
                         if (fromAlgebraic.charCodeAt(0) >= '1'.charCodeAt(0) && fromAlgebraic.charCodeAt(0) <= '8'.charCodeAt(0)) {
-                            filteredPieces = this.getFilteredPieces(pieces, { rank: 9 - parseInt(fromAlgebraic), color, type: pieceType });
+                            filteredPieces = this.getFilteredPieces(pieces, { rank: 9 - parseInt(fromAlgebraic), color, type: pieceType, legalMoves: [to] });
                         } else {
-                            filteredPieces = this.getFilteredPieces(pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color, type: pieceType });
+                            filteredPieces = this.getFilteredPieces(pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color, type: pieceType, legalMoves: [to] });
                         }
                         
                         if (filteredPieces) {
-                            pieceIndex = _.findIndex(pieces, piece => piece.square == filteredPieces[0].square);
+                            pieceIndex = _.findIndex(pieces, piece => !piece.captured && piece.square == filteredPieces[0].square);
                         }
                     }
                 }
@@ -503,7 +500,7 @@ export default class Chessboard {
                     }
                 }
             } else {
-                //Parsing algebraic move failed
+                console.log('Parsing algebraic move failed');
             }
 
             return ({
@@ -617,7 +614,7 @@ export default class Chessboard {
         let pgn = this.getPgnTags(tags) + '\n';
 
         for (let i = 0; i < moves.length; i++) {
-            const pieceType = pieces[moves[i].pieceIndex].type === PIECE_TYPE.PAWN ? '' : pieces[moves[i].pieceIndex].type.toUpperCase();
+            const pieceType = pieces[moves[i].pieceIndex].type === PIECE_TYPE.PAWN || ['B', 'K', 'N', 'R', 'Q'].includes(moves[i].algebraicNotation[0]) ? '' : pieces[moves[i].pieceIndex].type.toUpperCase();
             if (pieces[moves[i].pieceIndex].color === PIECE_COLOR.WHITE) {
                 pgn += `${Math.floor(i / 2) + 1}. ${pieceType}${moves[i].algebraicNotation} `;
             } else {
@@ -831,7 +828,7 @@ export default class Chessboard {
         if (v !== w) {
             const pieceIndex = _.findIndex(pieces, piece => !piece.captured && piece.square === v);
             if (pieceIndex >= 0) {
-                const capturedIndex = _.findIndex(pieces, piece => piece.square === w && piece.color !== pieces[pieceIndex].color);
+                const capturedIndex = _.findIndex(pieces, piece => !piece.captured && piece.square === w && piece.color !== pieces[pieceIndex].color);
                 if (capturedIndex >= 0) {
                     pieces[capturedIndex].captured = true;
                 }
@@ -992,7 +989,7 @@ export default class Chessboard {
                              */
                             reachedEnd[n] = true;
 
-                            if (occupyingPiece.color === oppositeColor) {
+                            if (occupyingPiece.color == oppositeColor) {
                                 //Piece is of opposite color, so we mark it as pseudo-legal capture
                                 pseudoLegalMoves.push([a, b]);
                             }

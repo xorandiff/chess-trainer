@@ -21,7 +21,7 @@ export const usePuzzleStore = defineStore({
     }),
     actions: {
         async loadRandomPuzzle(from: number, to: number) {
-            try {
+            /* try {
                 await axios.get('/sanctum/csrf-cookie');
                 const response = await axios.get(`/api/puzzles/random/${from}/${to}`);
 
@@ -93,7 +93,7 @@ export const usePuzzleStore = defineStore({
                 }
             } catch (error) {
                 console.log(error);
-            }
+            } */
         },
         async start(time?: number) {
             try {
