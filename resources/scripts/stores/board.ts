@@ -448,7 +448,11 @@ export const useBoardStore = defineStore({
           }
         }
         
-        this.stockfishRun(this.moves[index].fen);
+        if (this.moves[index].isCheckmate) {
+          this.variations = [];
+        } else {
+          this.stockfishRun(this.moves[index].fen);
+        }
 
         effects[this.moves[index].sound].play();
 

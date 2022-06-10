@@ -6,7 +6,7 @@ import { PIECE_TYPE, PIECE_COLOR } from "@/enums";
 
 const store = useBoardStore();
 
-const { variations, movesLength, engineWorking } = storeToRefs(store);
+const { variations, engineWorking, currentMoveIndex } = storeToRefs(store);
 
 const labelStyleWhite = {
     width: '40px',
@@ -28,6 +28,7 @@ const labelStyleBlack = {
 
 <template>
     <a-descriptions 
+        v-show="variations.length > 0"
         :column="1" 
         size="small" 
         :contentStyle="{ padding: '2px 10px' }" 
@@ -43,11 +44,11 @@ const labelStyleBlack = {
             <a-spin :spinning="engineWorking">
                 <a-space>
                     <template v-if="variation.moves[0] && variation.pieces[variation.moves[0].pieceIndex].color === PIECE_COLOR.BLACK">
-                        {{ Math.floor(movesLength / 2) + 1 }}... 
+                        {{ Math.floor((currentMoveIndex + 1) / 2) + 1 }}... 
                     </template>
                     <template v-for="(move, index) in variation.moves">
                         <template v-if="variation.pieces[move.pieceIndex].color === PIECE_COLOR.WHITE">
-                            {{ Math.floor((movesLength + index) / 2) + 1 }}. 
+                            {{ Math.floor(((currentMoveIndex + 1) + index) / 2) + 1 }}. 
                         </template>
                         <a-button class="moveButton" type="text" :style="{ marginLeft: variation.pieces[move.pieceIndex].color === PIECE_COLOR.BLACK ? '-7px': '0' }">
                             <template #icon v-if="variation.pieces[move.pieceIndex].type !== PIECE_TYPE.PAWN">

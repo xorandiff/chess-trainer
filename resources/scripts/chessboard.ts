@@ -625,29 +625,6 @@ export default class Chessboard {
     }
 
     /**
-     * Method for converting PGN string into move history
-     * 
-     * @param pgn 
-     * @returns 
-     */
-    //TODO rebuild loading from PGN/FEN structure
-    public static loadPGN(pieces: Pieces, pgn: string) : Move[] {
-        let moves: Move[] = [];
-        const movesAlgebraic = pgn.match(/ [BRKQN]?[a-h]?[1-8]?x?[BRKQN]?[a-h][1-8]=?[BRKQN]?\+?#?|O-O-O|O-O/g)!.map(x => x.trim());
-        let color = PIECE_COLOR.WHITE;
-
-        for (const moveAlgebraic of movesAlgebraic) {
-            let move = this.algebraicToMove(pieces, moveAlgebraic, color)!;
-            this.makeMove(pieces, move.from, move.to);
-            moves.push(move);
-
-            color = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-        }
-
-        return moves;
-    }
-
-    /**
      * Method for updating castling rights for given color
      * 
      * @param pieces 
