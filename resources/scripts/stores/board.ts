@@ -40,6 +40,8 @@ export const useBoardStore = defineStore({
     }
 
     return ({
+      highlights: new Array(64).fill(0),
+      legalMoves: new Array(64).fill(false),
       board,
       color,
       currentTurnColor: color,
@@ -111,7 +113,16 @@ export const useBoardStore = defineStore({
     movesLength: (state) => state.moves.length,
     movesReversed: (state) => state.moves.slice().reverse(),
     currentMove: (state) => state.currentMoveIndex ? state.moves[state.currentMoveIndex] : false,
-    occupiedSquares: (state) => state.pieces.map(piece => piece.square)
+    occupiedSquares: (state) => state.pieces.map(piece => piece.square),
+    fenMoves: (state) => {
+      return state.fen.split(' ')[0].replaceAll('/', '').split('').map(c => {
+        if (c.charCodeAt(0) >= '1'.charCodeAt(0) && c.charCodeAt(0) <= '8'.charCodeAt(0)) {
+          return 'X'.repeat(parseInt(c));
+        } else {
+          return c;
+        }
+      }).join('').split('');
+    }
   },
   actions: {
     newGame(fen: string) {
@@ -201,85 +212,69 @@ export const useBoardStore = defineStore({
         this.board[v].highlightColor = '';
       }
     },
-    pieceMouseDown(v: number) {
+    pieceMouseDown(n: number) {
       if (this.result) {
         return;
       }
 
-      this.pieceMoveFromActive(v);
+      this.pieceMoveFromActive(n);
       
-      for (let i = 1; i <= 8; i++) {
-        for (let j = 1; j <= 8; j++) {
-          this.board[i*10 + j].active = false;
-          this.board[i*10 + j].legalMove = false;
-        }
-      }
+      this.highlights = new Array(64).fill(0);
+      this.legalMoves = new Array(64).fill(false);
 
-      const piece = this.pieces.find(piece => !piece.captured && piece.square === v && piece.color === this.currentTurnColor);
-      if (piece && this.currentMoveIndex === this.movesLength - 1) {
+      if (this.fenMoves[n] != 'X' && this.currentMoveIndex === this.movesLength - 1) {
         //Set coordinates of current dragged piece
-        this.dragging = v;
+        this.dragging = n;
 
         //Make square background in active yellow color
-        this.board[v].active = true;
+        this.highlights[n] = 1;
 
         //Display all legal moves for piece on chessboard
-        for (const w of piece.legalMoves) {
+        /* for (const w of piece.legalMoves) {
           this.board[w].legalMove = true;
-        }
+        } */
       }
     },
     pieceMouseUp() {
       //Set non-existing dragging coordinates
-      this.dragging = 0;
+      this.dragging = -1;
     },
     clearHighlights() {
-      for (let i = 11; i < 89; i++) {
-        this.board[i].highlight = false;
-        this.board[i].highlightColor = '';
-      }
+      this.highlights = new Array(64).fill(0);
+      this.legalMoves = new Array(64).fill(false);
     },
     clearColoredHighlights() {
-      for (let i = 11; i < 89; i++) {
-        this.board[i].highlight = false;
-        this.board[i].highlightColor = '';
-      }
+      this.clearHighlights();
       this.arrows = [] as Arrow[];
     },
-    pieceMoveFromActive(w: number) {
-      const v = _.findIndex(this.board, square => square.active);
-      if (v >= 11 && v !== w) {
+    pieceMoveFromActive(m: number) {
+      const n = this.highlights.indexOf(1);
+      if (n >= 0 && this.fenMoves[n] != 'X' && n !== m) {
         this.clearHighlights();
 
-        const piece = Chessboard.p(this.pieces, v);
+        const color = this.fenMoves[n].toLowerCase() == this.fenMoves[n] ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
-        const toRank = Chessboard.s2c(w)[0];
+        const toRank = (m / 8) >> 0;
 
-        if (this.promotionType === PIECE_TYPE.PAWN && piece && piece.type === PIECE_TYPE.PAWN && ((piece.color === PIECE_COLOR.WHITE && toRank === 1) || (piece.color === PIECE_COLOR.BLACK && toRank === 8))) {
+        if (this.promotionType === PIECE_TYPE.PAWN && this.fenMoves[n].toLowerCase() == 'p' && ((color === PIECE_COLOR.WHITE && !toRank) || (color === PIECE_COLOR.BLACK && toRank === 7))) {
           /**
            * Promotion move detected, instead of performing this move, first show
            * popover for user in order to select promotion piece
            */
-          this.promotionMove.from = v;
-          this.promotionMove.to = w;
+          this.promotionMove.from = n;
+          this.promotionMove.to = m;
           this.promotionModalVisible = true;
         } else {
-          this.pieceMove(v, w);
+          this.pieceMove(n, m);
         }
       }
     },
-    pieceMove(v: number, w: number) {
-      const [r, f] = Chessboard.s2c(v);
-      const [i, j] = Chessboard.s2c(w);
-
+    pieceMove(n: number, m: number) {
       const pieceIndex = _.findIndex(this.pieces, piece => !piece.captured && piece.square == v);
       let capturedIndex = _.findIndex(this.pieces, piece => !piece.captured && piece.square == w);
 
-      if (pieceIndex >= 0 && this.pieces[pieceIndex].color === this.currentTurnColor && this.pieces[pieceIndex].legalMoves.includes(w)) {
-        for (let x = 11; x < 89; x++) {
-          this.board[x].active = false;
-          this.board[x].legalMove = false;
-        }
+      if (n >= 0 && this.fenMoves[n] != 'X' && this.pieces[pieceIndex].color === this.currentTurnColor && this.pieces[pieceIndex].legalMoves.includes(w)) {
+        this.clearHighlights();
         
         let sound = SOUND_TYPE.MOVE_SELF;
 
@@ -344,12 +339,12 @@ export const useBoardStore = defineStore({
         };
 
         //Highlight last move
-        this.board[v].highlight = true;
-        this.board[w].highlight = true;
+        this.highlights[n] = true;
+        this.highlights[m] = true;
 
         //Set proper sound type
         if (sound === SOUND_TYPE.MOVE_SELF) {
-          if (capturedIndex >= 0) {
+          if (this.fenMoves[m] != 'X') {
             sound = SOUND_TYPE.CAPTURE;
           } else {
             sound = this.currentTurnColor === this.color ? SOUND_TYPE.MOVE_SELF : SOUND_TYPE.MOVE_OPPONENT;
@@ -377,7 +372,7 @@ export const useBoardStore = defineStore({
         this.pieceMouseUp();
 
         //Detect if check occured
-        if (Chessboard.detectCheck(this.pieces, this.currentTurnColor)) {
+        if (Chessboard.detectCheck(this.fenMoves, this.currentTurnColor)) {
           move.isCheck = true;
           effects[SOUND_TYPE.MOVE_CHECK].play();
         }

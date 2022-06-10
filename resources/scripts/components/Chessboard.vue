@@ -16,10 +16,10 @@ const pieceTop = ref(0);
 
 const orderedRow = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
 
-const indexArray = computed(() => orderedRow.value.map(row => orderedRow.value.map(file => row*10+file)).flat());
+const indexArray = computed(() => orderedRow.value.map(n => orderedRow.value.map(m => [n, m])).flat());
 
 const store = useBoardStore();
-const { showEvaluation, currentMoveIndex, arrows, pieces, promotionModalVisible, dragging, occupiedSquares } = storeToRefs(store);
+const { showEvaluation, currentMoveIndex, arrows, promotionModalVisible, dragging, occupiedSquares, fenMoves } = storeToRefs(store);
 const { pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
 
 function handleMousemove(event: MouseEvent) {
@@ -63,6 +63,8 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('mousemove', handleMousemove);
   window.addEventListener('mouseup', handleMouseUp);
+  console.log(fenMoves.value);
+  console.log(indexArray.value);
 });
 
 onUnmounted(() => {
@@ -82,13 +84,16 @@ onUnmounted(() => {
       @mousedown.left="clearColoredHighlights" 
       :style="{ transform: `scale(${boardScale})` }"
     >
-      <BoardPiece 
-        v-for="(piece, i) in pieces" 
-        :key="i" 
-        :posLeft="dragging === piece.square ? pieceLeft : 0" 
-        :posTop="dragging === piece.square ? pieceTop : 0" 
-        :piece="piece" 
-      />
+      <template v-for="([i, j], n) in indexArray">
+        <BoardPiece 
+          v-if="fenMoves[n] != 'X'"
+          :posLeft="dragging === i*10+j ? pieceLeft : 0" 
+          :posTop="dragging === i*10+j ? pieceTop : 0" 
+          :rank="i"
+          :file="j"
+          :piece="fenMoves[n]"
+        />
+      </template>
 
       <svg id="arrows" viewBox="0 0 100 100">
         <polygon 
@@ -100,10 +105,10 @@ onUnmounted(() => {
       </svg>
 
       <BoardSquare 
-        v-for="square in indexArray" 
-        :index="square" 
-        :squareData="store.board[square]" 
-        :occupied="occupiedSquares.includes(square)" 
+        v-for="([i, j], n) in indexArray" 
+        :index="n"
+        :squareData="store.board[i*10+j]" 
+        :occupied="fenMoves[n] != 'X'" 
       />
 
       <div id="labels">
