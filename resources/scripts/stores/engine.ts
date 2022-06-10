@@ -2,9 +2,6 @@ import { defineStore } from "pinia";
 import { useBoardStore } from "@/stores/board";
 import type { ENGINE } from '@/enums';
 
-const DEFAULT_DEPTH_STOCKFISH = 16;
-const DEFAULT_DEPTH_LC0 = 18;
-
 let stockfish = new Worker('/build/stockfish11.js');
 
 stockfish.postMessage('uci');
@@ -15,21 +12,28 @@ stockfish.addEventListener('message', function (e) {
     if (e.data) {
         const data = e.data as string;
 
-        if (data.startsWith(`info depth ${DEFAULT_DEPTH_STOCKFISH - 4}`) || data.startsWith(`info depth ${DEFAULT_DEPTH_STOCKFISH - 2}`) || data.startsWith(`info depth ${DEFAULT_DEPTH_STOCKFISH}`)) {
-            const infoRegexp = /depth\s+(?<depthString>\d+)\s+seldepth\s+(?<seldepth>[\d]+)\s+multipv\s+(?<multipv>\d+)\s+score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;
-            const { depthString, seldepth, multipv, score, pv } = data.match(infoRegexp)!.groups!;
-            const depth = parseInt(depthString);
+        if (data[0] == 'i') {
+            const d = parseInt(data.substring(11, 13).trimEnd());
+            if (d >= useEngineStore().stockfish.config.depth - 3) {
+                const infoRegexp = /depth\s+(?<depthString>\d+)\s+seldepth\s+(?<seldepth>[\d]+)\s+multipv\s+(?<multipv>\d+)\s+score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;
+                const { depthString, seldepth, multipv, score, pv } = data.match(infoRegexp)!.groups!;
+                const depth = parseInt(depthString);
 
-            const variationIndex = parseInt(multipv) - 1;
-        
-            const cp = parseInt(score.match(/\-?\d+/)![0]);
+                const variationNumber = parseInt(multipv);
             
-            useEngineStore().response.depth = depth;
-            useEngineStore().response.variations[variationIndex] = {
-                pv,
-                score: cp,
-                mate: score.includes('mate')
-            };
+                const cp = parseInt(score.match(/\-?\d+/)![0]);
+                
+                useEngineStore().response.depth = depth;
+                useEngineStore().response.variations[variationNumber - 1] = {
+                    pv,
+                    score: cp,
+                    mate: score.includes('mate')
+                };
+
+                if (variationNumber == 1) {
+                    useBoardStore().stockfishDone(true);
+                }
+            }  
         } else if (!useEngineStore().async && data.startsWith('Total evaluation')) {
             const evalRegexp = /\s+(?<evaluation>[\-\.\d]+)\s+/;
             const { evaluation } = data.match(evalRegexp)!.groups!;
@@ -68,7 +72,7 @@ export const useEngineStore = defineStore({
         stockfish: {
             config: {
                 elo: 3000, //from 100 to 3000
-                depth: DEFAULT_DEPTH_STOCKFISH,
+                depth: 20,
                 skill: 20, //from 0 to 20
                 multipv: 3
             },
@@ -78,7 +82,7 @@ export const useEngineStore = defineStore({
         lc0: {
             config: {
                 elo: 300,
-                depth: DEFAULT_DEPTH_LC0,
+                depth: 20,
                 skill: 20, //from 0 to 20
                 multipv: 3
             },

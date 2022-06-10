@@ -15,6 +15,7 @@ Route::middleware('auth:sanctum')->group(function () {
     ]);
     Route::get('/game', [GamesController::class, 'previous']);
     Route::get('/puzzles/random/{from}/{to}', [PuzzlesController::class, 'randomInRange']);
+    Route::post('/puzzles', [PuzzlesController::class, 'store']);
 });
 
 Route::post('/sanctum/token', TokenController::class);

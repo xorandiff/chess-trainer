@@ -798,6 +798,7 @@ export default class Chessboard {
      * @param v 
      * @param w 
      */
+    //TODO This method has huge impact on overall performance, should be greatly optimized
     public static makeMove(pieces: Pieces, x: number | Square, y: number | Square, castlingRights?: CASTLING_SIDE[]) {
         const v = Array.isArray(x) ? this.c2s(...x) : x;
         const w = Array.isArray(y) ? this.c2s(...y) : y;
@@ -1076,10 +1077,10 @@ export default class Chessboard {
      * @param variation 
      * @returns 
      */
-    public static getVariationData(pieces: Pieces, variation: string, castlingRightsWhite: CASTLING_SIDE[], castlingRightsBlack: CASTLING_SIDE[]) {
+    public static getVariationData(pieces: Pieces, variation: string, castlingRightsWhite: CASTLING_SIDE[], castlingRightsBlack: CASTLING_SIDE[], oneMoveLimit?: boolean) {
         let piecesCopy: Pieces = JSON.parse(JSON.stringify(pieces));
 
-        const algebraicMoves = variation.split(' ');
+        const algebraicMoves = oneMoveLimit ? variation.split(' ')[0] : variation.split(' ');
         let variationData: Move[] = [];
 
         for (const algebraicMove of algebraicMoves) {

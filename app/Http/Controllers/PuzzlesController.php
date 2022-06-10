@@ -23,4 +23,20 @@ class PuzzlesController extends Controller
                         ->first();
         return new PuzzleResource($puzzle);
     }
+
+    /**
+     * Store a newly created puzzle.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        DB::table('puzzles')->insert([
+            'rating' => $request->rating,
+            'pgn' => $request->pgn
+        ]);
+
+        return response()->json('');
+    }
 }

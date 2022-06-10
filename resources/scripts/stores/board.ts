@@ -1,7 +1,7 @@
 import { message } from 'ant-design-vue';
 import Chessboard from "@/chessboard";
 import { useEngineStore } from "@/stores/engine";
-import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT } from '@/enums';
+import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT, ERROR_TYPE } from '@/enums';
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
@@ -475,7 +475,7 @@ export const useBoardStore = defineStore({
         engine.runAsync(resolve, ENGINE.STOCKFISH, fen ?? this.fen);
       });
     },
-    stockfishDone() {
+    stockfishDone(variationsOnly?: boolean) {
       this.engineWorking = false;
       const engine = useEngineStore();
 
@@ -492,7 +492,7 @@ export const useBoardStore = defineStore({
             mate
           };
 
-          if (!this.report.enabled && this.moves.length > 0 && !i) {
+          if (!variationsOnly && !this.report.enabled && this.moves.length > 0 && !i) {
             const bestMove = {
               move: this.variations[i].moves[0],
               eval: this.variations[i].eval,
@@ -510,7 +510,7 @@ export const useBoardStore = defineStore({
         }
       }
 
-      if ((this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
+      if (!variationsOnly && (this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
         const from = engine.response.bestmove.substring(0, 2);
         const to = engine.response.bestmove.substring(2, 4);
 
@@ -579,7 +579,7 @@ export const useBoardStore = defineStore({
       let stockfishConfig: StockfishConfig = engine.stockfish.config;
 
       //Set Stockfish config for report generation
-      engine.setStockfishConfig({ depth: 16 });
+      engine.setStockfishConfig({ depth: 12 });
 
       //Prepare game data for report computations
       let pieces: Pieces = JSON.parse(JSON.stringify(this.pieces));
@@ -627,7 +627,7 @@ export const useBoardStore = defineStore({
           const evaluation = mate ? score : (score / 100);
 
           variations[j] = {
-            ...Chessboard.getVariationData(pieces, pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK]),
+            ...Chessboard.getVariationData(pieces, pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], true),
             eval: currentColor === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
             mate
           };
@@ -689,6 +689,21 @@ export const useBoardStore = defineStore({
       } catch (error) {
           console.log(error);
           message.error('An error occured during saving your analysis');
+      }               
+    },
+    async addNewPuzzle(pgn: string, rating: number) {
+      try {
+        const pgnTags = pgn.slice(0, pgn.lastIndexOf(']') + 1).replaceAll(/\][^\[]+\[/gm, `]\n[`).replaceAll(/\d+\.[\.\s]+/gm, '').trim();
+        const pgnMoves = pgn.slice(pgn.lastIndexOf(']') + 1).replaceAll(/[\n\s]+/gm, ' ').trim();
+        const formattedPgn = pgnTags + `\n\n` + pgnMoves;
+        
+        await axios.get('/sanctum/csrf-cookie');
+        await axios.post('/api/puzzles', { pgn: formattedPgn, rating });
+
+        message.success('Puzzle successfully added');
+      } catch (error) {
+          console.log(error);
+          message.error('An error occured during adding your puzzle');
       }               
     },
     async updateAnalysis() {
