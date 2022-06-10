@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import axios from 'axios';
 import App from '@/App.vue';
 import Guest from '@/pages/Guest.vue';
-import Profile from "@/Profile.vue";
+import Profile from "@/pages/Profile.vue";
 import Openings from "@/Openings.vue";
 import Analysis from "@/Analysis.vue";
 import Play from "@/Play.vue";
