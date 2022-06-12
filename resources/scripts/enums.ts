@@ -10,6 +10,7 @@ export const enum SOUND_TYPE {
 };
 
 export enum PIECE_TYPE {
+    NONE = "",
     ROOK = "r",
     KNIGHT = "n",
     BISHOP = "b",
@@ -56,4 +57,13 @@ export enum MOVE_MARK {
 
 export enum ERROR_TYPE {
     PIECE_MISSING
+};
+
+export const enum HIGHLIGHT_COLOR {
+    NONE = '',
+    YELLOW = 'yellow',
+    ORANGE = 'orange',
+    RED = 'red',
+    GREEN = 'green',
+    BLUE = 'blue'
 };

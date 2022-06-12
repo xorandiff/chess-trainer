@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import Chessboard from "@/chessboard";
 import { storeToRefs } from 'pinia';
 import { PIECE_COLOR, PIECE_TYPE, GAME_RESULT } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 
 const store = useBoardStore();
 
-const { moves, currentMoveIndex, pieces, result } = storeToRefs(store);
+const { moves, currentMoveIndex, result } = storeToRefs(store);
+const { moveColor, moveType } = store;
 const { showMove } = store;
 </script>
 
@@ -14,15 +16,15 @@ const { showMove } = store;
         <a-descriptions-item>
             <a-row justify="start" :gutter="16">
                 <span v-for="(move, index) in moves">
-                    <span class="moveNumber" v-if="pieces[move.pieceIndex].color === PIECE_COLOR.WHITE">
+                    <span class="moveNumber" v-if="Chessboard.getColor(move.pieces[move.to]) === PIECE_COLOR.WHITE">
                         {{ Math.floor(index / 2) + 1 }}. 
                     </span>
                     <a-button class="moveButton" :type="currentMoveIndex === index ? 'dashed' : 'text'" @click="showMove(index)" :style="{ borderColor: currentMoveIndex === index ? 'yellow' : '' }">
-                        <template #icon v-if="pieces[move.pieceIndex].type != PIECE_TYPE.PAWN && !move.algebraicNotation.includes('O') && !move.promotionType">
-                            <span :class="`chessFont f-${pieces[move.pieceIndex].type}${pieces[move.pieceIndex].color}`"></span>
+                        <template #icon v-if="moveType(index) !== PIECE_TYPE.PAWN && !move.algebraicNotation.includes('O') && !move.promotionType">
+                            <span :class="`chessFont f-${moveType(index)}${moveColor(index)}`"></span>
                         </template>
                         {{ move.algebraicNotation.replace(/[QRKBN]/g, '') }}
-                        <span v-if="move.promotionType" :class="`chessFont f-${move.promotionType}${pieces[move.pieceIndex].color}`"></span>
+                        <span v-if="move.promotionType" :class="`chessFont f-${move.promotionType}${moveColor(index)}`"></span>
                     </a-button>
                 </span>
                 <span class="gameResult" v-if="result">

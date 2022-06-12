@@ -11,7 +11,7 @@ type Queen = "q";
 type Pawn = "p";
 
 type Piece = {
-    type: Rook | Bishop | Knight | King | Queen | Pawn;
+    type: string;
     color: White | Black;
     square: number;
     rank: number;
@@ -22,16 +22,18 @@ type Piece = {
 
 type PiecePartial = Partial<Piece>;
 
-type Pieces = Piece[];
+type Pieces = string[];
 
 type Move = {
+    pieces: Pieces;
     fen: string;
     from: number;
     to: number;
+    isCapture: boolean;
     isCheck: boolean;
     isCheckmate: boolean;
     castlingSide: boolean | "k" | "q";
-    promotionType: boolean | Piece["type"];
+    promotionType: "" | Piece["type"];
     algebraicNotation: string;
     sound: number;
     mark: number;

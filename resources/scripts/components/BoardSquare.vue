@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { useBoardStore } from "@/stores/board";
+import { HIGHLIGHT_COLOR } from '@/enums';
 
 defineProps<{
   index: number;
-  squareData: SquareData;
+  legalMove: boolean;
+  highlight: HIGHLIGHT_COLOR;
+  highlightBorder: boolean;
   occupied: boolean;
+  active: boolean;
 }>();
 
 const store = useBoardStore();
@@ -13,18 +17,18 @@ const { pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
 
 <template>
   <div 
-    :class="['square', { highlight: squareData.active || squareData.highlight }]"
+    :class="['square', { highlight: active }]"
     :style="{ cursor: occupied ? 'grab' : 'default' }"
     @mousedown.left="pieceMouseDown(index)"
     @mouseup.left="pieceMoveFromActive(index)"
     @click.right.prevent
     @mousedown.right="setArrowFrom(index)"
-    @mouseup.right.exact="setArrowTo(index, 'orange')"
-    @mouseup.right.ctrl="setArrowTo(index, 'red')"
-    @mouseup.right.shift="setArrowTo(index, 'green')"
-    @mouseup.right.alt="setArrowTo(index, 'blue')"
+    @mouseup.right.exact="setArrowTo(index, HIGHLIGHT_COLOR.RED)"
+    @mouseup.right.ctrl="setArrowTo(index, HIGHLIGHT_COLOR.ORANGE)"
+    @mouseup.right.shift="setArrowTo(index, HIGHLIGHT_COLOR.GREEN)"
+    @mouseup.right.alt="setArrowTo(index, HIGHLIGHT_COLOR.BLUE)"
   >
-    <div v-if="squareData.highlightColor" :class="['highlight', squareData.highlightColor]"></div>
-    <div v-if="squareData.legalMove" :class="occupied ? 'capture' : 'move'"></div>
+    <div v-if="highlight !== HIGHLIGHT_COLOR.NONE" :class="['highlight', highlight]"></div>
+    <div v-if="legalMove" :class="occupied ? 'capture' : 'move'"></div>
   </div>
 </template>

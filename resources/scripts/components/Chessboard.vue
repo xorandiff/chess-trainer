@@ -19,7 +19,7 @@ const orderedRow = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1,
 const indexArray = computed(() => orderedRow.value.map(n => orderedRow.value.map(m => [n, m])).flat());
 
 const store = useBoardStore();
-const { showEvaluation, currentMoveIndex, arrows, promotionModalVisible, dragging, occupiedSquares, fenMoves } = storeToRefs(store);
+const { showEvaluation, currentMoveIndex, arrows, promotionModalVisible, dragging, pieces, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
 const { pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
 
 function handleMousemove(event: MouseEvent) {
@@ -63,7 +63,7 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('mousemove', handleMousemove);
   window.addEventListener('mouseup', handleMouseUp);
-  console.log(fenMoves.value);
+  console.log(pieces.value);
   console.log(indexArray.value);
 });
 
@@ -79,19 +79,19 @@ onUnmounted(() => {
     <Eval v-if="showEvaluation" />
     <div 
       id="chessboard" 
-      :class="{ dragging: dragging }" 
+      :class="{ dragging: dragging >= 0 }" 
       @mouseup.left="pieceMouseUp" 
       @mousedown.left="clearColoredHighlights" 
       :style="{ transform: `scale(${boardScale})` }"
     >
       <template v-for="([i, j], n) in indexArray">
         <BoardPiece 
-          v-if="fenMoves[n] != 'X'"
-          :posLeft="dragging === i*10+j ? pieceLeft : 0" 
-          :posTop="dragging === i*10+j ? pieceTop : 0" 
+          v-if="pieces[n]"
+          :posLeft="dragging === n ? pieceLeft : 0" 
+          :posTop="dragging === n ? pieceTop : 0" 
           :rank="i"
           :file="j"
-          :piece="fenMoves[n]"
+          :piece="pieces[n]"
         />
       </template>
 
@@ -107,8 +107,11 @@ onUnmounted(() => {
       <BoardSquare 
         v-for="([i, j], n) in indexArray" 
         :index="n"
-        :squareData="store.board[i*10+j]" 
-        :occupied="fenMoves[n] != 'X'" 
+        :legalMove="visibleLegalMoves.includes(n)"
+        :highlight="highlights[n]"
+        :highlightBorder="dragging >= 0"
+        :occupied="!!pieces[n]" 
+        :active="activeIndex === n"
       />
 
       <div id="labels">

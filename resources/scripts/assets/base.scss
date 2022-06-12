@@ -12,11 +12,10 @@
 
 $light-square-color: #f0d9b5;
 $dark-square-color: #b58863;
-$light-square-active-color: #f7ec59;
-$dark-square-active-color: #dac431;
 $square-active-border-color: #fff;
 $white-eval-color: #fff;
 $black-eval-color: #403d39;
+$highlight-color-active: rgba(255, 234, 0, 0.5);
 $highlight-color-orange: rgba(255, 170, 0, 0.8);
 $highlight-color-red: rgba(248, 85, 63, 0.8);
 $highlight-color-green: rgba(159, 207, 63, 0.8);
@@ -136,6 +135,10 @@ body {
   }
 }
 
+.highlight {
+  background-color: $highlight-color-active;
+}
+
 .square {
   width: 12.5%;
   height: 12.5%;
@@ -158,12 +161,17 @@ body {
     opacity: 0.6;
   }
 
+  .yellow {
+    background-color: $highlight-color-active !important;
+    opacity: 1 !important;
+  }
+
   .orange {
-    background-color: $highlight-color-red !important;
+    background-color: $highlight-color-orange !important;
   }
 
   .red {
-    background-color: $highlight-color-orange !important;
+    background-color: $highlight-color-red !important;
   }
 
   .green {
