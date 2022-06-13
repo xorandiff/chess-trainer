@@ -2,10 +2,8 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from 'pinia';
 import { SettingOutlined, RetweetOutlined, ExpandAltOutlined } from '@ant-design/icons-vue';
-import { PIECE_TYPE } from "@/enums";
+import { PIECE_TYPE, HIGHLIGHT_COLOR } from "@/enums";
 import { useBoardStore } from "@/stores/board";
-import BoardPiece from "./BoardPiece.vue";
-import BoardSquare from "./BoardSquare.vue";
 import Eval from "./Eval.vue";
 
 const boardScale = ref<number>(1);
@@ -20,7 +18,7 @@ const indexArray = computed(() => orderedRow.value.map(n => orderedRow.value.map
 
 const store = useBoardStore();
 const { showEvaluation, currentMoveIndex, arrows, promotionModalVisible, dragging, pieces, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
-const { pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
+const { pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights, pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
 
 function handleMousemove(event: MouseEvent) {
   pieceLeft.value = event.pageX - 55;
@@ -63,8 +61,6 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('mousemove', handleMousemove);
   window.addEventListener('mouseup', handleMouseUp);
-  console.log(pieces.value);
-  console.log(indexArray.value);
 });
 
 onUnmounted(() => {
@@ -85,14 +81,12 @@ onUnmounted(() => {
       :style="{ transform: `scale(${boardScale})` }"
     >
       <template v-for="([i, j], n) in indexArray">
-        <BoardPiece 
-          v-if="pieces[n]"
-          :posLeft="dragging === n ? pieceLeft : 0" 
-          :posTop="dragging === n ? pieceTop : 0" 
-          :rank="i"
-          :file="j"
-          :piece="pieces[n]"
-        />
+        <template v-if="pieces[n] && dragging != n">
+            <div 
+              :class="`piece ${pieces[n] >= 'a' && pieces[n] <= 'z' ? 'b' : 'w'}${pieces[n].toLowerCase()}`"
+              :style="{ transform: `translateX(${(j - 1) * 100}%) translateY(${(i - 1) * 100}%)` }"
+            ></div>
+        </template>
       </template>
 
       <svg id="arrows" viewBox="0 0 100 100">
@@ -104,15 +98,22 @@ onUnmounted(() => {
         ></polygon>
       </svg>
 
-      <BoardSquare 
+      <div 
         v-for="([i, j], n) in indexArray" 
-        :index="n"
-        :legalMove="visibleLegalMoves.includes(n)"
-        :highlight="highlights[n]"
-        :highlightBorder="dragging >= 0"
-        :occupied="!!pieces[n]" 
-        :active="activeIndex === n"
-      />
+        :class="['square', { highlight: activeIndex === n }]"
+        :style="{ cursor: pieces[n] ? 'grab' : 'default' }"
+        @mousedown.left="pieceMouseDown(n)"
+        @mouseup.left="pieceMoveFromActive(n)"
+        @click.right.prevent
+        @mousedown.right="setArrowFrom(n)"
+        @mouseup.right.exact="setArrowTo(n, HIGHLIGHT_COLOR.RED)"
+        @mouseup.right.ctrl="setArrowTo(n, HIGHLIGHT_COLOR.ORANGE)"
+        @mouseup.right.shift="setArrowTo(n, HIGHLIGHT_COLOR.GREEN)"
+        @mouseup.right.alt="setArrowTo(n, HIGHLIGHT_COLOR.BLUE)"
+      >
+        <div v-show="highlights[n] !== HIGHLIGHT_COLOR.NONE" :class="['highlight', highlights[n]]"></div>
+        <div v-show="visibleLegalMoves.includes(n)" :class="pieces[n] ? 'capture' : 'move'"></div>
+      </div>
 
       <div id="labels">
         <div id="ranks">
@@ -156,6 +157,14 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <Teleport v-if="dragging >= 0" to="body">
+      <div
+        :class="`piece ${pieces[dragging] == pieces[dragging].toLowerCase() ? 'b' : 'w'}${pieces[dragging].toLowerCase()}`"
+        :style="{ left: `${pieceLeft}px`, top: `${pieceTop}px` }"
+      ></div>
+    </Teleport>
+
     <a-modal
       class="promotionModal"
       :visible="promotionModalVisible"
@@ -165,16 +174,16 @@ onUnmounted(() => {
     >
       <a-space>
         <a-button @click="setPromotionPiece(PIECE_TYPE.QUEEN)">
-          <img src="img/pieces/wq.png" width="75" height="75">
+          <div class="promotionPiece wq"></div>
         </a-button>
         <a-button @click="setPromotionPiece(PIECE_TYPE.ROOK)">
-          <img src="img/pieces/wr.png" width="75" height="75">
+          <div class="promotionPiece wr"></div>
         </a-button>
         <a-button @click="setPromotionPiece(PIECE_TYPE.KNIGHT)">
-          <img src="img/pieces/wn.png" width="75" height="75">
+          <div class="promotionPiece wn"></div>
         </a-button>
         <a-button @click="setPromotionPiece(PIECE_TYPE.BISHOP)">
-          <img src="img/pieces/wb.png" width="75" height="75">
+          <div class="promotionPiece wb"></div>
         </a-button>
       </a-space>
     </a-modal>

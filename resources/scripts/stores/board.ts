@@ -43,7 +43,6 @@ export const useBoardStore = defineStore({
       fullmoves,
       lastMove: {} as Move,
       moves: [] as Move[],
-      movesAlgebraic: '',
       variations: [] as Variation[],
       result: GAME_RESULT.IN_PROGRESS,
       promotionType: PIECE_TYPE.NONE,
@@ -101,6 +100,7 @@ export const useBoardStore = defineStore({
     oppositeColor: (state) => state.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE,
     movesLength: (state) => state.moves.length,
     movesReversed: (state) => state.moves.slice().reverse(),
+    movesAlgebraic: (state) => state.moves.map(x => x.algebraicNotation).reduce((p, c, i) => p + (i % 2 ? ` ${c} ` : `${i / 2 + 1}. ${c}`), '').trim(),
     currentMove: (state) => state.currentMoveIndex ? state.moves[state.currentMoveIndex] : false,
     isPlayerTurn: (state) => state.currentTurnColor == state.color,
     pieceType: (state) => {
@@ -201,7 +201,6 @@ export const useBoardStore = defineStore({
       this.fullmoves = fullmoves;
       this.pieces = pieces;
       this.moves = moves;
-      this.movesAlgebraic = pgn.slice(pgn.lastIndexOf(']') + 1).trim();
       this.openingData = Chessboard.getOpeningData(this.movesAlgebraic);
       if (this.moves[this.moves.length - 1].isCheckmate) {
         this.result = this.moveColor(this.moves.length - 1) == PIECE_COLOR.WHITE ? GAME_RESULT.WHITE_WON : GAME_RESULT.BLACK_WON;
@@ -211,7 +210,7 @@ export const useBoardStore = defineStore({
       if (moves.length) {
         this.currentTurnColor = moves.length % 2 ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
         this.pieces = Chessboard.fenToPiecesArray(moves[moves.length - 1].fen);
-        this.stockfishRun();
+        //this.stockfishRun();
       }
     },
     setHighlightColor(n: number, color: HIGHLIGHT_COLOR) {
@@ -222,7 +221,6 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMouseDown(n: number) {
-      console.log(...this.legalMoves[n]);
       if (this.result) {
         return;
       } else if (!this.pieces[n] && !this.visibleLegalMoves.includes(n)) {
@@ -283,11 +281,8 @@ export const useBoardStore = defineStore({
         this.clearHighlights();
         this.activeIndex = -1;
 
-        const i = (n / 8 >> 0) + 1;
-        const j = (n % 8) + 1;
-
-        const r = (m / 8 >> 0) + 1;
-        const f = (m & 8) + 1;
+        const [i, j] = Chessboard.i2c(n);
+        const [r, f] = Chessboard.i2c(m);
         
         let sound = SOUND_TYPE.MOVE_SELF;
 
@@ -298,10 +293,10 @@ export const useBoardStore = defineStore({
         let isCheck = false;
 
         //Castling
-        if (i === r && [1, 8].includes(r) && f === 5 && (Math.abs(f - j) === 2)) {
-          // Only possible files for king are 7 and 3
-          const rookFileFrom = j === 7 ? 8 : 1;
-          const rookFileTo = j === 7 ? 6 : 4;
+        if (i === r && [1, 8].includes(r) && j === 5 && (Math.abs(f - j) === 2)) {
+          // Only possible files for castled king are 7 and 3
+          const rookFileFrom = f === 7 ? 8 : 1;
+          const rookFileTo = f === 7 ? 6 : 4;
 
           sound = SOUND_TYPE.CASTLE;
           castlingSide = rookFileFrom === 8 ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
@@ -327,8 +322,8 @@ export const useBoardStore = defineStore({
           isCapture = true;
         }
 
-        // Increment fullmoves and halfmoves counters if black is moving
-        if (this.currentTurnColor === PIECE_COLOR.BLACK) {
+        // Increment fullmoves and halfmoves counters if white is moving
+        if (this.currentTurnColor === PIECE_COLOR.WHITE && this.moves.length) {
           this.fullmoves++;
           this.halfmoves++;
         }
@@ -397,7 +392,7 @@ export const useBoardStore = defineStore({
 
         move.sound = sound;
 
-        move.algebraicNotation = Chessboard.moveToAlgebraic(move, [ ...this.legalMoves ]);
+        const previousLegalMoves = [ ...this.legalMoves ];
 
         // Compute legal moves for next move
         this.legalMoves = this.legalMoves.map((legalMoves, n) => Chessboard.computeLegalMoves(this.pieces, n, this.castlingRights[this.currentTurnColor], move));
@@ -407,19 +402,13 @@ export const useBoardStore = defineStore({
         move.isCheckmate = !hasOpponentLegalMoves && hasLegalMoves;
         const isStalemate = !hasOpponentLegalMoves && !hasLegalMoves;
         
+        move.algebraicNotation = Chessboard.moveToAlgebraic(move, previousLegalMoves);
 
         let castlingRights = `${this.castlingRights[PIECE_COLOR.WHITE].join('')}${this.castlingRights[PIECE_COLOR.BLACK].join('')}`;
 
         // Update FEN string for current move
         move.fen = `${this.fenPieces} ${this.currentTurnColor} ${castlingRights} ${enPassantTargetSquare} ${this.halfmoves} ${this.fullmoves}`;
         move.pieces = [ ...this.pieces ];
-
-        // Update algebraic move list
-        if (this.pieceColor(n) === PIECE_COLOR.WHITE) {
-          this.movesAlgebraic += `${Math.floor((this.currentMoveIndex + 1) / 2) + 1}. ${move.algebraicNotation}`;
-        } else {
-          this.movesAlgebraic += ` ${move.algebraicNotation}`;
-        }
 
         // Update move history
         this.moves.push(move);
@@ -451,7 +440,7 @@ export const useBoardStore = defineStore({
           effects[SOUND_TYPE.GAME_END].play();
         } else {
           effects[sound].play();
-          this.stockfishRun();
+          //this.stockfishRun();
         }
       } else {
         this.pieceMouseUp();
@@ -465,7 +454,7 @@ export const useBoardStore = defineStore({
         if (this.moves[index].isCheckmate) {
           this.variations = [];
         } else {
-          this.stockfishRun(this.moves[index].fen);
+          //this.stockfishRun(this.moves[index].fen);
         }
 
         effects[this.moves[index].sound].play();
@@ -552,13 +541,13 @@ export const useBoardStore = defineStore({
     switchAlwaysStockfish() {
       this.alwaysStockfish = !this.alwaysStockfish;
       if (this.alwaysStockfish) {
-        this.stockfishRun();
+        //this.stockfishRun();
       }
     },
     switchStockfish() {
       this.stockfish = !this.stockfish;
       if (this.stockfish && this.currentTurnColor === PIECE_COLOR.BLACK) {
-        this.stockfishRun();
+        //this.stockfishRun();
       }
     },
     setArrowFrom(v: number) {

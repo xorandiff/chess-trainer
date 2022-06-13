@@ -333,9 +333,9 @@ export default class Chessboard {
      * @returns 
      */
     public static moveToAlgebraic(move: Move, legalMoves: number[][]) : string {
-        const type = this.getMoveType(move);
+        const type = move.pieces[move.from].toLowerCase() as PIECE_TYPE;
 
-        let pieceString = '';
+        let pieceString = move.pieces[move.from].toUpperCase();
         if (!move.isCapture && (type === PIECE_TYPE.PAWN || move.promotionType)) {
             pieceString = '';
         }
@@ -356,16 +356,16 @@ export default class Chessboard {
                 piecesOfType = piecesOfType.map((p, i) => legalMoves[i].includes(move.to) ? p : '');
 
                 if (piecesOfType.filter(p => p.length).length > 0) {
-                    piecesOfType = piecesOfType.filter((p, i) => i % 8 === move.from % 8);
-                    if (!piecesOfType.length) {
+                    piecesOfType = piecesOfType.map((p, i) => i % 8 === move.from % 8 ? p : '');
+                    if (!piecesOfType.filter(p => p.length)) {
                         /**
                          * There are no other pieces on the same file, so file is enough 
                          * to disambiguate move
                          */
                         onSquare = this.i2a(move.from)[0];
                     } else {
-                        piecesOfType = piecesOfType.filter((p, i) => ((i / 8) >> 0) === ((move.from / 8) >> 0));
-                        if (!piecesOfType.length) {
+                        piecesOfType = piecesOfType.map((p, i) => ((i / 8) >> 0) === ((move.from / 8) >> 0) ? p : '');
+                        if (!piecesOfType.filter(p => p.length)) {
                             /**
                              * There are no other pieces on the same rank, so rank is enough 
                              * to disambiguate move
@@ -1031,7 +1031,7 @@ export default class Chessboard {
         let moveslength = 0;
 
         for (const opening of eco) {
-            const openingMovesAlgebraic = opening.movesAlgebraic.slice(0, movesAlgebraic.length);
+            const openingMovesAlgebraic = opening.movesAlgebraic.slice(0, movesAlgebraic.length + 1);
             if (movesAlgebraic.startsWith(openingMovesAlgebraic) && openingMovesAlgebraic.length > moveslength) {
                 moveslength = openingMovesAlgebraic.length;
                 openingData = opening;
