@@ -463,7 +463,7 @@ export default class Chessboard {
      * @param color 
      * @returns 
      */
-    public static algebraicToMove(pieces: Pieces, algebraicMove: string, color: PIECE_COLOR, castlingRights: CASTLING_SIDE[], lastMove: Move) : Move | undefined {
+    public static algebraicToMove(pieces: Pieces, algebraicMove: string, color: PIECE_COLOR, castlingRights: CASTLING_SIDE[], lastMove?: Move) : Move | undefined {
         const groups = algebraicMove.match(/(N|K|R|B|Q)?([a-h]?[1-8]?)?(x)?([a-h][1-8])?(=[N|K|R|B|Q])?(O-O-O|O-O)?(\+|#)?/);
         if (groups) {
             let fen = '';
@@ -476,7 +476,7 @@ export default class Chessboard {
             const isCapture = groups[3] !== undefined;
             const promotionType = groups[5] !== undefined ? groups[5][1].toLowerCase() as PIECE_TYPE : PIECE_TYPE.NONE;
             
-            const legalMoves = new Array(64).fill([]).map((x, n) => this.computeLegalMoves(pieces, n, castlingRights, lastMove));
+            const legalMoves = new Array(64).fill([]).map((x, n) => this.computeLegalMoves(pieces, n, castlingRights, lastMove ?? {}));
 
             let castlingSide: boolean | CASTLING_SIDE = false;
             if (groups[6]) {
@@ -1019,7 +1019,7 @@ export default class Chessboard {
      * @param variation 
      * @returns 
      */
-    public static getVariationData(pieces: Pieces, variation: string, castlingRightsWhite: CASTLING_SIDE[], castlingRightsBlack: CASTLING_SIDE[], legalMoves: number[][], oneMoveLimit?: boolean) {
+    public static getVariationData(pieces: Pieces, variation: string, castlingRightsWhite: CASTLING_SIDE[], castlingRightsBlack: CASTLING_SIDE[], oneMoveLimit?: boolean) {
         const algebraicMoves = oneMoveLimit ? variation.split(' ')[0] : variation.split(' ');
         let variationData: Move[] = [];
 
@@ -1030,7 +1030,8 @@ export default class Chessboard {
             const m = this.a2i(algebraicTo);
             
             if (pieces[n]) {
-                const oppositeColor = this.getColor(pieces[n]) === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+                const color = this.getColor(pieces[n]);
+                const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
                 let move: Move = {
                     pieces,
@@ -1047,6 +1048,8 @@ export default class Chessboard {
                     mark: -1
                 };
 
+                const previousLegalMoves = new Array(64).fill([]).map((x, n) => this.computeLegalMoves(pieces, n, color === PIECE_COLOR.WHITE ? castlingRightsWhite : castlingRightsBlack, {}));
+
                 if (this.getColor(pieces[n]) == PIECE_COLOR.WHITE) {
                     this.makeMove(pieces, n, m);
                     //compute legalmoves
@@ -1057,10 +1060,12 @@ export default class Chessboard {
                     castlingRightsBlack = this.updateCastlingRights(pieces, PIECE_COLOR.BLACK, castlingRightsBlack);
                 }
 
+                const nextLegalMoves = new Array(64).fill([]).map((x, n) => this.computeLegalMoves(pieces, n, oppositeColor === PIECE_COLOR.WHITE ? castlingRightsWhite : castlingRightsBlack, {}));
+
                 move.isCheck = this.detectCheck(pieces, oppositeColor);
-                move.isCheckmate = this.detectCheckmate(pieces, oppositeColor, legalMoves);
+                move.isCheckmate = this.detectCheckmate(pieces, oppositeColor, nextLegalMoves);
     
-                move.algebraicNotation = this.moveToAlgebraic(move, legalMoves);
+                move.algebraicNotation = this.moveToAlgebraic(move, nextLegalMoves);
     
                 variationData.push(move);
             } else {

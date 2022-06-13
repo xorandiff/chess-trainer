@@ -189,7 +189,7 @@ export const useBoardStore = defineStore({
       if (moves.length) {
         this.currentTurnColor = moves.length % 2 ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
         this.pieces = Chessboard.fenToPieces(moves[moves.length - 1].fen);
-        //this.stockfishRun();
+        this.stockfishRun();
       }
     },
     setHighlightColor(n: number, color: HIGHLIGHT_COLOR) {
@@ -427,7 +427,7 @@ export const useBoardStore = defineStore({
           effects[SOUND_TYPE.GAME_END].play();
         } else {
           effects[sound].play();
-          //this.stockfishRun();
+          this.stockfishRun();
         }
       } else {
         this.pieceMouseUp();
@@ -441,7 +441,7 @@ export const useBoardStore = defineStore({
         if (this.moves[index].isCheckmate) {
           this.variations = [];
         } else {
-          //this.stockfishRun(this.moves[index].fen);
+          this.stockfishRun(this.moves[index].fen);
         }
 
         effects[this.moves[index].sound].play();
@@ -478,7 +478,7 @@ export const useBoardStore = defineStore({
           const evaluation = mate ? score : (score / 100);
 
           this.variations[i] = {
-            ...Chessboard.getVariationData([ ...this.pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], this.legalMoves),
+            ...Chessboard.getVariationData([ ...this.pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK]),
             eval: this.moveColor(this.currentMoveIndex) === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
             mate
           };
@@ -526,13 +526,13 @@ export const useBoardStore = defineStore({
     switchAlwaysStockfish() {
       this.alwaysStockfish = !this.alwaysStockfish;
       if (this.alwaysStockfish) {
-        //this.stockfishRun();
+        this.stockfishRun();
       }
     },
     switchStockfish() {
       this.stockfish = !this.stockfish;
       if (this.stockfish && this.currentTurnColor === PIECE_COLOR.BLACK) {
-        //this.stockfishRun();
+        this.stockfishRun();
       }
     },
     setArrowFrom(v: number) {
@@ -613,7 +613,7 @@ export const useBoardStore = defineStore({
           const evaluation = mate ? score : (score / 100);
 
           variations[j] = {
-            ...Chessboard.getVariationData([ ...pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], this.legalMoves, true),
+            ...Chessboard.getVariationData([ ...pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], true),
             eval: currentColor === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
             mate
           };

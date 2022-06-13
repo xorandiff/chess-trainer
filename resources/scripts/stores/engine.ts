@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { useBoardStore } from "@/stores/board";
 import type { ENGINE } from '@/enums';
 
-let stockfish = new Worker('/build/stockfish11.js');
+let stockfish = new Worker('build/stockfish11.js');
 
 stockfish.postMessage('uci');
 stockfish.postMessage('ucinewgame');
