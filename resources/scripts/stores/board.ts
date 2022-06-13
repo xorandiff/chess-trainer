@@ -22,10 +22,11 @@ effects[SOUND_TYPE.GAME_END] = new Howl({ src: ['sounds/game_end.mp3'], preload:
 export const useBoardStore = defineStore({
   id: "board",
   state: () => {
-    const chessboard = Chessboard.create('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-    const { initialFen, pieces, castlingRights, halfmoves, fullmoves, color } = chessboard;
+    const initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const chessboard = Chessboard.create(initialFen);
+    const { pieces, castlingRights, halfmoves, fullmoves, color } = chessboard;
     let legalMoves: number[][] = new Array(64).fill([]);
-    legalMoves = legalMoves.map((legalMoves, n) => Chessboard.computeLegalMoves(pieces, n, castlingRights[color], {} as Move));
+    legalMoves = legalMoves.map((legalMoves, n) => Chessboard.computeLegalMoves(pieces, n, castlingRights[color], initialFen));
 
     return ({
       highlights: new Array(64).fill(HIGHLIGHT_COLOR.NONE) as HIGHLIGHT_COLOR[],
@@ -381,9 +382,14 @@ export const useBoardStore = defineStore({
 
         const previousLegalMoves = [ ...this.legalMoves ];
 
-        // Compute legal moves for next move
-        this.legalMoves = this.legalMoves.map((legalMoves, n) => Chessboard.computeLegalMoves(this.pieces, n, this.castlingRights[this.currentTurnColor], move));
+        let castlingRights = `${this.castlingRights[PIECE_COLOR.WHITE].join('').toUpperCase()}${this.castlingRights[PIECE_COLOR.BLACK].join('')}` ?? '-';
 
+        // Update FEN string for current move
+        move.fen = `${this.fenPieces} ${this.currentTurnColor} ${castlingRights} ${enPassantAlgebraic} ${this.halfmoves} ${this.fullmoves}`;
+        
+        // Compute legal moves for next move
+        this.legalMoves = this.legalMoves.map((legalMoves, n) => Chessboard.computeLegalMoves(this.pieces, n, this.castlingRights[this.currentTurnColor], move.fen));
+        
         const hasOpponentLegalMoves = this.pieces.find((piece, n) => piece && Chessboard.getColor(piece) === this.currentTurnColor && this.legalMoves[n]) !== undefined;
         const hasLegalMoves = this.pieces.find((piece, n) => piece && Chessboard.getColor(piece) === this.oppositeColor && this.legalMoves[n]) !== undefined;
         move.isCheckmate = !hasOpponentLegalMoves && hasLegalMoves;
@@ -391,12 +397,8 @@ export const useBoardStore = defineStore({
         
         move.algebraicNotation = Chessboard.moveToAlgebraic(move, previousLegalMoves);
 
-        let castlingRights = `${this.castlingRights[PIECE_COLOR.WHITE].join('').toUpperCase()}${this.castlingRights[PIECE_COLOR.BLACK].join('')}` ?? '-';
-
-        // Update FEN string for current move
-        move.fen = `${this.fenPieces} ${this.currentTurnColor} ${castlingRights} ${enPassantAlgebraic} ${this.halfmoves} ${this.fullmoves}`;
         move.pieces = [ ...this.pieces ];
-
+        
         // Update move history
         this.moves.push(move);
 
@@ -478,7 +480,7 @@ export const useBoardStore = defineStore({
           const evaluation = mate ? score : (score / 100);
 
           this.variations[i] = {
-            ...Chessboard.getVariationData([ ...this.pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK]),
+            ...Chessboard.getVariationData([ ...this.pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], this.movesLength ? this.moves[this.moves.length - 1].fen : this.initialFen),
             eval: this.moveColor(this.currentMoveIndex) === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
             mate
           };
@@ -613,7 +615,7 @@ export const useBoardStore = defineStore({
           const evaluation = mate ? score : (score / 100);
 
           variations[j] = {
-            ...Chessboard.getVariationData([ ...pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], true),
+            ...Chessboard.getVariationData([ ...pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], i ? this.moves[i - 1].fen : this.initialFen, true),
             eval: currentColor === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
             mate
           };
