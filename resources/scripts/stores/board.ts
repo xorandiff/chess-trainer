@@ -41,6 +41,7 @@ export const useBoardStore = defineStore({
       pieces,
       halfmoves,
       fullmoves,
+      enPassantTargetSquare: -1,
       lastMove: {} as Move,
       moves: [] as Move[],
       variations: [] as Variation[],
@@ -115,29 +116,7 @@ export const useBoardStore = defineStore({
     moveColor: (state) => {
       return (n: number) => state.moves[n].pieces[state.moves[n].to].toLowerCase() == state.moves[n].pieces[state.moves[n].to] ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
     },
-    fenPieces: (state) => {
-      let fenPieces = '';
-      let emptyCount = 0;
-      for (let i = 0; i < 64; i++) {
-        if (i && !(i % 8)) {
-          if (emptyCount) {
-            fenPieces += `${emptyCount}`;
-            emptyCount = 0;
-          }
-          fenPieces += '/';
-        } else if (state.pieces[i]) {
-          if (emptyCount) {
-            fenPieces += `${emptyCount}`;
-            emptyCount = 0;
-          } else {
-            fenPieces += state.pieces[i];
-          }
-        } else {
-          emptyCount++;
-        }
-      }
-      return fenPieces;
-    }
+    fenPieces: (state) => _.chunk(state.pieces.map(p => p ? p : ' '), 8).map(row => row.join('').split(/\b/).map(x => x.includes(' ') ? x.length : x).join('')).join('/'),
   },
   actions: {
     newGame(fen: string) {
@@ -209,7 +188,7 @@ export const useBoardStore = defineStore({
 
       if (moves.length) {
         this.currentTurnColor = moves.length % 2 ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-        this.pieces = Chessboard.fenToPiecesArray(moves[moves.length - 1].fen);
+        this.pieces = Chessboard.fenToPieces(moves[moves.length - 1].fen);
         //this.stockfishRun();
       }
     },
@@ -305,17 +284,25 @@ export const useBoardStore = defineStore({
           Chessboard.makeMove(this.pieces, [i, rookFileFrom], [i, rookFileTo]);
         }
 
-        let enPassantTargetSquare = '';
+        let enPassantAlgebraic = '-';
 
-        if (this.pieceType(n) == PIECE_TYPE.PAWN) {
-          if (this.pieces[m] && j != f) {
+        if (this.pieceType(n) === PIECE_TYPE.PAWN) {
+          if (this.enPassantTargetSquare === (this.currentTurnColor === PIECE_COLOR.WHITE ? m + 8 : m - 8)) {
             // En passant capture
             isCapture = true;
-            const captureIndex = Chessboard.c2i(this.isPlayerTurn ? i + 1 : i - 1, j);
-            this.pieces[captureIndex] = '';
+            sound = SOUND_TYPE.CAPTURE;
+
+            this.pieces[this.enPassantTargetSquare] = '';
+            
+            this.enPassantTargetSquare = -1;
           } else if (Math.abs(i - r) == 2) {
-            enPassantTargetSquare = `${m}`;
+            this.enPassantTargetSquare = m;
+            enPassantAlgebraic = Chessboard.i2a(m);
+          } else {
+            this.enPassantTargetSquare = -1;
           }
+        } else {
+          this.enPassantTargetSquare = -1;
         }
 
         if (this.pieces[m]) {
@@ -404,10 +391,10 @@ export const useBoardStore = defineStore({
         
         move.algebraicNotation = Chessboard.moveToAlgebraic(move, previousLegalMoves);
 
-        let castlingRights = `${this.castlingRights[PIECE_COLOR.WHITE].join('')}${this.castlingRights[PIECE_COLOR.BLACK].join('')}`;
+        let castlingRights = `${this.castlingRights[PIECE_COLOR.WHITE].join('').toUpperCase()}${this.castlingRights[PIECE_COLOR.BLACK].join('')}` ?? '-';
 
         // Update FEN string for current move
-        move.fen = `${this.fenPieces} ${this.currentTurnColor} ${castlingRights} ${enPassantTargetSquare} ${this.halfmoves} ${this.fullmoves}`;
+        move.fen = `${this.fenPieces} ${this.currentTurnColor} ${castlingRights} ${enPassantAlgebraic} ${this.halfmoves} ${this.fullmoves}`;
         move.pieces = [ ...this.pieces ];
 
         // Update move history
@@ -483,8 +470,6 @@ export const useBoardStore = defineStore({
       this.engineWorking = false;
       const engine = useEngineStore();
 
-      return;
-
       if (this.currentMoveIndex >= 0) {
         //Update variations
         for (let i = 0; i < engine.response.variations.length; i++) {
@@ -493,7 +478,7 @@ export const useBoardStore = defineStore({
           const evaluation = mate ? score : (score / 100);
 
           this.variations[i] = {
-            ...Chessboard.getVariationData([ ...this.pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK]),
+            ...Chessboard.getVariationData([ ...this.pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], this.legalMoves),
             eval: this.moveColor(this.currentMoveIndex) === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
             mate
           };
@@ -628,7 +613,7 @@ export const useBoardStore = defineStore({
           const evaluation = mate ? score : (score / 100);
 
           variations[j] = {
-            ...Chessboard.getVariationData([ ...pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], true),
+            ...Chessboard.getVariationData([ ...pieces ], pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], this.legalMoves, true),
             eval: currentColor === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
             mate
           };
@@ -651,7 +636,6 @@ export const useBoardStore = defineStore({
 
       this.pieces = pieces;
       this.variations = variations;
-      this.movesAlgebraic = movesAlgebraic;
       this.openingData = openingData;
 
       //Restore Stockfish configuration

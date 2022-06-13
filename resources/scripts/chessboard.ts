@@ -76,7 +76,7 @@ export default class Chessboard {
      * @param fen 
      * @returns 
      */
-    public static fenToPiecesArray(fen: string) {
+    public static fenToPieces(fen: string) {
         return fen.split(' ')[0]                                    // Extract pieces portion of FEN
                   .replaceAll('/', '')                              // Remove slashes
                   .split('')                                        // Split characters into singletons
@@ -95,6 +95,60 @@ export default class Chessboard {
                   .join('')                                         // Join singletons back into string
                   .split('')                                        // Split into singletons again
                   .map(s => s.trim());                              // Replace [' '] with ['']
+    }
+
+    /**
+     * Method for converting pieces array into pieces 
+     * segment of FEN string 
+     * 
+     * @param pieces 
+     * @returns 
+     */
+    public static piecesToFen(pieces: Pieces) {
+        const piecesWhitespaces = pieces.map(p => p ? p : ' ');     // Replace '' with ' '
+        return _.chunk(piecesWhitespaces, 8)                        // Divide into chunks of length 8
+                .map(row => {
+                    return row.join('')                             // Join into single string
+                              .split(/\b/)                          // Split by word boundaries
+                              .map(x => {
+                                if (x.includes(' ')) {
+                                    return x.length;                // Replace whitespaces with their amount
+                                }
+                                return x;
+                              })
+                              .join('');                            // Join back into one string
+                })
+                .join('/');                                         // Join rows with slashes
+    }
+
+    /**
+     * Method for creating a FEN string from 
+     * pieces array and rest of  necessary board 
+     * data
+     * 
+     * @param pieces 
+     * @param castlingRightsWhite 
+     * @param castlingRightsBlack 
+     * @param halfmoves 
+     * @param fullmoves 
+     * @param currentTurnColor 
+     * @param lastMove 
+     */
+    public static getFen(pieces: Pieces, castlingRightsWhite: CASTLING_SIDE[], castlingRightsBlack: CASTLING_SIDE[], halfmoves: number, fullmoves: number, currentTurnColor: PIECE_COLOR, lastMove: Move) {
+        let fenPieces = this.piecesToFen(pieces);
+        let castlingRights = `${castlingRightsWhite.join('').toUpperCase()}${castlingRightsBlack.join('')}` ?? '-';
+
+        let enPassantAlgebraic = '-';
+        if (this.getMoveType(lastMove) === PIECE_TYPE.PAWN && !lastMove.isCapture) {
+            const [i, j] = this.i2c(lastMove.from);
+            const [r, f] = this.i2c(lastMove.to);
+
+            if (i == r && Math.abs(j - f) == 2) {
+                enPassantAlgebraic = this.i2a(lastMove.to);
+            }
+        }
+
+        return `${fenPieces} ${currentTurnColor} ${castlingRights} ${enPassantAlgebraic} ${halfmoves} ${fullmoves}`;
     }
 
     /**
@@ -137,7 +191,7 @@ export default class Chessboard {
             }
         }
 
-        let pieces = this.fenToPiecesArray(fen);
+        let pieces = this.fenToPieces(fen);
         let moves: Move[] = [];
 
         if (fenOrPgn && fenOrPgn.includes('[')) {
@@ -152,7 +206,7 @@ export default class Chessboard {
                     fullmoves++;
                 }
 
-                let move = this.algebraicToMove(pieces, moveAlgebraic, currentTurnColor)!;
+                let move = this.algebraicToMove(pieces, moveAlgebraic, currentTurnColor, castlingRights[currentTurnColor], moves.length ? moves[moves.length - 1] : {})!;
                 if (move.castlingSide) {
                     let rookFromAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'h1' : 'a1';
                     let rookToAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'f1' : 'd1';
@@ -160,21 +214,23 @@ export default class Chessboard {
                         rookFromAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'h8' : 'a8';
                         rookToAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'f8' : 'd8';
                     }
-                    pieces = this.makeMove(pieces, this.a2i(rookFromAlgebraic), this.a2i(rookToAlgebraic));
+                    this.makeMove(pieces, this.a2i(rookFromAlgebraic), this.a2i(rookToAlgebraic));
                 }
-                pieces = this.makeMove(pieces, move.from, move.to);
+                this.makeMove(pieces, move.from, move.to);
 
+                move.pieces = [ ...pieces ];
+                
                 castlingRights[currentTurnColor] = this.updateCastlingRights(pieces, currentTurnColor, castlingRights[currentTurnColor]);
-
+                                
                 currentTurnColor = currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
-                if (typeof move.promotionType == 'string') {
+                if (move.promotionType) {
                     //TODO check if promotion type doesn't cause bug
                     //const movedPiece = this.p(pieces, move.to);
                     //pieces[pieces.indexOf(movedPiece!)].type = move.promotionType;
                 }
 
-                //move.fen = this.getFen(pieces, castlingRights, halfmoves, fullmoves, currentTurnColor, move);
+                move.fen = this.getFen(pieces, castlingRights[PIECE_COLOR.WHITE], castlingRights[PIECE_COLOR.BLACK], halfmoves, fullmoves, currentTurnColor, move);
 
                 moves.push(move);
             }
@@ -407,18 +463,20 @@ export default class Chessboard {
      * @param color 
      * @returns 
      */
-    public static algebraicToMove(pieces: Pieces, algebraicMove: string, color: PIECE_COLOR) : Move | undefined {
+    public static algebraicToMove(pieces: Pieces, algebraicMove: string, color: PIECE_COLOR, castlingRights: CASTLING_SIDE[], lastMove: Move) : Move | undefined {
         const groups = algebraicMove.match(/(N|K|R|B|Q)?([a-h]?[1-8]?)?(x)?([a-h][1-8])?(=[N|K|R|B|Q])?(O-O-O|O-O)?(\+|#)?/);
         if (groups) {
             let fen = '';
             let sound = SOUND_TYPE.MOVE_SELF;
             let from = -1;
-
+            
             let pieceType = groups[1] !== undefined ? groups[1].toLowerCase() as PIECE_TYPE : PIECE_TYPE.PAWN;
             let fromAlgebraic = groups[2];
             let toAlgebraic = groups[4];
             const isCapture = groups[3] !== undefined;
             const promotionType = groups[5] !== undefined ? groups[5][1].toLowerCase() as PIECE_TYPE : PIECE_TYPE.NONE;
+            
+            const legalMoves = new Array(64).fill([]).map((x, n) => this.computeLegalMoves(pieces, n, castlingRights, lastMove));
 
             let castlingSide: boolean | CASTLING_SIDE = false;
             if (groups[6]) {
@@ -459,9 +517,9 @@ export default class Chessboard {
                     } else {
                         let filteredIndexes: number[] = [];
                         if (fromAlgebraic.charCodeAt(0) >= '1'.charCodeAt(0) && fromAlgebraic.charCodeAt(0) <= '8'.charCodeAt(0)) {
-                            filteredIndexes = this.getFilteredIndexes(pieces, { rank: 9 - parseInt(fromAlgebraic), color, type: pieceType, legalMoves: [to] });
+                            filteredIndexes = this.getFilteredIndexes(pieces, { rank: 9 - parseInt(fromAlgebraic), color, type: pieceType }).filter(i => legalMoves[i].includes(to));
                         } else {
-                            filteredIndexes = this.getFilteredIndexes(pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color, type: pieceType, legalMoves: [to] });
+                            filteredIndexes = this.getFilteredIndexes(pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color, type: pieceType }).filter(i => legalMoves[i].includes(to));
                         }
                         
                         if (filteredIndexes) {
@@ -475,11 +533,12 @@ export default class Chessboard {
                         color,
                         type: pieceType 
                     };
+
+                    let matchingIndexes = this.getFilteredIndexes(pieces, pieceFilters);
+
                     if (!castlingSide) {
-                        pieceFilters.legalMoves = [to];
-                        // TODO handle legalMoves another way
+                        matchingIndexes = matchingIndexes.filter(i => legalMoves[i].includes(to));
                     }
-                    const matchingIndexes = this.getFilteredIndexes(pieces, pieceFilters);
 
                     if (matchingIndexes.length) {
                         from = matchingIndexes[0];
@@ -490,7 +549,7 @@ export default class Chessboard {
             }
 
             return ({
-                pieces,
+                pieces: [],
                 from,
                 to,
                 isCapture: false,
