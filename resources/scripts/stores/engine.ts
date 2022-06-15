@@ -14,7 +14,7 @@ stockfish.addEventListener('message', function (e) {
 
         if (data[0] == 'i') {
             const d = parseInt(data.substring(11, 13).trimEnd());
-            if (d >= useEngineStore().stockfish.config.depth - 3) {
+            if (d == useEngineStore().stockfish.config.depth) {
                 const infoRegexp = /depth\s+(?<depthString>\d+)\s+seldepth\s+(?<seldepth>[\d]+)\s+multipv\s+(?<multipv>\d+)\s+score\s+(?<score>.+)\s+nodes.*\s+pv\s+(?<pv>.+)\s+bmc/;
                 const { depthString, seldepth, multipv, score, pv } = data.match(infoRegexp)!.groups!;
                 const depth = parseInt(depthString);
@@ -29,10 +29,6 @@ stockfish.addEventListener('message', function (e) {
                     score: cp,
                     mate: score.includes('mate')
                 };
-
-                if (variationNumber == 1) {
-                    useBoardStore().stockfishDone(true);
-                }
             }  
         } else if (!useEngineStore().async && data.startsWith('Total evaluation')) {
             const evalRegexp = /\s+(?<evaluation>[\-\.\d]+)\s+/;
@@ -72,7 +68,7 @@ export const useEngineStore = defineStore({
         stockfish: {
             config: {
                 elo: 3000, //from 100 to 3000
-                depth: 20,
+                depth: 16,
                 skill: 20, //from 0 to 20
                 multipv: 3
             },
@@ -82,7 +78,7 @@ export const useEngineStore = defineStore({
         lc0: {
             config: {
                 elo: 300,
-                depth: 20,
+                depth: 16,
                 skill: 20, //from 0 to 20
                 multipv: 3
             },
@@ -152,7 +148,7 @@ export const useEngineStore = defineStore({
             stockfish.postMessage(`position fen ${fen}`);
             stockfish.postMessage(`go depth ${this[engine].config.depth}`);
         },
-        setStockfishConfig(stockfishConfigPartial: StockfishConfigPartial) {
+        setStockfishConfig(stockfishConfigPartial: Partial<StockfishConfig>) {
             this.stockfish.config = { ...this.stockfish.config, ...stockfishConfigPartial };
         }
     }

@@ -17,8 +17,10 @@ const orderedRow = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1,
 const indexArray = computed(() => orderedRow.value.map(n => orderedRow.value.map(m => [n, m])).flat());
 
 const store = useBoardStore();
-const { showEvaluation, currentMoveIndex, arrows, promotionModalVisible, dragging, pieces, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
-const { pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights, pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
+const { showEvaluation, currentMoveIndex, moves, arrows, promotionModalVisible, dragging, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
+const { pieceMouseUp, showMove, setPromotionPiece, clearColoredHighlights, pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
+
+const pieces = computed(() => moves.value[currentMoveIndex.value].pieces);
 
 function handleMousemove(event: MouseEvent) {
   pieceLeft.value = event.pageX - 55;

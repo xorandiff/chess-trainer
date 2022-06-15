@@ -34,7 +34,7 @@ const labelStyleBlack = {
         :contentStyle="{ padding: '2px 10px' }" 
         bordered
     >
-        <a-descriptions-item v-for="(variation, n) in variations" :labelStyle="variation.eval >= 0 ? labelStyleWhite : labelStyleBlack" >
+        <a-descriptions-item v-for="variation in variations" :labelStyle="variation.eval >= 0 ? labelStyleWhite : labelStyleBlack" >
             <template #label>
                 <LoadingOutlined v-if="engineWorking" />
                 <span class="variationLabel" v-else>
@@ -43,15 +43,15 @@ const labelStyleBlack = {
             </template>
             <a-spin :spinning="engineWorking">
                 <span class="moveNumber">
-                    {{ Math.floor((currentMoveIndex + 1) / 2) + 1 }}{{ currentMoveIndex % 2 ? '.' : '...' }}
+                    {{ Math.floor((currentMoveIndex) / 2) + 1 }}{{ currentMoveIndex % 2 ? '...' : '.' }}
                 </span>
                 <template v-for="(move, index) in variation.moves">
                     <span class="moveNumber">
-                        {{ index && (currentMoveIndex + index) % 2 ? `${Math.floor(((currentMoveIndex + 1) + index) / 2) + 1}.` : '' }}
+                        {{ index && (currentMoveIndex - 1 + index) % 2 ? `${Math.floor((currentMoveIndex + index) / 2) + 1}.` : '' }}
                     </span>
                     <a-button class="moveButton" type="text">
-                        <template #icon v-if="variation.pieces[move.to].toLowerCase() != 'p'">
-                            <span :class="`chessFont f-${variation.pieces[move.to].toLowerCase()}${index % 2 ? 'w' : 'b'}`"></span>
+                        <template #icon v-if="move.type !== PIECE_TYPE.PAWN">
+                            <span :class="`chessFont f-${move.type}${move.color}`"></span>
                         </template>
                         {{ move.algebraicNotation }}
                     </a-button>

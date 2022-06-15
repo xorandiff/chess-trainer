@@ -10,6 +10,10 @@ type King = "k";
 type Queen = "q";
 type Pawn = "p";
 
+type Square = [number, number];
+
+type Coordinates = number | Square | string;
+
 type Piece = {
     type: string;
     color: White | Black;
@@ -20,8 +24,6 @@ type Piece = {
     captured: boolean;
 };
 
-type PiecePartial = Partial<Piece>;
-
 type Pieces = string[];
 
 type Move = {
@@ -29,13 +31,18 @@ type Move = {
     fen: string;
     from: number;
     to: number;
+    color: White | Black;
+    type: "" | Rook | Bishop | Knight | King | Queen | Pawn;
+    legalMoves: number[][];
     isCapture: boolean;
     isCheck: boolean;
     isCheckmate: boolean;
-    castlingSide: boolean | "k" | "q";
-    promotionType: "" | Piece["type"];
+    castlingSide: "" | "k" | "q";
+    castlingRights: string;
+    promotionType: string;
     algebraicNotation: string;
-    sound: number;
+    fullmoves: number;
+    halfmoves: number;
     mark: number;
     bestNextMove?: {
         move: Move;
@@ -44,8 +51,6 @@ type Move = {
     };
 }
 
-type Square = [number, number];
-
 type Arrow = {
     color: string;
     from: number;
@@ -53,15 +58,6 @@ type Arrow = {
     transform: string;
     points: string;
 }
-
-type SquareData = {
-    active: boolean;
-    legalMove: boolean;
-    highlight: boolean;
-    highlightColor: string;
-};
-
-type Board = SquareData[];
 
 type EngineResponseVariation = {
     pv: string;
@@ -87,11 +83,8 @@ interface StockfishConfig extends EngineConfig {
     skill: number
 }
 
-type StockfishConfigPartial = Partial<StockfishConfig>;
-
 type Variation = {
     moves: Move[];
-    pieces: Pieces;
     eval: number;
     mate: boolean;
 }

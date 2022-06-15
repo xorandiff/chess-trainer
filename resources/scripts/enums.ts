@@ -1,12 +1,13 @@
 export const enum SOUND_TYPE {
-    MOVE_SELF = 0,
-    MOVE_OPPONENT = 1,
-    MOVE_CHECK = 2,
-    CAPTURE = 3,
-    CASTLE = 4,
-    PROMOTE = 5,
-    GAME_START = 6,
-    GAME_END = 7,
+    NONE,
+    MOVE_SELF,
+    MOVE_OPPONENT,
+    MOVE_CHECK,
+    CAPTURE,
+    CASTLE,
+    PROMOTE,
+    GAME_START,
+    GAME_END,
 };
 
 export enum PIECE_TYPE {
