@@ -237,7 +237,7 @@ export default class Chessboard {
         let { halfmoves, fullmoves } = previousMove;
         let moves = [ previousMove ];
 
-        const movesAlgebraic = algebraicMoves.match(/[BRKQN]?[a-h]?[1-8]?x?[BRKQN]?[a-h][1-8]=?[BRKQN]?\+?#?|O-O-O|O-O/g)!;
+        const movesAlgebraic = algebraicMoves.match(/\b\S*[a-zA-Z]+\S*/g)!;
 
         for (const moveAlgebraic of movesAlgebraic) {
             let { color, castlingRights, pieces } = moves[moves.length - 1];
@@ -275,10 +275,12 @@ export default class Chessboard {
             ];
             move.fen = fenSegments.join(' ');
 
+            move.legalMoves = move.pieces.map((p, i) => p ? this.computeLegalMoves(move.pieces, i, move.castlingRights, move.fen) : []);
+
             moves.push(move);
         }
         
-        return moves.slice(1);
+        return moves;
     }
 
     /**
@@ -402,7 +404,7 @@ export default class Chessboard {
             // PGN
             const pgnMoves = fenOrPgn.slice(fenOrPgn.lastIndexOf(']') + 1).trim();
 
-            moves = moves.concat(this.createMoves(pgnMoves, initialMove));
+            moves = this.createMoves(pgnMoves, initialMove);
         }
         
         return moves;
@@ -521,19 +523,19 @@ export default class Chessboard {
             if (!pieces[i]) {
                 continue;
             }
-            if (type && this.getType(pieces[i]) !== type) {
+            if (type !== undefined && this.getType(pieces[i]) != type) {
                 continue;
             }
-            if (color && this.getColor(pieces[i]) !== color) {
+            if (color !== undefined && this.getColor(pieces[i]) != color) {
                 continue;
             }
-            if (square && i !== square) {
+            if (square !== undefined && i !== square) {
                 continue;
             }
-            if (rank && (((i / 8) >> 0) + 1) !== rank) {
+            if (rank !== undefined && (((i / 8) >> 0) + 1) != rank) {
                 continue;
             }
-            if (file && ((i % 8) + 1) !== file) {
+            if (file !== undefined && ((i % 8) + 1) != file) {
                 continue;
             }
             filteredIndexes.push(i);
@@ -626,16 +628,19 @@ export default class Chessboard {
      * @returns 
      */
     public static algebraicToMove(previousMove: Move, algebraicMove: string) {
+        console.log('algebraicToMove method input: ' + algebraicMove);
         const groups = algebraicMove.match(/(N|K|R|B|Q)?([a-h]?[1-8]?)?(x)?([a-h][1-8])?(=[N|K|R|B|Q])?(O-O-O|O-O)?(\+|#)?/);
 
         if (groups) {
             let from = -1;
             let to = -1;
+
+            console.log(groups);
             
             let fromAlgebraic = groups[2];
             let toAlgebraic = groups[4];
 
-            const pieceColor = this.oppositeColor(previousMove.color);
+            const pieceColor = previousMove.color == "w" ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
             let pieceType = groups[1] !== undefined ? this.getType(groups[1]) : PIECE_TYPE.PAWN;
             const isCapture = groups[3] !== undefined;
             const promotionType = groups[5] !== undefined ? this.getType(groups[5][1]) : PIECE_TYPE.NONE;
@@ -659,6 +664,8 @@ export default class Chessboard {
             
             if (toAlgebraic) {
                 to = this.a2i(toAlgebraic);
+
+                console.log(fromAlgebraic, toAlgebraic);
 
                 if (fromAlgebraic) {
                     if (fromAlgebraic.length === 2) {
@@ -685,11 +692,12 @@ export default class Chessboard {
 
                     let matchingIndexes = this.getFilteredIndexes(previousMove.pieces, pieceFilters);
 
+                    console.log(matchingIndexes);
+                    console.log(matchingIndexes.map(i => previousMove.legalMoves[i].map(n => this.i2a(n))));
+
                     if (!castlingSide) {
                         matchingIndexes = matchingIndexes.filter(i => previousMove.legalMoves[i].includes(to));
                     }
-
-                    console.log(matchingIndexes);
 
                     if (matchingIndexes.length) {
                         from = matchingIndexes[0];
@@ -1328,7 +1336,7 @@ export default class Chessboard {
             moves.push(move);
         }
 
-        return moves.slice(1, 9);
+        return moves.slice(1, 7);
     }
 
     /**

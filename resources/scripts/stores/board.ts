@@ -96,6 +96,7 @@ export const useBoardStore = defineStore({
     halfmoves: (state) => state.moves[state.currentMoveIndex].halfmoves,
     castlingRights: (state) => state.moves[state.currentMoveIndex].castlingRights,
     color: (state) => state.moves[0].color,
+    properMoves: (state) => state.moves.slice(1),
     pieceType: (state) => {
       return (n: number) => state.moves[state.currentMoveIndex].pieces[n].toLowerCase() as PIECE_TYPE;
     },
@@ -216,7 +217,7 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMove(n: number, m: number) {
-      if (n !== m && this.pieces[n] && Chessboard.getColor(this.pieces[n]) === this.currentTurnColor && this.legalMoves[n].includes(m)) {
+      if (n !== m && this.pieces[n] && Chessboard.getColor(this.pieces[n]) !== this.currentTurnColor && this.legalMoves[n].includes(m)) {
         this.clearHighlights();
         this.activeIndex = -1;
         
@@ -291,8 +292,10 @@ export const useBoardStore = defineStore({
 
         this.clearHighlights();
 
-        this.highlights[this.currentMove.from] = HIGHLIGHT_COLOR.YELLOW;
-        this.highlights[this.currentMove.to] = HIGHLIGHT_COLOR.YELLOW;
+        if (index) {
+          this.highlights[this.currentMove.from] = HIGHLIGHT_COLOR.YELLOW;
+          this.highlights[this.currentMove.to] = HIGHLIGHT_COLOR.YELLOW;
+        }
       }
     },
     stockfishRun(fen?: string) {

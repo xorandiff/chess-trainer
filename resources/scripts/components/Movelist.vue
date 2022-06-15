@@ -5,7 +5,7 @@ import { useBoardStore } from "@/stores/board";
 
 const store = useBoardStore();
 
-const { moves, currentMoveIndex, result } = storeToRefs(store);
+const { properMoves, currentMoveIndex, result } = storeToRefs(store);
 const { showMove } = store;
 </script>
 
@@ -13,11 +13,11 @@ const { showMove } = store;
     <a-descriptions :column="1" size="small" bordered>
         <a-descriptions-item>
             <a-row justify="start" :gutter="16">
-                <span v-for="(move, index) in moves.slice(1)">
-                    <span class="moveNumber" v-if="move.color !== PIECE_COLOR.WHITE">
+                <span v-for="(move, index) in properMoves">
+                    <span class="moveNumber" v-if="move.color === PIECE_COLOR.WHITE">
                         {{ Math.floor(index / 2) + 1 }}. 
                     </span>
-                    <a-button class="moveButton" :type="(currentMoveIndex - 1) === index ? 'dashed' : 'text'" @click="showMove(index)" :style="{ borderColor: (currentMoveIndex - 1) === index ? 'yellow' : '' }">
+                    <a-button class="moveButton" :type="(currentMoveIndex - 1) === index ? 'dashed' : 'text'" @click="showMove(index + 1)" :style="{ borderColor: (currentMoveIndex - 1) === index ? 'yellow' : '' }">
                         <template #icon v-if="move.type !== PIECE_TYPE.PAWN && !move.algebraicNotation.includes('O') && !move.promotionType">
                             <span :class="`chessFont f-${move.type}${move.color}`"></span>
                         </template>
