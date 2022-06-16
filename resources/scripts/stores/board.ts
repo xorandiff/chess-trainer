@@ -1,10 +1,10 @@
 import { message } from 'ant-design-vue';
 import Chessboard from "@/chessboard";
 import { useEngineStore } from "@/stores/engine";
-import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT, HIGHLIGHT_COLOR } from '@/enums';
+import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, GAME_RESULT, HIGHLIGHT_COLOR } from '@/enums';
 import { defineStore } from "pinia";
 import { Howl } from "howler";
-import _, { initial } from "lodash";
+import _ from "lodash";
 import axios from "axios";
 
 axios.defaults.withCredentials = true;
@@ -217,7 +217,7 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMove(n: number, m: number) {
-      if (n !== m && this.pieces[n] && Chessboard.getColor(this.pieces[n]) !== this.currentTurnColor && this.legalMoves[n].includes(m)) {
+      if (n !== m && this.pieces[n] && Chessboard.getColor(this.pieces[n]) === this.currentTurnColor && this.legalMoves[n].includes(m)) {
         this.clearHighlights();
         this.activeIndex = -1;
         
@@ -284,15 +284,13 @@ export const useBoardStore = defineStore({
     showMove(index: number) {
       if (index >= 0 && index < this.moves.length && index != this.currentMoveIndex) {
         this.currentMoveIndex = index;
-        this.playMoveSound(this.currentMoveIndex);
-        
-        if (!this.currentMove.isCheckmate) {
-          this.stockfishRun(this.fen);
-        }
-
         this.clearHighlights();
-
+        
         if (index) {
+          if (!this.currentMove.isCheckmate) {
+            this.stockfishRun(this.fen);
+          }
+          this.playMoveSound(index);
           this.highlights[this.currentMove.from] = HIGHLIGHT_COLOR.YELLOW;
           this.highlights[this.currentMove.to] = HIGHLIGHT_COLOR.YELLOW;
         }

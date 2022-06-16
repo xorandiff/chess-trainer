@@ -5,6 +5,7 @@ import { SettingOutlined, RetweetOutlined, ExpandAltOutlined } from '@ant-design
 import { PIECE_TYPE, HIGHLIGHT_COLOR } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 import Eval from "./Eval.vue";
+import _ from 'lodash';
 
 const boardScale = ref<number>(1);
 const flipped = ref<boolean>(false);
@@ -13,8 +14,7 @@ const pieceLeft = ref(0);
 const pieceTop = ref(0);
 
 const orderedRow = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
-
-const indexArray = computed(() => orderedRow.value.map(n => orderedRow.value.map(m => [n, m])).flat());
+const indexArray = computed(() => flipped.value ? _.range(63, -1) : _.range(0, 64));
 
 const store = useBoardStore();
 const { showEvaluation, currentMoveIndex, moves, arrows, promotionModalVisible, dragging, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
@@ -82,13 +82,12 @@ onUnmounted(() => {
       @mousedown.left="clearColoredHighlights" 
       :style="{ transform: `scale(${boardScale})` }"
     >
-      <template v-for="([i, j], n) in indexArray">
-        <template v-if="pieces[n] && dragging != n">
-            <div 
-              :class="`piece ${pieces[n] >= 'a' && pieces[n] <= 'z' ? 'b' : 'w'}${pieces[n].toLowerCase()}`"
-              :style="{ transform: `translateX(${(j - 1) * 100}%) translateY(${(i - 1) * 100}%)` }"
-            ></div>
-        </template>
+      <template v-for="n in indexArray">
+        <div 
+          v-if="pieces[n] && dragging != n"
+          :class="`piece ${pieces[n] >= 'a' && pieces[n] <= 'z' ? 'b' : 'w'}${pieces[n].toLowerCase()}`"
+          :style="{ transform: `translateX(${((flipped ? 63 - n : n) % 8) * 100}%) translateY(${((flipped ? 63 - n : n) / 8 >> 0) * 100}%)` }"
+        ></div>
       </template>
 
       <svg id="arrows" viewBox="0 0 100 100">
@@ -101,7 +100,7 @@ onUnmounted(() => {
       </svg>
 
       <div 
-        v-for="([i, j], n) in indexArray" 
+        v-for="n in indexArray" 
         :class="['square', { highlight: activeIndex === n }]"
         :style="{ cursor: pieces[n] ? 'grab' : 'default' }"
         @mousedown.left="pieceMouseDown(n)"

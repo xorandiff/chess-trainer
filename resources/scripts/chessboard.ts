@@ -243,7 +243,12 @@ export default class Chessboard {
             let { color, castlingRights, pieces } = moves[moves.length - 1];
             pieces = [ ...pieces ];
             
-            let move = this.algebraicToMove(moves[moves.length - 1], moveAlgebraic)!;
+            let move = this.algebraicToMove(moves[moves.length - 1], moveAlgebraic);
+            if (move === undefined || pieces[move.from] === undefined) {
+                console.log(`Chessboard.createMoves, loading PGN; ERROR: move #${moves.length} (${moveAlgebraic}) cannot be parsed`);
+                console.log(move);
+                return moves;
+            }
             const pieceType = this.getType(pieces[move.from]);
 
             // Update fullmove and halfmove clocks
@@ -275,7 +280,7 @@ export default class Chessboard {
             ];
             move.fen = fenSegments.join(' ');
 
-            move.legalMoves = move.pieces.map((p, i) => p ? this.computeLegalMoves(move.pieces, i, move.castlingRights, move.fen) : []);
+            move.legalMoves = move.pieces.map((p, i) => p ? this.computeLegalMoves(move!.pieces, i, move!.castlingRights, move!.fen) : []);
 
             moves.push(move);
         }
@@ -291,14 +296,11 @@ export default class Chessboard {
      */
     public static setRookCastlePosition(move: Move) {
         if (move.castlingSide) {
-            const r = move.color === PIECE_COLOR.WHITE ? 8 : 1;
+            const r = move.color === PIECE_COLOR.WHITE ? 1 : 8;
             const f1 = move.castlingSide === 'k' ? 'h' : 'a';
             const f2 = move.castlingSide === 'k' ? 'f' : 'd';
 
-            const rookFrom = this.a2i(`${f1}${r}`);
-            const rookTo = this.a2i(`${f2}${r}`);
-
-            return this.makeMove(move.pieces, rookFrom, rookTo);
+            return this.makeMove(move.pieces, `${f1}${r}`, `${f2}${r}`);
         }
 
         return move.pieces;
@@ -354,7 +356,7 @@ export default class Chessboard {
      */
     public static create(fenOrPgn?: string) {
         let fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-        let color = PIECE_COLOR.BLACK;
+        let color = PIECE_COLOR.WHITE;
         let halfmoves = 0;
         let fullmoves = 1;
         let castlingRights = 'KQkq';
@@ -370,7 +372,7 @@ export default class Chessboard {
             }
 
             const fields = fen.split(' ');
-            color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+            color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
             castlingRights = fields[2];
             halfmoves = parseInt(fields[4]);
             fullmoves = parseInt(fields[5]);
@@ -628,19 +630,19 @@ export default class Chessboard {
      * @returns 
      */
     public static algebraicToMove(previousMove: Move, algebraicMove: string) {
-        console.log('algebraicToMove method input: ' + algebraicMove);
         const groups = algebraicMove.match(/(N|K|R|B|Q)?([a-h]?[1-8]?)?(x)?([a-h][1-8])?(=[N|K|R|B|Q])?(O-O-O|O-O)?(\+|#)?/);
 
         if (groups) {
             let from = -1;
             let to = -1;
-
-            console.log(groups);
             
             let fromAlgebraic = groups[2];
             let toAlgebraic = groups[4];
 
-            const pieceColor = previousMove.color == "w" ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+            let pieceColor = previousMove.color == "w" ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+            if (previousMove.from === previousMove.to) {
+                pieceColor = previousMove.color as PIECE_COLOR;
+            }
             let pieceType = groups[1] !== undefined ? this.getType(groups[1]) : PIECE_TYPE.PAWN;
             const isCapture = groups[3] !== undefined;
             const promotionType = groups[5] !== undefined ? this.getType(groups[5][1]) : PIECE_TYPE.NONE;
@@ -664,8 +666,6 @@ export default class Chessboard {
             
             if (toAlgebraic) {
                 to = this.a2i(toAlgebraic);
-
-                console.log(fromAlgebraic, toAlgebraic);
 
                 if (fromAlgebraic) {
                     if (fromAlgebraic.length === 2) {
@@ -692,9 +692,6 @@ export default class Chessboard {
 
                     let matchingIndexes = this.getFilteredIndexes(previousMove.pieces, pieceFilters);
 
-                    console.log(matchingIndexes);
-                    console.log(matchingIndexes.map(i => previousMove.legalMoves[i].map(n => this.i2a(n))));
-
                     if (!castlingSide) {
                         matchingIndexes = matchingIndexes.filter(i => previousMove.legalMoves[i].includes(to));
                     }
@@ -707,13 +704,12 @@ export default class Chessboard {
                 console.log('Parsing algebraic move failed');
             }
 
-            
-
             return ({
                 ...previousMove,
                 from,
                 to,
                 color: pieceColor,
+                type: pieceType,
                 isCapture,
                 isCheck,
                 isCheckmate,
@@ -1063,6 +1059,9 @@ export default class Chessboard {
         if (newPieces[n]) {
             newPieces[m] = newPieces[n];
             newPieces[n] = '';
+        } else {
+            console.log(`ERROR: Cannot perform makeMove for ${this.i2a(n)} => ${this.i2a(m)}`);
+            console.log(newPieces);
         }
 
         return newPieces;
