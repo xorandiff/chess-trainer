@@ -10,6 +10,7 @@ import { useBoardStore } from "@/stores/board";
 import Chessboard from "@/components/Chessboard.vue";
 import Movelist from "@/components/Movelist.vue";
 import MoveMark from "@/components/MoveMark.vue";
+import ReportSummary from "@/components/ReportSummary.vue";
 import OpeningCode from "@/components/OpeningCode.vue";
 import EngineVariations from "@/components/EngineVariations.vue";
 import BoardOptions from "@/components/BoardOptions.vue";
@@ -84,6 +85,7 @@ onMounted(async () => {
                     </template>
                     <template v-if="movesLength">
                         <a-space direction="vertical" :style="{ width: '100%' }">
+                            <ReportSummary v-if="report.enabled" />
                             <MoveMark v-if="options.visibility.feedback" />
                             <EngineVariations v-if="options.visibility.variations" />
                             <OpeningCode />

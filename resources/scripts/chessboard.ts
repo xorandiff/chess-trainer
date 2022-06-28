@@ -272,7 +272,7 @@ export default class Chessboard {
             // Create FEN for current move
             const fenSegments = [
                 this.piecesToFen(move.pieces),                      // Create FEN pieces list
-                move.color,                                         // Current turn color
+                this.oppositeColor(move.color),                     // Current turn color
                 move.castlingRights ? move.castlingRights : '-',    // Castling rights
                 pawnMovedTwoSquares ? this.i2a(move.to) : '-',      // En passant target square
                 halfmoves,                                          // Halfmove clock
@@ -356,7 +356,7 @@ export default class Chessboard {
      */
     public static create(fenOrPgn?: string) {
         let fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-        let color = PIECE_COLOR.WHITE;
+        let color = PIECE_COLOR.BLACK;
         let halfmoves = 0;
         let fullmoves = 1;
         let castlingRights = 'KQkq';
@@ -372,7 +372,7 @@ export default class Chessboard {
             }
 
             const fields = fen.split(' ');
-            color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
+            color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
             castlingRights = fields[2];
             halfmoves = parseInt(fields[4]);
             fullmoves = parseInt(fields[5]);
@@ -639,10 +639,7 @@ export default class Chessboard {
             let fromAlgebraic = groups[2];
             let toAlgebraic = groups[4];
 
-            let pieceColor = previousMove.color == "w" ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-            if (previousMove.from === previousMove.to) {
-                pieceColor = previousMove.color as PIECE_COLOR;
-            }
+            const pieceColor = previousMove.color == PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
             let pieceType = groups[1] !== undefined ? this.getType(groups[1]) : PIECE_TYPE.PAWN;
             const isCapture = groups[3] !== undefined;
             const promotionType = groups[5] !== undefined ? this.getType(groups[5][1]) : PIECE_TYPE.NONE;
@@ -1385,6 +1382,8 @@ export default class Chessboard {
                 const currentEval = variations[0].mate ? variations[0].eval + 100 : variations[0].eval;
 
                 const evalDifference = Math.abs(currentEval - previousEval);
+
+                console.log(previousMove.eval, variations[0].eval);
 
                 if (previousMove.move.from == moves[currentMoveIndex].from && previousMove.move.to == moves[currentMoveIndex].to) {
                     return MOVE_MARK.BEST_MOVE;

@@ -1,7 +1,7 @@
 import { message } from 'ant-design-vue';
 import Chessboard from "@/chessboard";
 import { useEngineStore } from "@/stores/engine";
-import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, GAME_RESULT, HIGHLIGHT_COLOR } from '@/enums';
+import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, GAME_RESULT, HIGHLIGHT_COLOR, MOVE_MARK } from '@/enums';
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
@@ -102,6 +102,9 @@ export const useBoardStore = defineStore({
     },
     pieceColor: (state) => {
       return (n: number) => state.moves[state.currentMoveIndex].pieces[n].toLowerCase() === state.moves[state.currentMoveIndex].pieces[n] ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+    },
+    markTypeCount: (state) => {
+      return (markType: MOVE_MARK, color: PIECE_COLOR) => state.moves.reduce((p, c) => c.mark === markType && c.color === color ? p + 1 : p, 0)
     }
   },
   actions: {
@@ -321,7 +324,7 @@ export const useBoardStore = defineStore({
 
         this.variations[i] = {
           moves: Chessboard.getVariationData(this.currentMove, pv),
-          eval: this.currentMove.color === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
+          eval: this.currentMove.color === PIECE_COLOR.BLACK ? evaluation * (-1) : evaluation,
           mate
         };
       }
@@ -414,7 +417,7 @@ export const useBoardStore = defineStore({
       let stockfishConfig: StockfishConfig = engine.stockfish.config;
 
       //Set Stockfish config for report generation
-      engine.setStockfishConfig({ depth: 12 });
+      engine.setStockfishConfig({ depth: 15 });
 
       //Prepare game data for report computations
       let movesLength = this.moves.length;
@@ -433,7 +436,9 @@ export const useBoardStore = defineStore({
         
         this.report.generation.progress = Math.floor(i / movesLength * 100);
 
+        console.log(this.moves[i].fen);
         await this.stockfishRunAsync(this.moves[i].fen);
+        console.log('stockfish done');
 
         variations = [];
 
@@ -447,6 +452,8 @@ export const useBoardStore = defineStore({
           movesAlgebraic += ` ${this.moves[i].algebraicNotation}`;
         }
 
+        console.log(movesAlgebraic);
+
         openingData = Chessboard.getOpeningData(movesAlgebraic);
 
         for (let j = 0; j < engine.response.variations.length; j++) {
@@ -455,7 +462,7 @@ export const useBoardStore = defineStore({
 
           variations[j] = {
             moves: Chessboard.getVariationData(this.moves[i], pv, true),
-            eval: currentColor === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
+            eval: currentColor === PIECE_COLOR.BLACK ? evaluation * (-1) : evaluation,
             mate
           };
 

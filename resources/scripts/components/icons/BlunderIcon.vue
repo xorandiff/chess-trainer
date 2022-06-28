@@ -1,7 +1,10 @@
 <script lang="ts" setup>
+defineProps<{
+  size: number;
+}>();
 </script>
 <template>
-    <svg xmlns="http://www.w3.org/2000/svg" class="" width="26" height="26" viewBox="0 0 18 19">
+    <svg xmlns="http://www.w3.org/2000/svg" class="" :width="size" :height="size" viewBox="0 0 18 19">
         <g id="blunder">
             <path class="icon-shadow" opacity="0.3" d="M9,.5a9,9,0,1,0,9,9A9,9,0,0,0,9,.5Z"></path>
             <path class="icon-background" fill="#ca3431" d="M9,0a9,9,0,1,0,9,9A9,9,0,0,0,9,0Z"></path>

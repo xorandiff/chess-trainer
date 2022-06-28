@@ -461,3 +461,50 @@ body {
 .moveMarkDescription svg {
   margin-bottom: -8px;
 }
+
+/* Game report
+   ========================================================================== */
+
+.colorBrilliant {
+  color: #1baca6;
+}
+
+.colorGreatMove {
+  color: #5c8bb0;
+}
+
+.colorBestMove {
+  color: #95bb4a;
+}
+
+.colorExcellent {
+  color: #96bc4b;
+}
+
+.colorGood {
+  color: #96af8b;
+}
+
+.colorBook {
+  color: #a88865;
+}
+
+.colorInaccuracy {
+  color: #f0c15c;
+}
+
+.colorMistake {
+  color: #e58f2a;
+}
+
+.colorBlunder {
+  color: #ca3431;
+}
+
+.colorMissedWin {
+  color: #dbac16;
+}
+
+#reportSummary {
+  font-weight: bold;
+}

@@ -23,31 +23,31 @@ const { currentMove } = storeToRefs(store);
         <a-descriptions-item>
             <a-typography-title :level="4">
                 <span v-if="currentMove.mark == MOVE_MARK.BOOK" :style="{ color: '#a88865' }">
-                   <BookIcon/> {{ currentMove.algebraicNotation }} is a book move
+                   <BookIcon :size="26" /> {{ currentMove.algebraicNotation }} is a book move
                 </span>
                 <span v-if="currentMove.mark == MOVE_MARK.BRILLIANT" :style="{ color: '#1baca6' }">
-                   <BrilliantMoveIcon/> {{ currentMove.algebraicNotation }} is brilliant
+                   <BrilliantMoveIcon :size="26" /> {{ currentMove.algebraicNotation }} is brilliant
                 </span>
                 <span v-if="currentMove.mark == MOVE_MARK.GREAT_MOVE" :style="{ color: '#5c8bb0' }">
-                   <GreatMoveIcon/> {{ currentMove.algebraicNotation }} is a great move
+                   <GreatMoveIcon :size="26" /> {{ currentMove.algebraicNotation }} is a great move
                 </span>
                 <span v-if="currentMove.mark == MOVE_MARK.BEST_MOVE" :style="{ color: '#96bc4b' }">
-                   <BestMoveIcon/> {{ currentMove.algebraicNotation }} is best
+                   <BestMoveIcon :size="26" /> {{ currentMove.algebraicNotation }} is best
                 </span>
                 <span v-if="currentMove.mark == MOVE_MARK.EXCELLENT" :style="{ color: '#96bc4b' }">
-                   <ExcellentMoveIcon/> {{ currentMove.algebraicNotation }} is excellent
+                   <ExcellentMoveIcon :size="26" /> {{ currentMove.algebraicNotation }} is excellent
                 </span>
                 <span v-if="currentMove.mark == MOVE_MARK.GOOD" :style="{ color: '#96af8b' }">
-                   <GoodMoveIcon/> {{ currentMove.algebraicNotation }} is good
+                   <GoodMoveIcon :size="26" /> {{ currentMove.algebraicNotation }} is good
                 </span>
                 <span v-if="currentMove.mark == MOVE_MARK.INACCURACY" :style="{ color: '#f0c15c' }">
-                   <InaccuracyIcon/> {{ currentMove.algebraicNotation }} is an inaccuracy
+                   <InaccuracyIcon :size="26" /> {{ currentMove.algebraicNotation }} is an inaccuracy
                 </span>
                 <span v-if="currentMove.mark == MOVE_MARK.MISTAKE" :style="{ color: '#e58f2a' }">
-                   <MistakeIcon/> {{ currentMove.algebraicNotation }} is a mistake
+                   <MistakeIcon :size="26" /> {{ currentMove.algebraicNotation }} is a mistake
                 </span>
                 <span v-if="currentMove.mark == MOVE_MARK.BLUNDER" :style="{ color: '#ca3431' }">
-                   <BlunderIcon/> {{ currentMove.algebraicNotation }} is a blunder
+                   <BlunderIcon :size="26" /> {{ currentMove.algebraicNotation }} is a blunder
                 </span>
             </a-typography-title>
         </a-descriptions-item>
