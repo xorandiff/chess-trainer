@@ -38,6 +38,10 @@ export const useBoardStore = defineStore({
     showEvaluation: true,
     report: {
       enabled: false,
+      capscore: {
+        [PIECE_COLOR.WHITE]: 0,
+        [PIECE_COLOR.BLACK]: 0
+      },
       generation: {
         active: false,
         progress: 0 //From 0 to 100, as percents
@@ -294,8 +298,23 @@ export const useBoardStore = defineStore({
             this.stockfishRun(this.fen);
           }
           this.playMoveSound(index);
-          this.highlights[this.currentMove.from] = HIGHLIGHT_COLOR.YELLOW;
-          this.highlights[this.currentMove.to] = HIGHLIGHT_COLOR.YELLOW;
+
+          let highlightColor = HIGHLIGHT_COLOR.YELLOW;
+          if (this.report.enabled && !this.report.generation.active && this.currentMove.mark) {
+            switch (this.currentMove.mark) {
+              case MOVE_MARK.BRILLIANT: highlightColor = HIGHLIGHT_COLOR.BRILLIANT_MOVE; break;
+              case MOVE_MARK.GREAT_MOVE: highlightColor = HIGHLIGHT_COLOR.GREAT_MOVE; break;
+              case MOVE_MARK.BEST_MOVE: highlightColor = HIGHLIGHT_COLOR.BEST_MOVE; break;
+              case MOVE_MARK.EXCELLENT: highlightColor = HIGHLIGHT_COLOR.EXCELLENT_MOVE; break;
+              case MOVE_MARK.GOOD: highlightColor = HIGHLIGHT_COLOR.GOOD_MOVE; break;
+              case MOVE_MARK.INACCURACY: highlightColor = HIGHLIGHT_COLOR.INACCURACY; break;
+              case MOVE_MARK.MISTAKE: highlightColor = HIGHLIGHT_COLOR.MISTAKE; break;
+              case MOVE_MARK.BLUNDER: highlightColor = HIGHLIGHT_COLOR.BLUNDER; break;
+              case MOVE_MARK.BOOK: highlightColor = HIGHLIGHT_COLOR.BOOK_MOVE; break;
+            }
+          }
+          this.highlights[this.currentMove.from] = highlightColor;
+          this.highlights[this.currentMove.to] = highlightColor;
         }
       }
     },
@@ -324,7 +343,7 @@ export const useBoardStore = defineStore({
 
         this.variations[i] = {
           moves: Chessboard.getVariationData(this.currentMove, pv),
-          eval: this.currentMove.color === PIECE_COLOR.BLACK ? evaluation * (-1) : evaluation,
+          eval: this.currentMove.color === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
           mate
         };
       }
@@ -342,7 +361,7 @@ export const useBoardStore = defineStore({
   
           //Update move mark
           if (this.showFeedback) {
-            this.moves[this.currentMoveIndex].mark = Chessboard.getMoveFeedback(this.moves, this.movesAlgebraic, this.openingData, this.currentMoveIndex, this.variations);
+            this.moves[this.currentMoveIndex].mark = Chessboard.getMoveFeedback(this.moves, this.movesAlgebraic, this.currentMoveIndex, this.variations);
           } 
         }
   
@@ -410,14 +429,18 @@ export const useBoardStore = defineStore({
     async generateReport() {
       const engine = useEngineStore();
 
-      //Set report generation to true
+      //Set report generation and report enabled flag to true
+      this.report.enabled = true;
       this.report.generation.active = true;
 
       //Store current Stockfish configuration
       let stockfishConfig: StockfishConfig = engine.stockfish.config;
 
       //Set Stockfish config for report generation
-      engine.setStockfishConfig({ depth: 15 });
+      engine.setStockfishConfig({ 
+        depth: 15,
+        evaluation: false
+      });
 
       //Prepare game data for report computations
       let movesLength = this.moves.length;
@@ -430,15 +453,20 @@ export const useBoardStore = defineStore({
           movesAlgebraic: ''
       };
 
+      this.report.capscore[PIECE_COLOR.WHITE] = 0;
+      this.report.capscore[PIECE_COLOR.BLACK] = 0;
+
+      let capscoreTotalWhite = 0;
+      let capscoreTotalBlack = 0;
+
       //Do report computations for each move
       for (let i = 1; i < movesLength; i++) {
         const currentColor = this.moves[i].color;
         
         this.report.generation.progress = Math.floor(i / movesLength * 100);
 
-        console.log(this.moves[i].fen);
+        console.log(`Running Stockfish for FEN ${this.moves[i].fen}...`);
         await this.stockfishRunAsync(this.moves[i].fen);
-        console.log('stockfish done');
 
         variations = [];
 
@@ -451,8 +479,6 @@ export const useBoardStore = defineStore({
         } else {
           movesAlgebraic += ` ${this.moves[i].algebraicNotation}`;
         }
-
-        console.log(movesAlgebraic);
 
         openingData = Chessboard.getOpeningData(movesAlgebraic);
 
@@ -472,11 +498,42 @@ export const useBoardStore = defineStore({
               eval: variations[j].eval,
               mate
             };
-            this.moves[i].mark = Chessboard.getMoveFeedback(this.moves, movesAlgebraic, openingData, i, variations);
+            this.moves[i].mark = Chessboard.getMoveFeedback(this.moves, movesAlgebraic, i, variations);
+            if (this.moves[i].mark) {
+              if (currentColor == PIECE_COLOR.WHITE) {
+                capscoreTotalWhite++;
+                if ([MOVE_MARK.BRILLIANT, MOVE_MARK.GREAT_MOVE, MOVE_MARK.BOOK, MOVE_MARK.BEST_MOVE].includes(this.moves[i].mark)) {
+                  this.report.capscore[PIECE_COLOR.WHITE]++;
+                } else if (this.moves[i].mark === MOVE_MARK.EXCELLENT) {
+                  this.report.capscore[PIECE_COLOR.WHITE] += 0.9;
+                } else if (this.moves[i].mark === MOVE_MARK.GOOD) {
+                  this.report.capscore[PIECE_COLOR.WHITE] += 0.7;
+                } else if (this.moves[i].mark === MOVE_MARK.INACCURACY) {
+                  this.report.capscore[PIECE_COLOR.WHITE] += 0.5;
+                } else if (this.moves[i].mark === MOVE_MARK.MISTAKE) {
+                  this.report.capscore[PIECE_COLOR.WHITE] += 0.2;
+                }
+              } else {
+                capscoreTotalBlack++;
+                if ([MOVE_MARK.BRILLIANT, MOVE_MARK.GREAT_MOVE, MOVE_MARK.BOOK, MOVE_MARK.BEST_MOVE].includes(this.moves[i].mark)) {
+                  this.report.capscore[PIECE_COLOR.BLACK]++;
+                } else if (this.moves[i].mark === MOVE_MARK.EXCELLENT) {
+                  this.report.capscore[PIECE_COLOR.BLACK] += 0.9;
+                } else if (this.moves[i].mark === MOVE_MARK.GOOD) {
+                  this.report.capscore[PIECE_COLOR.BLACK] += 0.7;
+                } else if (this.moves[i].mark === MOVE_MARK.INACCURACY) {
+                  this.report.capscore[PIECE_COLOR.BLACK] += 0.5;
+                } else if (this.moves[i].mark === MOVE_MARK.MISTAKE) {
+                  this.report.capscore[PIECE_COLOR.BLACK] += 0.2;
+                }
+              }
+            }
           }
         }
       }
-      this.report.enabled = true;
+
+      this.report.capscore[PIECE_COLOR.WHITE] = this.report.capscore[PIECE_COLOR.WHITE] / capscoreTotalWhite * 100;
+      this.report.capscore[PIECE_COLOR.BLACK] = this.report.capscore[PIECE_COLOR.BLACK] / capscoreTotalBlack * 100;
 
       this.variations = variations;
       this.openingData = openingData;

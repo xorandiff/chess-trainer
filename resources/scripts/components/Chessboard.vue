@@ -2,10 +2,20 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from 'pinia';
 import { SettingOutlined, RetweetOutlined, ExpandAltOutlined } from '@ant-design/icons-vue';
-import { PIECE_TYPE, HIGHLIGHT_COLOR } from "@/enums";
+import { PIECE_TYPE, HIGHLIGHT_COLOR, MOVE_MARK } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 import Eval from "./Eval.vue";
 import _ from 'lodash';
+
+import BookIcon from "@/components/icons/BookIcon.vue";
+import BrilliantMoveIcon from "@/components/icons/BrilliantMoveIcon.vue";
+import GreatMoveIcon from "@/components/icons/GreatMoveIcon.vue";
+import BestMoveIcon from "@/components/icons/BestMoveIcon.vue";
+import ExcellentMoveIcon from "@/components/icons/ExcellentMoveIcon.vue";
+import GoodMoveIcon from "@/components/icons/GoodMoveIcon.vue";
+import InaccuracyIcon from "@/components/icons/InaccuracyIcon.vue";
+import MistakeIcon from "@/components/icons/MistakeIcon.vue";
+import BlunderIcon from "@/components/icons/BlunderIcon.vue";
 
 const boardScale = ref<number>(1);
 const flipped = ref<boolean>(false);
@@ -17,7 +27,7 @@ const orderedRow = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1,
 const indexArray = computed(() => flipped.value ? _.range(63, -1) : _.range(0, 64));
 
 const store = useBoardStore();
-const { showEvaluation, currentMoveIndex, moves, arrows, promotionModalVisible, dragging, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
+const { currentMove, report, showEvaluation, currentMoveIndex, moves, arrows, promotionModalVisible, dragging, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
 const { pieceMouseUp, showMove, setPromotionPiece, clearColoredHighlights, pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
 
 const pieces = computed(() => moves.value[currentMoveIndex.value].pieces);
@@ -87,7 +97,19 @@ onUnmounted(() => {
           v-if="pieces[n] && dragging != n"
           :class="`piece ${pieces[n] >= 'a' && pieces[n] <= 'z' ? 'b' : 'w'}${pieces[n].toLowerCase()}`"
           :style="{ transform: `translateX(${((flipped ? 63 - n : n) % 8) * 100}%) translateY(${((flipped ? 63 - n : n) / 8 >> 0) * 100}%)` }"
-        ></div>
+        >
+          <div class="pieceMarkIcon" v-if="report.enabled && currentMove.mark && currentMove.to === n">
+            <BookIcon v-if="currentMove.mark == MOVE_MARK.BOOK" :size="50" />
+            <BrilliantMoveIcon v-if="currentMove.mark == MOVE_MARK.BRILLIANT" :size="50" />
+            <GreatMoveIcon v-if="currentMove.mark == MOVE_MARK.GREAT_MOVE" :size="50" />
+            <BestMoveIcon v-if="currentMove.mark == MOVE_MARK.BEST_MOVE" :size="50" />
+            <ExcellentMoveIcon v-if="currentMove.mark == MOVE_MARK.EXCELLENT" :size="50" />
+            <GoodMoveIcon v-if="currentMove.mark == MOVE_MARK.GOOD" :size="50" />
+            <InaccuracyIcon v-if="currentMove.mark == MOVE_MARK.INACCURACY" :size="50" />
+            <MistakeIcon v-if="currentMove.mark == MOVE_MARK.MISTAKE" :size="50" />
+            <BlunderIcon v-if="currentMove.mark == MOVE_MARK.BLUNDER" :size="50" />
+          </div>
+        </div>
       </template>
 
       <svg id="arrows" viewBox="0 0 100 100">

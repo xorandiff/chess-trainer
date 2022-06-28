@@ -1,12 +1,11 @@
 import { defineStore } from "pinia";
 import { useBoardStore } from "@/stores/board";
-import type { ENGINE } from '@/enums';
+import { ENGINE } from '@/enums';
 
 let stockfish = new Worker('/build/stockfish11.js');
 
 stockfish.postMessage('uci');
 stockfish.postMessage('ucinewgame');
-stockfish.postMessage('setoption name UCI_AnalyseMode value true');
 
 stockfish.addEventListener('message', function (e) {
     if (e.data) {
@@ -70,7 +69,10 @@ export const useEngineStore = defineStore({
                 elo: 3000, //from 100 to 3000
                 depth: 17,
                 skill: 20, //from 0 to 20
-                multipv: 3
+                multipv: 3,
+                analyseMode: true,
+                evaluation: true,
+                movetime: 0
             },
             working: false,
             active: false
@@ -80,7 +82,9 @@ export const useEngineStore = defineStore({
                 elo: 300,
                 depth: 16,
                 skill: 20, //from 0 to 20
-                multipv: 3
+                multipv: 3,
+                evaluation: true,
+                movetime: 0
             },
             working: false,
             active: false
@@ -125,28 +129,38 @@ export const useEngineStore = defineStore({
         },
     },
     actions: {
-        run(engine : ENGINE, fen: string) {
-            this.async = false;
+        run(engine : ENGINE, fen: string, keepAsync?: boolean) {
+            if (!keepAsync) {
+                this.async = false;
+            }
             this[engine].working = true;
+
+            if (engine === ENGINE.STOCKFISH) {
+                if (this[engine].config.analyseMode) {
+                    stockfish.postMessage('setoption name UCI_AnalyseMode value true');
+                }
+            }
 
             if (this[engine].config.skill < 20) {
                 stockfish.postMessage(`setoption name Skill Level value ${this[engine].config.skill}`);
             }
+
             stockfish.postMessage(`setoption name MultiPV value ${this[engine].config.multipv}`);
+
             stockfish.postMessage(`position fen ${fen}`);
-            stockfish.postMessage(`go depth ${this[engine].config.depth}`);
-            stockfish.postMessage(`eval`);
+            
+            let movetime = this[engine].config.movetime ? ` movetime ${this[engine].config.movetime}` : '';
+            stockfish.postMessage(`go depth ${this[engine].config.depth}${movetime}`);
+
+            if (this[engine].config.evaluation) {
+                stockfish.postMessage(`eval`);
+            }
         },
         runAsync(resolve: (value: unknown) => void, engine : ENGINE, fen: string) {
             this.async = true;
             this.resolve = resolve;
             
-            if (this[engine].config.skill < 20) {
-                stockfish.postMessage(`setoption name Skill Level value ${this[engine].config.skill}`);
-            }
-            stockfish.postMessage(`setoption name MultiPV value ${this[engine].config.multipv}`);
-            stockfish.postMessage(`position fen ${fen}`);
-            stockfish.postMessage(`go depth ${this[engine].config.depth}`);
+            this.run(engine, fen, true);
         },
         setStockfishConfig(stockfishConfigPartial: Partial<StockfishConfig>) {
             this.stockfish.config = { ...this.stockfish.config, ...stockfishConfigPartial };

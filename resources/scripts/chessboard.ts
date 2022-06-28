@@ -1057,8 +1057,8 @@ export default class Chessboard {
             newPieces[m] = newPieces[n];
             newPieces[n] = '';
         } else {
-            console.log(`ERROR: Cannot perform makeMove for ${this.i2a(n)} => ${this.i2a(m)}`);
-            console.log(newPieces);
+            //console.log(`ERROR: Cannot perform makeMove for ${this.i2a(n)} => ${this.i2a(m)}`);
+            //console.log(newPieces);
         }
 
         return newPieces;
@@ -1366,13 +1366,12 @@ export default class Chessboard {
      * 
      * @param moves 
      * @param movesAlgebraic 
-     * @param openingData 
      * @param currentMoveIndex 
      * @param variations 
      * @returns 
      */
-    public static getMoveFeedback(moves: Move[], movesAlgebraic: string, openingData: OpeningData, currentMoveIndex: number, variations: Variation[]) : MOVE_MARK {
-        if (openingData.movesAlgebraic.includes(movesAlgebraic)) {
+    public static getMoveFeedback(moves: Move[], movesAlgebraic: string, currentMoveIndex: number, variations: Variation[]) : MOVE_MARK {
+        if (eco.find(opening => opening.movesAlgebraic.includes(movesAlgebraic))) {
             return MOVE_MARK.BOOK;
         } else if (moves.length > 1 && currentMoveIndex && moves[currentMoveIndex - 1].bestNextMove) {
             const previousMove = moves[currentMoveIndex - 1].bestNextMove;
@@ -1383,7 +1382,9 @@ export default class Chessboard {
 
                 const evalDifference = Math.abs(currentEval - previousEval);
 
-                console.log(previousMove.eval, variations[0].eval);
+                const isPlayerAdvantage = (moves[currentMoveIndex].color === PIECE_COLOR.WHITE && currentEval > 0) || (moves[currentMoveIndex].color === PIECE_COLOR.BLACK && currentEval < 0);
+
+                //console.log(previousMove.eval, variations[0].eval);
 
                 if (previousMove.move.from == moves[currentMoveIndex].from && previousMove.move.to == moves[currentMoveIndex].to) {
                     return MOVE_MARK.BEST_MOVE;
@@ -1396,6 +1397,9 @@ export default class Chessboard {
                 } else if (evalDifference < 2) {
                     return MOVE_MARK.MISTAKE;
                 } else {
+                    if (isPlayerAdvantage && Math.abs(currentEval) >= 5) {
+                        return MOVE_MARK.MISTAKE;
+                    }
                     return MOVE_MARK.BLUNDER;
                 }
             } else {

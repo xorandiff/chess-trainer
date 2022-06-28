@@ -66,5 +66,14 @@ export const enum HIGHLIGHT_COLOR {
     ORANGE = 'orange',
     RED = 'red',
     GREEN = 'green',
-    BLUE = 'blue'
+    BLUE = 'blue',
+    BRILLIANT_MOVE = 'brilliantMove',
+    GREAT_MOVE = 'greatMove',
+    BEST_MOVE = 'bestMove',
+    EXCELLENT_MOVE = 'excellentMove',
+    GOOD_MOVE = 'goodMove',
+    INACCURACY = 'inaccuracy',
+    MISTAKE = 'mistake',
+    BLUNDER = 'blunder',
+    BOOK_MOVE = 'bookMove'
 };

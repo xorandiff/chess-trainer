@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { PIECE_COLOR, PIECE_TYPE, GAME_RESULT } from "@/enums";
+import { PIECE_COLOR, PIECE_TYPE, GAME_RESULT, MOVE_MARK } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 
 const store = useBoardStore();
@@ -17,7 +17,7 @@ const { showMove } = store;
                     <span class="moveNumber" v-if="move.color === PIECE_COLOR.WHITE">
                         {{ Math.floor(index / 2) + 1 }}. 
                     </span>
-                    <a-button class="moveButton" :type="(currentMoveIndex - 1) === index ? 'dashed' : 'text'" @click="showMove(index + 1)" :style="{ borderColor: (currentMoveIndex - 1) === index ? 'yellow' : '' }">
+                    <a-button :class="['moveButton', { colorBlunder: move.mark === MOVE_MARK.BLUNDER, colorMistake: move.mark === MOVE_MARK.MISTAKE, colorInaccuracy: move.mark === MOVE_MARK.INACCURACY } ]" :type="(currentMoveIndex - 1) === index ? 'dashed' : 'text'" @click="showMove(index + 1)" :style="{ borderColor: (currentMoveIndex - 1) === index ? 'yellow' : '' }">
                         <template #icon v-if="move.type !== PIECE_TYPE.PAWN && !move.algebraicNotation.includes('O') && !move.promotionType">
                             <span :class="`chessFont f-${move.type}${move.color}`"></span>
                         </template>

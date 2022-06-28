@@ -15,7 +15,7 @@ import BlunderIcon from "@/components/icons/BlunderIcon.vue";
 
 const store = useBoardStore();
 
-const { markTypeCount } = storeToRefs(store);
+const { markTypeCount, report } = storeToRefs(store);
 </script>
 
 <template>
@@ -25,7 +25,7 @@ const { markTypeCount } = storeToRefs(store);
             <a-card>
                <a-statistic
                   title="White accuracy"
-                  :value="11.28"
+                  :value="report.capscore[PIECE_COLOR.WHITE]"
                   :precision="2"
                   suffix="%"
                   style="margin-right: 50px"
@@ -37,7 +37,7 @@ const { markTypeCount } = storeToRefs(store);
             <a-card>
                <a-statistic
                   title="Black accuracy"
-                  :value="9.3"
+                  :value="report.capscore[PIECE_COLOR.BLACK]"
                   :precision="2"
                   suffix="%"
                >

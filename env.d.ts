@@ -75,12 +75,15 @@ type EngineResponse = {
 
 interface EngineConfig {
     depth: number,
-    multipv: number
+    multipv: number,
+    movetime: number,
+    evaluation: boolean
 }
 
 interface StockfishConfig extends EngineConfig {
     elo: number,
-    skill: number
+    skill: number,
+    analyseMode: boolean
 }
 
 type Variation = {

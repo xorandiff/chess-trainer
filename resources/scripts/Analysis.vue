@@ -51,6 +51,11 @@ const handleLoadPreviousAnalysis = async () => {
     loadingPreviousAnalysis.value = false;
 };
 
+const handleGenerateReport = () => {
+    generateReport();
+    activeKey.value = 'report';
+};
+
 const handleTabChange = (activeKey: string) => {
     if (activeKey == 'analysis') {
         updatePgnTags();
@@ -76,7 +81,29 @@ onMounted(async () => {
             <Chessboard />
         </a-col>
         <a-col id="analysisColumn">
-            <a-tabs v-if="!report.generation.active" v-model:activeKey="activeKey" @change="handleTabChange">
+            <a-tabs v-model:activeKey="activeKey" @change="handleTabChange" style="height: 100%">
+                <a-tab-pane key="report" v-if="report.enabled">
+                    <template #tab>
+                        <span>
+                            Report
+                        </span>
+                    </template>
+                    <template v-if="!report.generation.active">
+                        <a-space direction="vertical" :style="{ width: '100%' }">
+                            <ReportSummary />
+                            <MoveMark v-if="options.visibility.feedback" />
+                            <Movelist />
+                        </a-space>
+                    </template>
+                    <a-row v-else type="flex" justify="space-around" align="middle" :style="{ height: '100%' }">
+                        <a-col>
+                            <a-space direction="vertical" align="center" size="middle">
+                                <a-typography-title :level="3">Generating report...</a-typography-title>
+                                <a-progress type="circle" :percent="report.generation.progress" />
+                            </a-space>
+                        </a-col>
+                    </a-row>
+                </a-tab-pane>
                 <a-tab-pane key="analysis">
                     <template #tab>
                         <span>
@@ -85,7 +112,6 @@ onMounted(async () => {
                     </template>
                     <template v-if="movesLength">
                         <a-space direction="vertical" :style="{ width: '100%' }">
-                            <ReportSummary v-if="report.enabled" />
                             <MoveMark v-if="options.visibility.feedback" />
                             <EngineVariations v-if="options.visibility.variations" />
                             <OpeningCode />
@@ -101,8 +127,9 @@ onMounted(async () => {
                         </a-space>
                         <a-space direction="vertical" :style="{ width: '100%', bottom: '0px', position: 'absolute', left: '0px' }">
                             <a-button 
+                                v-if="!report.enabled"
                                 type="dashed" 
-                                @click="generateReport"
+                                @click="handleGenerateReport"
                                 block
                             >
                                 <template #icon>
@@ -158,14 +185,6 @@ onMounted(async () => {
                     <BoardOptions />
                 </a-tab-pane>
             </a-tabs>
-            <a-row v-else type="flex" justify="space-around" align="middle" :style="{ height: '100%' }">
-                <a-col>
-                    <a-space direction="vertical" align="center" size="middle">
-                        <a-typography-title :level="3">Generating report...</a-typography-title>
-                        <a-progress type="circle" :percent="report.generation.progress" />
-                    </a-space>
-                </a-col>
-            </a-row>
         </a-col>
     </a-row>
 </template>
