@@ -1,6 +1,5 @@
-import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE, MOVE_MARK, ERROR_TYPE } from '@/enums';
-import Error from '@/errors';
-import _, { initial } from 'lodash';
+import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, MOVE_MARK } from '@/enums';
+import _ from 'lodash';
 import moment from 'moment';
 import eco from "./eco.json";
 
@@ -152,6 +151,19 @@ export default class Chessboard {
     }
 
     /**
+     * Method for validating FEN format
+     * 
+     * @param fen 
+     */
+    public static isValidFen(fen: string) {
+        if (fen.match(/^([rnbqkpRNBQKP1-8]{1,8}\/){7}[rnbqkpRNBQKP1-8]{1,8} [wb] ([KQkq]{1,4}|-) ([a-h][1-8]|-) \d+ \d+$/)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Method for converting FEN string into pieces 
      * array
      * 
@@ -159,6 +171,10 @@ export default class Chessboard {
      * @returns 
      */
     public static fenToPieces(fen: string) {
+        if (!this.isValidFen(fen)) {
+            throw 'Invalid FEN format';
+        }
+
         return fen.split(' ')[0]                                    // Extract pieces portion of FEN
                   .replaceAll('/', '')                              // Remove slashes
                   .split('')                                        // Split characters into singletons
@@ -237,7 +253,11 @@ export default class Chessboard {
         let { halfmoves, fullmoves } = previousMove;
         let moves = [ previousMove ];
 
-        const movesAlgebraic = algebraicMoves.match(/\b\S*[a-zA-Z]+\S*/g)!;
+        const movesAlgebraic = algebraicMoves.match(/\b\S*[a-zA-Z]+\S*/g);
+
+        if (!movesAlgebraic) {
+            throw 'Invalid format of algebraic moves';
+        }
 
         for (const moveAlgebraic of movesAlgebraic) {
             let { color, castlingRights, pieces } = moves[moves.length - 1];
@@ -245,16 +265,20 @@ export default class Chessboard {
             
             let move = this.algebraicToMove(moves[moves.length - 1], moveAlgebraic);
             if (move === undefined || pieces[move.from] === undefined) {
-                console.log(`Chessboard.createMoves, loading PGN; ERROR: move #${moves.length} (${moveAlgebraic}) cannot be parsed`);
-                console.log(move);
-                return moves;
+                throw 'Error during conversion of algebraic move to move object';
             }
             const pieceType = this.getType(pieces[move.from]);
 
             // Update fullmove and halfmove clocks
             if (color === PIECE_COLOR.BLACK) {
+                if (move.algebraicMoves) {
+                    move.algebraicMoves += ' ';
+                }
+                move.algebraicMoves += `${fullmoves}. ${move.algebraicNotation}`;
                 fullmoves++;
                 halfmoves = pieceType === PIECE_TYPE.PAWN || move.isCapture ? 0 : halfmoves + 1;
+            } else {
+                move.algebraicMoves += ` ${move.algebraicNotation}`;
             }
 
             // If castling, then move rook to the castled position
@@ -325,23 +349,26 @@ export default class Chessboard {
 
         for (const row of pgn.split("\n")) {
             const matches = row.match(/\[(\w+)\s+"(.+)"\]/i);
-            if (matches) {
-                const tagName = matches[1];
-                const tagValue = matches[2];
 
-                switch (tagName.toLowerCase()) {
-                    case 'event': tags.event = tagValue; break;
-                    case 'site': tags.site = tagValue; break;
-                    case 'date': tags.date = tagValue; break;
-                    case 'round': tags.round = tagValue; break;
-                    case 'white': tags.white = tagValue; break;
-                    case 'black': tags.black = tagValue; break;
-                    case 'result': tags.result = tagValue; break;
-                    case 'fen': tags.fen = tagValue; break;
-                    case 'firstmove': tags.firstMove = tagValue; break;
-                    case 'full': tags.solution = tagValue; break;
-                    default: break;
-                }
+            if (!matches) {
+                continue;
+            }
+
+            const tagName = matches[1];
+            const tagValue = matches[2];
+
+            switch (tagName.toLowerCase()) {
+                case 'event': tags.event = tagValue; break;
+                case 'site': tags.site = tagValue; break;
+                case 'date': tags.date = tagValue; break;
+                case 'round': tags.round = tagValue; break;
+                case 'white': tags.white = tagValue; break;
+                case 'black': tags.black = tagValue; break;
+                case 'result': tags.result = tagValue; break;
+                case 'fen': tags.fen = tagValue; break;
+                case 'firstmove': tags.firstMove = tagValue; break;
+                case 'full': tags.solution = tagValue; break;
+                default: break;
             }
         }
 
@@ -397,6 +424,7 @@ export default class Chessboard {
             castlingSide: '',
             promotionType: PIECE_TYPE.NONE,
             algebraicNotation: '',
+            algebraicMoves: '',
             mark: -1
         };
 
@@ -660,45 +688,45 @@ export default class Chessboard {
                 toAlgebraic = fromAlgebraic;
                 fromAlgebraic = '';
             }
+
+            if (!toAlgebraic) {
+                throw 'Error occured during parsing algebraic move into move object';
+            }
             
-            if (toAlgebraic) {
-                to = this.a2i(toAlgebraic);
+            to = this.a2i(toAlgebraic);
 
-                if (fromAlgebraic) {
-                    if (fromAlgebraic.length === 2) {
-                        from = this.a2i(fromAlgebraic);
+            if (fromAlgebraic) {
+                if (fromAlgebraic.length === 2) {
+                    from = this.a2i(fromAlgebraic);
+                } else {
+                    let filteredIndexes: number[] = [];
+                    if (fromAlgebraic.charCodeAt(0) >= '1'.charCodeAt(0) && fromAlgebraic.charCodeAt(0) <= '8'.charCodeAt(0)) {
+                        filteredIndexes = this.getFilteredIndexes(previousMove.pieces, { rank: 9 - parseInt(fromAlgebraic), color: pieceColor, type: pieceType }).filter(i => previousMove.legalMoves[i].includes(to));
                     } else {
-                        let filteredIndexes: number[] = [];
-                        if (fromAlgebraic.charCodeAt(0) >= '1'.charCodeAt(0) && fromAlgebraic.charCodeAt(0) <= '8'.charCodeAt(0)) {
-                            filteredIndexes = this.getFilteredIndexes(previousMove.pieces, { rank: 9 - parseInt(fromAlgebraic), color: pieceColor, type: pieceType }).filter(i => previousMove.legalMoves[i].includes(to));
-                        } else {
-                            filteredIndexes = this.getFilteredIndexes(previousMove.pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color: pieceColor, type: pieceType }).filter(i => previousMove.legalMoves[i].includes(to));
-                        }
-                        
-                        if (filteredIndexes) {
-                            from = filteredIndexes[0];
-                        }
+                        filteredIndexes = this.getFilteredIndexes(previousMove.pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color: pieceColor, type: pieceType }).filter(i => previousMove.legalMoves[i].includes(to));
+                    }
+                    
+                    if (filteredIndexes) {
+                        from = filteredIndexes[0];
                     }
                 }
+            }
 
-                if (from === -1) {
-                    let pieceFilters: Partial<Piece> = {
-                        color: pieceColor,
-                        type: pieceType 
-                    };
+            if (from === -1) {
+                let pieceFilters: Partial<Piece> = {
+                    color: pieceColor,
+                    type: pieceType 
+                };
 
-                    let matchingIndexes = this.getFilteredIndexes(previousMove.pieces, pieceFilters);
+                let matchingIndexes = this.getFilteredIndexes(previousMove.pieces, pieceFilters);
 
-                    if (!castlingSide) {
-                        matchingIndexes = matchingIndexes.filter(i => previousMove.legalMoves[i].includes(to));
-                    }
-
-                    if (matchingIndexes.length) {
-                        from = matchingIndexes[0];
-                    }
+                if (!castlingSide) {
+                    matchingIndexes = matchingIndexes.filter(i => previousMove.legalMoves[i].includes(to));
                 }
-            } else {
-                console.log('Parsing algebraic move failed');
+
+                if (matchingIndexes.length) {
+                    from = matchingIndexes[0];
+                }
             }
 
             return ({
@@ -1007,6 +1035,7 @@ export default class Chessboard {
             castlingRights,
             promotionType,
             algebraicNotation: '',
+            algebraicMoves: '',
             mark: -1
         };
 
@@ -1053,13 +1082,12 @@ export default class Chessboard {
 
         let newPieces = [ ...pieces ];
 
-        if (newPieces[n]) {
-            newPieces[m] = newPieces[n];
-            newPieces[n] = '';
-        } else {
-            //console.log(`ERROR: Cannot perform makeMove for ${this.i2a(n)} => ${this.i2a(m)}`);
-            //console.log(newPieces);
+        if (!newPieces[n]) {
+            throw 'Cannot perform move from unoccupied square';
         }
+
+        newPieces[m] = newPieces[n];
+        newPieces[n] = '';
 
         return newPieces;
     }
@@ -1364,46 +1392,45 @@ export default class Chessboard {
     /**
      * Computes move feedback for given move
      * 
-     * @param moves 
-     * @param movesAlgebraic 
-     * @param currentMoveIndex 
-     * @param variations 
+     * @param currentMove 
+     * @param previousMove  
      * @returns 
      */
-    public static getMoveFeedback(moves: Move[], movesAlgebraic: string, currentMoveIndex: number, variations: Variation[]) : MOVE_MARK {
-        if (eco.find(opening => opening.movesAlgebraic.includes(movesAlgebraic))) {
+    public static getMoveFeedback(currentMove: Move, previousMove?: Move) : MOVE_MARK {
+        if (eco.find(opening => opening.movesAlgebraic.includes(currentMove.algebraicMoves))) {
             return MOVE_MARK.BOOK;
-        } else if (moves.length > 1 && currentMoveIndex && moves[currentMoveIndex - 1].bestNextMove) {
-            const previousMove = moves[currentMoveIndex - 1].bestNextMove;
+        } else if (previousMove && previousMove.bestNextMove) {
+            const currentBestMove = previousMove.bestNextMove;
+            const nextBestMove = currentMove.bestNextMove;
 
-            if (previousMove && previousMove.move) {
-                const previousEval = previousMove.mate ? previousMove.eval + 100 : previousMove.eval;
-                const currentEval = variations[0].mate ? variations[0].eval + 100 : variations[0].eval;
+            if (!currentBestMove || !currentBestMove.move || !nextBestMove || !nextBestMove.move) {
+                return MOVE_MARK.NONE;
+            }
 
-                const evalDifference = Math.abs(currentEval - previousEval);
+            const previousEval = currentBestMove.mate ? currentBestMove.eval + 100 : currentBestMove.eval;
+            const currentEval = nextBestMove.mate ? nextBestMove.eval + 100 : nextBestMove.eval;
 
-                const isPlayerAdvantage = (moves[currentMoveIndex].color === PIECE_COLOR.WHITE && currentEval > 0) || (moves[currentMoveIndex].color === PIECE_COLOR.BLACK && currentEval < 0);
+            const evalDifference = Math.abs(currentEval - previousEval);
 
-                //console.log(previousMove.eval, variations[0].eval);
+            const isPlayerAdvantage = (currentMove.color === PIECE_COLOR.WHITE && currentEval > 0) || (currentMove.color === PIECE_COLOR.BLACK && currentEval < 0);
 
-                if (previousMove.move.from == moves[currentMoveIndex].from && previousMove.move.to == moves[currentMoveIndex].to) {
-                    return MOVE_MARK.BEST_MOVE;
-                } else if (evalDifference < 0.7) {
-                    return MOVE_MARK.EXCELLENT;
-                } else if (evalDifference < 1) {
-                    return MOVE_MARK.GOOD;
-                } else if (evalDifference < 1.5) {
-                    return MOVE_MARK.INACCURACY;
-                } else if (evalDifference < 2) {
-                    return MOVE_MARK.MISTAKE;
-                } else {
-                    if (isPlayerAdvantage && Math.abs(currentEval) >= 5) {
-                        return MOVE_MARK.MISTAKE;
-                    }
-                    return MOVE_MARK.BLUNDER;
-                }
+            //console.log(previousMove.eval, variations[0].eval);
+
+            if (currentBestMove.move.from === currentMove.from && currentBestMove.move.to === currentMove.to) {
+                return MOVE_MARK.BEST_MOVE;
+            } else if (evalDifference < 0.7) {
+                return MOVE_MARK.EXCELLENT;
+            } else if (evalDifference < 1) {
+                return MOVE_MARK.GOOD;
+            } else if (evalDifference < 1.5) {
+                return MOVE_MARK.INACCURACY;
+            } else if (evalDifference < 2) {
+                return MOVE_MARK.MISTAKE;
             } else {
-                console.log(`Error, moves[${currentMoveIndex - 1}].bestNextMove is undefined`);
+                if (isPlayerAdvantage && Math.abs(currentEval) >= 5) {
+                    return MOVE_MARK.MISTAKE;
+                }
+                return MOVE_MARK.BLUNDER;
             }
         }
 

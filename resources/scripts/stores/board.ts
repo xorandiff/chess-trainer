@@ -126,23 +126,26 @@ export const useBoardStore = defineStore({
     loadPgnTags(pgn: string) {
       for (const row of pgn.split("\n")) {
         const matches = row.match(/\[(\w+)\s+"(.+)"\]/i);
-        if (matches) {
-          const tagName = matches[1];
-          const tagValue = matches[2];
 
-          switch (tagName.toLowerCase()) {
-            case 'event': this.pgn.tags.event = tagValue; break;
-            case 'site': this.pgn.tags.site = tagValue; break;
-            case 'date': this.pgn.tags.date = tagValue; break;
-            case 'round': this.pgn.tags.round = tagValue; break;
-            case 'white': this.pgn.tags.white = tagValue; break;
-            case 'black': this.pgn.tags.black = tagValue; break;
-            case 'result': this.pgn.tags.result = tagValue; break;
-            case 'fen': this.pgn.tags.fen = tagValue; break;
-            case 'firstmove': this.pgn.tags.firstMove = tagValue; break;
-            case 'full': this.pgn.tags.solution = tagValue; break;
-            default: break;
-          }
+        if (!matches) {
+          continue;
+        }
+
+        const tagName = matches[1];
+        const tagValue = matches[2];
+
+        switch (tagName.toLowerCase()) {
+          case 'event': this.pgn.tags.event = tagValue; break;
+          case 'site': this.pgn.tags.site = tagValue; break;
+          case 'date': this.pgn.tags.date = tagValue; break;
+          case 'round': this.pgn.tags.round = tagValue; break;
+          case 'white': this.pgn.tags.white = tagValue; break;
+          case 'black': this.pgn.tags.black = tagValue; break;
+          case 'result': this.pgn.tags.result = tagValue; break;
+          case 'fen': this.pgn.tags.fen = tagValue; break;
+          case 'firstmove': this.pgn.tags.firstMove = tagValue; break;
+          case 'full': this.pgn.tags.solution = tagValue; break;
+          default: break;
         }
       }
     },
@@ -170,7 +173,9 @@ export const useBoardStore = defineStore({
     pieceMouseDown(n: number) {
       if (this.result) {
         return;
-      } else if (!this.pieces[n] && !this.visibleLegalMoves.includes(n)) {
+      }
+      
+      if (!this.pieces[n] && !this.visibleLegalMoves.includes(n)) {
         this.activeIndex = -1;
         this.visibleLegalMoves = [];
       }
@@ -313,6 +318,7 @@ export const useBoardStore = defineStore({
               case MOVE_MARK.BOOK: highlightColor = HIGHLIGHT_COLOR.BOOK_MOVE; break;
             }
           }
+
           this.highlights[this.currentMove.from] = highlightColor;
           this.highlights[this.currentMove.to] = highlightColor;
         }
@@ -361,7 +367,7 @@ export const useBoardStore = defineStore({
   
           //Update move mark
           if (this.showFeedback) {
-            this.moves[this.currentMoveIndex].mark = Chessboard.getMoveFeedback(this.moves, this.movesAlgebraic, this.currentMoveIndex, this.variations);
+            this.moves[this.currentMoveIndex].mark = this.currentMoveIndex ? Chessboard.getMoveFeedback(this.currentMove, this.moves[this.currentMoveIndex - 1]) : Chessboard.getMoveFeedback(this.currentMove);
           } 
         }
   
@@ -445,7 +451,6 @@ export const useBoardStore = defineStore({
       //Prepare game data for report computations
       let movesLength = this.moves.length;
       let variations: Variation[] = [];
-      let movesAlgebraic = '';
       let openingData: OpeningData = {
         name: 'None',
           eco: '',
@@ -470,17 +475,7 @@ export const useBoardStore = defineStore({
 
         variations = [];
 
-        //Update algebraic move list
-        if (currentColor == PIECE_COLOR.WHITE) {
-          if (i > 1) {
-            movesAlgebraic += ` `;
-          }
-          movesAlgebraic += `${Math.floor(i / 2) + 1}. ${this.moves[i].algebraicNotation}`;
-        } else {
-          movesAlgebraic += ` ${this.moves[i].algebraicNotation}`;
-        }
-
-        openingData = Chessboard.getOpeningData(movesAlgebraic);
+        openingData = Chessboard.getOpeningData(this.moves[i].algebraicMoves);
 
         for (let j = 0; j < engine.response.variations.length; j++) {
           const { pv, score, mate } = engine.response.variations[j];
@@ -498,7 +493,7 @@ export const useBoardStore = defineStore({
               eval: variations[j].eval,
               mate
             };
-            this.moves[i].mark = Chessboard.getMoveFeedback(this.moves, movesAlgebraic, i, variations);
+            this.moves[i].mark = Chessboard.getMoveFeedback(this.moves[i], this.moves[i - 1]);
             if (this.moves[i].mark) {
               if (currentColor == PIECE_COLOR.WHITE) {
                 capscoreTotalWhite++;
@@ -633,6 +628,7 @@ export const useBoardStore = defineStore({
         this.loadPGN(pgn);
       } catch (error) {
           console.log(error);
+          message.error('An error occured during loading of your analysis');
       }               
     },
     async loadAnalysisList() {
@@ -658,6 +654,7 @@ export const useBoardStore = defineStore({
         }
       } catch (error) {
           console.log(error);
+          message.error('An error occured during loading your saved analysis list');
       }               
     }
   },

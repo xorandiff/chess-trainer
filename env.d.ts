@@ -41,6 +41,7 @@ type Move = {
     castlingRights: string;
     promotionType: string;
     algebraicNotation: string;
+    algebraicMoves: string;
     fullmoves: number;
     halfmoves: number;
     mark: number;
