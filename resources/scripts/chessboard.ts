@@ -1,41 +1,77 @@
-import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, SOUND_TYPE, MOVE_MARK, ERROR_TYPE } from '@/enums';
-import Error from '@/errors';
+import { PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, MOVE_MARK } from '@/enums';
 import _ from 'lodash';
 import moment from 'moment';
 import eco from "./eco.json";
 
 export default class Chessboard {
     /**
-     * Converts rank and file coordinates into square number
+     * Return piece color
+     * 
+     * @param piece 
+     * @returns 
+     */
+    public static getColor(piece: string) {
+        return piece.toLowerCase() == piece ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+    }
+
+    /**
+     * Returns piece type
+     * 
+     * @param piece 
+     * @returns 
+     */
+    public static getType(piece: string) {
+        switch (piece.toLowerCase()) {
+            case "k": return PIECE_TYPE.KING;
+            case "n": return PIECE_TYPE.KNIGHT;
+            case "b": return PIECE_TYPE.BISHOP;
+            case "q": return PIECE_TYPE.QUEEN;
+            case "p": return PIECE_TYPE.PAWN;
+            case "r": return PIECE_TYPE.ROOK;
+            default: return PIECE_TYPE.NONE;
+        }
+    }
+
+    /**
+     * Converts rank and file coordinates into index coordinates
      * 
      * @param rank 
      * @param file 
      * @returns 
      */
-    public static c2s(rank: number, file: number) {
-        return (rank * 10 + file);
+    public static c2i(rank: number, file: number) {
+        return ((rank - 1) * 8 + (file - 1));
     }
 
     /**
-     * Converts square number into rank and file coordinates
+     * Converts rank and file coordinates into algebraic coordinates
      * 
-     * @param v 
+     * @param rank 
+     * @param file 
      * @returns 
      */
-    public static s2c(v: number) : Square {
-        const rank = Math.floor(v / 10);
-        const file = v % 10;
-        return [rank, file];
+    public static c2a(rank: number, file: number) {
+        return this.i2a(this.c2i(rank, file));
     }
 
     /**
-     * Method for converting square notation to algebraic notation
+     * Converts index coordinates into rank and file coordinates
      * 
-     * @param v 
+     * @param n 
      * @returns 
      */
-    public static s2a(v: number) : string {
-        const [rank, file] = this.s2c(v);
+    public static i2c(n: number) : Square {
+        return [((n / 8) >> 0) + 1, (n % 8) + 1];
+    }
+
+    /**
+     * Converts index coordinates into algebraic coordinates
+     * 
+     * @param n 
+     * @returns 
+     */
+    public static i2a(n: number) : string {
+        const [rank, file] = this.i2c(n);
 
         const algebraicRank = 9 - rank;
         const algebraicFile = String.fromCharCode('a'.charCodeAt(0) + file - 1);
@@ -44,29 +80,299 @@ export default class Chessboard {
     }
 
     /**
-     * Method for converting algebraic notation to square notation
+     * Converts algebraic coordinates into index coordinates
      * 
      * @param algebraicSquare 
      * @returns 
      */
-    public static a2s(algebraicSquare: string) {
-        const file = algebraicSquare.charCodeAt(0) - 'a'.charCodeAt(0) + 1;
-        const rank = 9 - parseInt(algebraicSquare[1]);
+    public static a2i(algebraicSquare: string) {
+        const [rank, file] = this.a2c(algebraicSquare);
 
-        return this.c2s(rank, file);
+        return this.c2i(rank, file);
     }
 
     /**
-     * Method for getting piece occupying given square/coordinates
+     * Converts algebraic coordinates into rank and file coordinates
      * 
-     * @param pieces 
-     * @param x 
+     * @param algebraicSquare 
      * @returns 
      */
-    public static p(pieces: Pieces, x: number | Square) {
-        const v = Array.isArray(x) ? this.c2s(...x) : x;
+    public static a2c(algebraicSquare: string) {
+        const rank = 9 - parseInt(algebraicSquare[1]);
+        const file = algebraicSquare.charCodeAt(0) - 'a'.charCodeAt(0) + 1;
 
-        return pieces.find(piece => !piece.captured && piece.square === v);
+        return [rank, file];
+    }
+
+    /**
+     * Converts each of given coordinates in any of supported formats 
+     * into respective index coordinates
+     * 
+     * @param coordinatesArray 
+     */
+    public static toIndex(...coordinatesArray: Coordinates[]) {
+        let indexesArray = [];
+
+        for (const coordinate of coordinatesArray) {
+            if (typeof coordinate === "number") {
+                indexesArray.push(coordinate);
+            } else if (typeof coordinate === "string") {
+                indexesArray.push(this.a2i(coordinate));
+            } else {
+                indexesArray.push(this.c2i(...coordinate));
+            }
+        }
+
+        return indexesArray;
+    }
+
+    /**
+     * Returns file and rank distances between given coordinates
+     * 
+     * @param x 
+     * @param y 
+     * @returns 
+     */
+    public static squareDistance(x: number | string, y: number | string) {
+        const [a, b] = typeof x === "string" ? this.a2c(x) : this.i2c(x);
+        const [c, d] = typeof y === "string" ? this.a2c(y) : this.i2c(y);
+
+        return [Math.abs(a - c), Math.abs(b - d)];
+    }
+
+    /**
+     * Returns opposite color
+     * 
+     * @param color 
+     * @returns 
+     */
+    public static oppositeColor(color: PIECE_COLOR | "w" | "b") {
+        return color == "w" ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+    }
+
+    /**
+     * Method for validating FEN format
+     * 
+     * @param fen 
+     */
+    public static isValidFen(fen: string) {
+        if (fen.match(/^([rnbqkpRNBQKP1-8]{1,8}\/){7}[rnbqkpRNBQKP1-8]{1,8} [wb] ([KQkq]{1,4}|-) ([a-h][1-8]|-) \d+ \d+$/)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Method for converting FEN string into pieces 
+     * array
+     * 
+     * @param fen 
+     * @returns 
+     */
+    public static fenToPieces(fen: string) {
+        if (!this.isValidFen(fen)) {
+            throw 'Invalid FEN format';
+        }
+
+        return fen.split(' ')[0]                                    // Extract pieces portion of FEN
+                  .replaceAll('/', '')                              // Remove slashes
+                  .split('')                                        // Split characters into singletons
+                  .map(c => {                                       // Replace numbers with whitespaces
+                        if (c >= '1' && c <= '8') {
+                            /**
+                             * If character is number n such that
+                             * 1 <= n <= 8, then replace it with n
+                             * whitespaces
+                             */
+                            return ' '.repeat(parseInt(c));
+                        }
+                        // Or else don't replace it
+                        return c;
+                   })
+                  .join('')                                         // Join singletons back into string
+                  .split('')                                        // Split into singletons again
+                  .map(s => s.trim());                              // Replace [' '] with ['']
+    }
+
+    /**
+     * Method for converting pieces array into pieces 
+     * segment of FEN string 
+     * 
+     * @param pieces 
+     * @returns 
+     */
+    public static piecesToFen(pieces: Pieces) {
+        const piecesWhitespaces = pieces.map(p => p ? p : ' ');     // Replace '' with ' '
+        return _.chunk(piecesWhitespaces, 8)                        // Divide into chunks of length 8
+                .map(row => {
+                    return row.join('')                             // Join into single string
+                              .split(/\b/)                          // Split by word boundaries
+                              .map(x => {
+                                if (x.includes(' ')) {
+                                    return x.length;                // Replace whitespaces with their amount
+                                }
+                                return x;
+                              })
+                              .join('');                            // Join back into one string
+                })
+                .join('/');                                         // Join rows with slashes
+    }
+
+    /**
+     * Method for creating a FEN string from 
+     * pieces array and rest of  necessary board 
+     * data
+     * 
+     * @param pieces 
+     * @param castlingRights
+     * @param halfmoves 
+     * @param fullmoves 
+     * @param currentTurnColor 
+     * @param lastMove 
+     */
+    public static getFen(pieces: Pieces, castlingRights: string, halfmoves: number, fullmoves: number, currentTurnColor: PIECE_COLOR, lastMove: Move) {
+        let fenPieces = this.piecesToFen(pieces);
+
+        let enPassantAlgebraic = '-';
+        if (lastMove.type === PIECE_TYPE.PAWN && this.squareDistance(lastMove.from, lastMove.to)[0] === 2) {
+            enPassantAlgebraic = this.i2a(lastMove.to);
+        }
+
+        return `${fenPieces} ${currentTurnColor} ${castlingRights ? castlingRights : '-'} ${enPassantAlgebraic} ${halfmoves} ${fullmoves}`;
+    }
+
+    /**
+     * Method for creating move data from an algebraic moves list
+     * 
+     * @param algebraicMoves 
+     * @param previousMove 
+     * @returns 
+     */
+    public static createMoves(algebraicMoves: string, previousMove: Move) {
+        let { halfmoves, fullmoves } = previousMove;
+        let moves = [ previousMove ];
+
+        const movesAlgebraic = algebraicMoves.match(/\b\S*[a-zA-Z]+\S*/g);
+
+        if (!movesAlgebraic) {
+            throw 'Invalid format of algebraic moves';
+        }
+
+        for (const moveAlgebraic of movesAlgebraic) {
+            let { color, castlingRights, pieces } = moves[moves.length - 1];
+            pieces = [ ...pieces ];
+            
+            let move = this.algebraicToMove(moves[moves.length - 1], moveAlgebraic);
+            if (move === undefined || pieces[move.from] === undefined) {
+                throw 'Error during conversion of algebraic move to move object';
+            }
+            const pieceType = this.getType(pieces[move.from]);
+
+            // Update fullmove and halfmove clocks
+            if (color === PIECE_COLOR.BLACK) {
+                if (move.algebraicMoves) {
+                    move.algebraicMoves += ' ';
+                }
+                move.algebraicMoves += `${fullmoves}. ${move.algebraicNotation}`;
+                fullmoves++;
+                halfmoves = pieceType === PIECE_TYPE.PAWN || move.isCapture ? 0 : halfmoves + 1;
+            } else {
+                move.algebraicMoves += ` ${move.algebraicNotation}`;
+            }
+
+            // If castling, then move rook to the castled position
+            pieces = this.setRookCastlePosition(move);
+
+            // Perform a move
+            move.pieces = this.makeMove(pieces, move.from, move.to);
+
+            // Update castling rights
+            move.castlingRights = this.updateCastlingRights(pieces, castlingRights); 
+
+            const rankDistance = this.squareDistance(move.from, move.to)[0];
+            const pawnMovedTwoSquares = pieceType === PIECE_TYPE.PAWN && rankDistance === 2;
+
+            // Create FEN for current move
+            const fenSegments = [
+                this.piecesToFen(move.pieces),                      // Create FEN pieces list
+                this.oppositeColor(move.color),                     // Current turn color
+                move.castlingRights ? move.castlingRights : '-',    // Castling rights
+                pawnMovedTwoSquares ? this.i2a(move.to) : '-',      // En passant target square
+                halfmoves,                                          // Halfmove clock
+                fullmoves                                           // Fullmove clock
+            ];
+            move.fen = fenSegments.join(' ');
+
+            move.legalMoves = move.pieces.map((p, i) => p ? this.computeLegalMoves(move!.pieces, i, move!.castlingRights, move!.fen) : []);
+
+            moves.push(move);
+        }
+        
+        return moves;
+    }
+
+    /**
+     * Sets castled position for a rook, if move is castle
+     * 
+     * @param move 
+     * @returns 
+     */
+    public static setRookCastlePosition(move: Move) {
+        if (move.castlingSide) {
+            const r = move.color === PIECE_COLOR.WHITE ? 1 : 8;
+            const f1 = move.castlingSide === 'k' ? 'h' : 'a';
+            const f2 = move.castlingSide === 'k' ? 'f' : 'd';
+
+            return this.makeMove(move.pieces, `${f1}${r}`, `${f2}${r}`);
+        }
+
+        return move.pieces;
+    }
+
+    /**
+     * Method for parsing PGN tags from PGN string
+     * 
+     * @param pgn 
+     * @returns 
+     */
+    public static parsePgnTags(pgn: string) {
+        let tags: PgnTags = {
+            event: '',
+            site: '',
+            date: '',
+            round: '',
+            white: '',
+            black: '',
+            result: ''
+        };
+
+        for (const row of pgn.split("\n")) {
+            const matches = row.match(/\[(\w+)\s+"(.+)"\]/i);
+
+            if (!matches) {
+                continue;
+            }
+
+            const tagName = matches[1];
+            const tagValue = matches[2];
+
+            switch (tagName.toLowerCase()) {
+                case 'event': tags.event = tagValue; break;
+                case 'site': tags.site = tagValue; break;
+                case 'date': tags.date = tagValue; break;
+                case 'round': tags.round = tagValue; break;
+                case 'white': tags.white = tagValue; break;
+                case 'black': tags.black = tagValue; break;
+                case 'result': tags.result = tagValue; break;
+                case 'fen': tags.fen = tagValue; break;
+                case 'firstmove': tags.firstMove = tagValue; break;
+                case 'full': tags.solution = tagValue; break;
+                default: break;
+            }
+        }
+
+        return tags;
     }
 
     /**
@@ -77,141 +383,73 @@ export default class Chessboard {
      */
     public static create(fenOrPgn?: string) {
         let fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-        let color = PIECE_COLOR.WHITE;
+        let color = PIECE_COLOR.BLACK;
         let halfmoves = 0;
         let fullmoves = 1;
-        let castlingRights = {
-            [PIECE_COLOR.WHITE]: [CASTLING_SIDE.KINGSIDE, CASTLING_SIDE.QUEENSIDE],
-            [PIECE_COLOR.BLACK]: [CASTLING_SIDE.KINGSIDE, CASTLING_SIDE.QUEENSIDE],
-        };
-        //TODO load en passant target square
-        //let enPassantTargetSquare = fields[3];
+        let castlingRights = 'KQkq';
 
-        if (fenOrPgn && !fenOrPgn.includes('[')) {
-            fen = fenOrPgn;
+        if (fenOrPgn) {
+            if (fenOrPgn.includes('[')) {
+                const tags = this.parsePgnTags(fenOrPgn);
+                if (tags.fen) {
+                    fen = tags.fen;
+                }
+            } else {
+                fen = fenOrPgn;
+            }
 
             const fields = fen.split(' ');
-            color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.WHITE : PIECE_COLOR.BLACK;
+            color = fields[1] == PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+            castlingRights = fields[2];
             halfmoves = parseInt(fields[4]);
             fullmoves = parseInt(fields[5]);
-
-            if (!fields[2].includes('K')) {
-                _.remove(castlingRights[PIECE_COLOR.WHITE], right => right === CASTLING_SIDE.KINGSIDE);
-            }
-            if (!fields[2].includes('Q')) {
-                _.remove(castlingRights[PIECE_COLOR.WHITE], right => right === CASTLING_SIDE.QUEENSIDE);
-            }
-            if (!fields[2].includes('k')) {
-                _.remove(castlingRights[PIECE_COLOR.BLACK], right => right === CASTLING_SIDE.KINGSIDE);
-            }
-            if (!fields[2].includes('q')) {
-                _.remove(castlingRights[PIECE_COLOR.BLACK], right => right === CASTLING_SIDE.QUEENSIDE);
-            }
         }
 
-        let pieces = this.fenToPieces(fen, castlingRights[PIECE_COLOR.WHITE], {} as Move);
-        let moves: Move[] = [];
+        const pieces = this.fenToPieces(fen);
+
+        const initialMove: Move = {
+            pieces,
+            fen,
+            from: 0,
+            to: 0,
+            color,
+            type: PIECE_TYPE.NONE,
+            fullmoves,
+            halfmoves,
+            castlingRights,
+            legalMoves: pieces.map((p, i) => p ? this.computeLegalMoves(pieces, i, castlingRights, fen) : []),
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            castlingSide: '',
+            promotionType: PIECE_TYPE.NONE,
+            algebraicNotation: '',
+            algebraicMoves: '',
+            mark: -1
+        };
+
+        let moves = [ initialMove ];
 
         if (fenOrPgn && fenOrPgn.includes('[')) {
-            //PGN
+            // PGN
             const pgnMoves = fenOrPgn.slice(fenOrPgn.lastIndexOf(']') + 1).trim();
 
-            const movesAlgebraic = pgnMoves.match(/[BRKQN]?[a-h]?[1-8]?x?[BRKQN]?[a-h][1-8]=?[BRKQN]?\+?#?|O-O-O|O-O/g)!;
-            let currentTurnColor = color;
-
-            for (const moveAlgebraic of movesAlgebraic) {
-                if (currentTurnColor === PIECE_COLOR.BLACK) {
-                    fullmoves++;
-                }
-
-                let move = this.algebraicToMove(pieces, moveAlgebraic, currentTurnColor)!;
-                if (move.castlingSide) {
-                    let rookFromAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'h1' : 'a1';
-                    let rookToAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'f1' : 'd1';
-                    if (currentTurnColor === PIECE_COLOR.BLACK) {
-                        rookFromAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'h8' : 'a8';
-                        rookToAlgebraic = move.castlingSide === CASTLING_SIDE.KINGSIDE ? 'f8' : 'd8';
-                    }
-                    this.makeMove(pieces, this.a2s(rookFromAlgebraic), this.a2s(rookToAlgebraic));
-                }
-                this.makeMove(pieces, move.from, move.to, castlingRights[currentTurnColor]);
-
-                castlingRights[currentTurnColor] = this.updateCastlingRights(pieces, currentTurnColor, castlingRights[currentTurnColor]);
-
-                currentTurnColor = currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-
-                if (typeof move.promotionType == 'string') {
-                    //TODO check if promotion type doesn't cause bug
-                    //const movedPiece = this.p(pieces, move.to);
-                    //pieces[pieces.indexOf(movedPiece!)].type = move.promotionType;
-                }
-
-                move.fen = this.getFen(pieces, castlingRights, halfmoves, fullmoves, currentTurnColor, move);
-
-                moves.push(move);
-            }
+            moves = this.createMoves(pgnMoves, initialMove);
         }
         
-        return {
-            pieces,
-            color,
-            castlingRights,
-            halfmoves,
-            fullmoves,
-            moves
-        };
-    }
-
-    /**
-     * Method for converting FEN into pieces array
-     * 
-     * @param fen 
-     * @returns 
-     */
-    public static fenToPieces(fen: string, castlingRights: CASTLING_SIDE[], lastMove: Move) : Pieces {
-        const rows = fen.split(' ')[0].split('/');
-
-        let pieces: Pieces = [];
-
-        for (let i = 1; i <= 8; i++) {
-            let row = rows[i - 1];
-            for (let j = 1; j <= 8; j++) {
-                let c = row[0];
-                row = row.substring(1);
-                const pieceTypesString = Object.values(PIECE_TYPE) as string[];
-                if (pieceTypesString.includes(c.toLowerCase())) {
-                    pieces.push({
-                        type: c.toLowerCase() as PIECE_TYPE,
-                        color: c === c.toLowerCase() ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE,
-                        square: this.c2s(i, j),
-                        rank: i,
-                        file: j,
-                        legalMoves: [],
-                        captured: false
-                    });
-                } else {
-                    j += parseInt(c) - 1;
-                }
-            }
-        }
-
-        pieces.forEach(piece => {
-            piece.legalMoves = Chessboard.computeLegalMoves(pieces, piece.square, castlingRights, lastMove);
-        });
-        
-        return pieces;
+        return moves;
     }
 
     /**
      * Method for computing position of an arrow
      * 
-     * @param v 
-     * @param w 
+     * @param n 
+     * @param m 
      * @returns 
      */
-    public static getArrowCoordinates(v: number, w: number) {
-        let [a, b] = this.s2c(v);
-        let [c, d] = this.s2c(w);
+    public static getArrowCoordinates(n: number, m: number) {
+        let [a, b] = this.i2c(n);
+        let [c, d] = this.i2c(m);
 
         a--;
         b--;
@@ -306,99 +544,95 @@ export default class Chessboard {
      * @param piecePartial 
      * @returns 
      */
-    public static getFilteredPieces(pieces: Pieces, piecePartial: PiecePartial) {
-        const { type, color, square, rank, file, legalMoves } = piecePartial;
+    public static getFilteredIndexes(pieces: Pieces, piecePartial: Partial<Piece>) {
+        const { type, color, square, rank, file } = piecePartial;
 
-        return pieces.filter(piece => {
-            if (piece.captured) {
-                return false;
+        let filteredIndexes = [];
+
+        for (let i = 0; i < pieces.length; i++) {
+            if (!pieces[i]) {
+                continue;
             }
-            if (type && piece.type != type) {
-                return false;
+            if (type !== undefined && this.getType(pieces[i]) != type) {
+                continue;
             }
-            if (color && piece.color != color) {
-                return false;
+            if (color !== undefined && this.getColor(pieces[i]) != color) {
+                continue;
             }
-            if (square && piece.square != square) {
-                return false;
+            if (square !== undefined && i !== square) {
+                continue;
             }
-            if (rank && piece.rank != rank) {
-                return false;
+            if (rank !== undefined && (((i / 8) >> 0) + 1) != rank) {
+                continue;
             }
-            if (file && piece.file != file) {
-                return false;
+            if (file !== undefined && ((i % 8) + 1) != file) {
+                continue;
             }
-            if (legalMoves) {
-                for (const legalMove of legalMoves) {
-                    if (!piece.legalMoves.includes(legalMove)) {
-                        return false;
-                    }
-                }
-            }
-            
-            return true;
-        });
+            filteredIndexes.push(i);
+        }
+
+        return filteredIndexes;
     }
 
     /**
      * Method for converting move to algebraic notation
      * 
      * @param move 
-     * @param pieces 
+     * @param legalMoves 
      * @returns 
      */
-    public static moveToAlgebraic(move: Move, pieces: Pieces) : string {
-        const { type } = pieces[move.pieceIndex];
+    public static moveToAlgebraic(move: Move, legalMoves: number[][]) : string {
+        const pieceType = move.type as PIECE_TYPE;
 
-        let pieceString = '';
-        if (move.capturedIndex == -1 && (type === PIECE_TYPE.PAWN || move.promotionType)) {
+        let pieceString = move.pieces[move.from].toUpperCase();
+        if (!move.isCapture && (pieceType == PIECE_TYPE.PAWN || move.promotionType)) {
             pieceString = '';
         }
-        if (move.capturedIndex >= 0 && (type === PIECE_TYPE.PAWN || move.promotionType)) {
-            pieceString = this.s2a(move.from)[0];
+        if (move.isCapture && (pieceType == PIECE_TYPE.PAWN || move.promotionType)) {
+            pieceString = this.i2a(move.from)[0];
         }
 
         let onSquare = '';
-        if (type !== PIECE_TYPE.PAWN) {
-            let piecesOfType = pieces.filter(p => !p.captured && p.type === type);
+        if (pieceType != PIECE_TYPE.PAWN) {
+            let piecesOfType = move.pieces.map(p => pieceType == p ? p : '');
 
             //We now check if there are at least two pieces of the same type
-            if (piecesOfType.length > 1) {
+            if (piecesOfType.filter(p => p.length > 0).length > 1) {
                 //We exclude our current piece from this list
-                piecesOfType = piecesOfType.filter(p => p.square != pieces[move.pieceIndex].square);
+                piecesOfType[move.from] = '';
 
                 //We left only pieces which can go to the same square
-                piecesOfType = piecesOfType.filter(piece => piece.legalMoves.find(square => square === move.to));
+                piecesOfType = piecesOfType.map((p, i) => legalMoves[i].includes(move.to) ? p : '');
 
-                if (piecesOfType.length > 0) {
-                    let removedPieces = _.remove(piecesOfType, piece => piece.square % 10 === move.from % 10);
-                    if (!removedPieces.length) {
+                if (piecesOfType.filter(p => p.length).length > 0) {
+                    piecesOfType = piecesOfType.map((p, i) => i % 8 === move.from % 8 ? p : '');
+                    if (!piecesOfType.filter(p => p.length)) {
                         /**
                          * There are no other pieces on the same file, so file is enough 
                          * to disambiguate move
                          */
-                        onSquare = this.s2a(move.from)[0];
+                        onSquare = this.i2a(move.from)[0];
                     } else {
-                        let removedPieces = _.remove(piecesOfType, piece => Math.floor(piece.square / 10) === Math.floor(move.from / 10));
-                        if (!removedPieces.length) {
+                        piecesOfType = piecesOfType.map((p, i) => ((i / 8) >> 0) === ((move.from / 8) >> 0) ? p : '');
+                        if (!piecesOfType.filter(p => p.length)) {
                             /**
                              * There are no other pieces on the same rank, so rank is enough 
                              * to disambiguate move
                              */
-                            onSquare = this.s2a(move.from)[1];
+                            onSquare = this.i2a(move.from)[1];
                         } else {
-                            onSquare = this.s2a(move.from);
+                            onSquare = this.i2a(move.from);
                         }
                     }
                 }
             }
         }
 
-        let captureString = move.capturedIndex >= 0 ? 'x' : '';
+        let captureString = move.isCapture ? 'x' : '';
 
-        let moveString = `${pieceString}${onSquare}${captureString}${this.s2a(move.to)}`;
+        let moveString = `${pieceString}${onSquare}${captureString}${this.i2a(move.to)}`;
 
-        if (move.promotionType && typeof move.promotionType === "string") {
+        if (move.promotionType) {
             moveString += `=${move.promotionType.toUpperCase()}`;
         }
 
@@ -416,173 +650,100 @@ export default class Chessboard {
     }
 
     /**
-     * Method for converting algebraic notation to move
+     * Method for converting algebraic move notation into move coordinates 
+     * along with returning capture, castle and promotion data
      * 
+     * @param previousMove 
      * @param algebraicMove 
-     * @param color 
      * @returns 
      */
-    public static algebraicToMove(pieces: Pieces, algebraicMove: string, color: PIECE_COLOR) : Move | undefined {
+    public static algebraicToMove(previousMove: Move, algebraicMove: string) {
         const groups = algebraicMove.match(/(N|K|R|B|Q)?([a-h]?[1-8]?)?(x)?([a-h][1-8])?(=[N|K|R|B|Q])?(O-O-O|O-O)?(\+|#)?/);
-        if (groups) {
-            let fen = '';
-            let sound = SOUND_TYPE.MOVE_SELF;
-            let pieceIndex = -1;
 
-            let pieceType = groups[1] !== undefined ? groups[1].toLowerCase() as PIECE_TYPE : PIECE_TYPE.PAWN;
+        if (groups) {
+            let from = -1;
+            let to = -1;
+            
             let fromAlgebraic = groups[2];
             let toAlgebraic = groups[4];
+
+            const pieceColor = previousMove.color == PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+            let pieceType = groups[1] !== undefined ? this.getType(groups[1]) : PIECE_TYPE.PAWN;
             const isCapture = groups[3] !== undefined;
-            const promotionType = groups[5] !== undefined ? groups[5][1].toLowerCase() as PIECE_TYPE : false;
-
-            let castlingSide: boolean | CASTLING_SIDE = false;
+            const promotionType = groups[5] !== undefined ? this.getType(groups[5][1]) : PIECE_TYPE.NONE;
+            
+            let castlingSide: Move["castlingSide"] = '';
             if (groups[6]) {
-                castlingSide = groups[6] == 'O-O' ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
+                castlingSide = groups[6] == 'O-O' ? 'k' : 'q';
                 pieceType = PIECE_TYPE.KING;
-                sound = SOUND_TYPE.CASTLE;
 
-                if (color === PIECE_COLOR.WHITE) {
-                    toAlgebraic = castlingSide === CASTLING_SIDE.KINGSIDE ? 'g1' : 'c1';
-                } else {
-                    toAlgebraic = castlingSide === CASTLING_SIDE.KINGSIDE ? 'g8' : 'c8';
-                }
+                const castlingRank = pieceColor === PIECE_COLOR.WHITE ? 1 : 8;
+                const castlingFile = castlingSide === 'k' ? 'g' : 'c';
+                toAlgebraic = `${castlingFile}${castlingRank}`;
             }
             const isCheck = groups[7] === '+';
             const isCheckmate = groups[7] === '#';
-
-            if (isCheckmate) {
-                sound = SOUND_TYPE.GAME_END;
-            } else if (isCheck) {
-                sound = SOUND_TYPE.MOVE_CHECK;
-            } else if (isCapture) {
-                sound = SOUND_TYPE.CAPTURE;
-            }
-
-            let to = 0;
 
             if (!toAlgebraic && fromAlgebraic) {
                 toAlgebraic = fromAlgebraic;
                 fromAlgebraic = '';
             }
+
+            if (!toAlgebraic) {
+                throw 'Error occured during parsing algebraic move into move object';
+            }
             
-            if (toAlgebraic) {
-                to = this.a2s(toAlgebraic);
+            to = this.a2i(toAlgebraic);
 
-                if (fromAlgebraic) {
-                    if (fromAlgebraic.length === 2) {
-                        pieceIndex = _.findIndex(pieces, piece => !piece.captured && piece.square == this.a2s(fromAlgebraic));
+            if (fromAlgebraic) {
+                if (fromAlgebraic.length === 2) {
+                    from = this.a2i(fromAlgebraic);
+                } else {
+                    let filteredIndexes: number[] = [];
+                    if (fromAlgebraic.charCodeAt(0) >= '1'.charCodeAt(0) && fromAlgebraic.charCodeAt(0) <= '8'.charCodeAt(0)) {
+                        filteredIndexes = this.getFilteredIndexes(previousMove.pieces, { rank: 9 - parseInt(fromAlgebraic), color: pieceColor, type: pieceType }).filter(i => previousMove.legalMoves[i].includes(to));
                     } else {
-                        let filteredPieces: Piece[] = [];
-                        if (fromAlgebraic.charCodeAt(0) >= '1'.charCodeAt(0) && fromAlgebraic.charCodeAt(0) <= '8'.charCodeAt(0)) {
-                            filteredPieces = this.getFilteredPieces(pieces, { rank: 9 - parseInt(fromAlgebraic), color, type: pieceType, legalMoves: [to] });
-                        } else {
-                            filteredPieces = this.getFilteredPieces(pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color, type: pieceType, legalMoves: [to] });
-                        }
-                        
-                        if (filteredPieces) {
-                            pieceIndex = _.findIndex(pieces, piece => !piece.captured && piece.square == filteredPieces[0].square);
-                        }
+                        filteredIndexes = this.getFilteredIndexes(previousMove.pieces, { file: (fromAlgebraic.charCodeAt(0) - 'a'.charCodeAt(0) + 1), color: pieceColor, type: pieceType }).filter(i => previousMove.legalMoves[i].includes(to));
+                    }
+                    
+                    if (filteredIndexes) {
+                        from = filteredIndexes[0];
                     }
                 }
+            }
 
-                if (pieceIndex == -1) {
-                    let pieceFilters: Partial<Piece> = {
-                        color,
-                        type: pieceType 
-                    };
-                    if (!castlingSide) {
-                        pieceFilters.legalMoves = [to];
-                    }
-                    const matchingPieces = this.getFilteredPieces(pieces, pieceFilters);
+            if (from === -1) {
+                let pieceFilters: Partial<Piece> = {
+                    color: pieceColor,
+                    type: pieceType 
+                };
 
-                    if (matchingPieces.length > 0) {
-                        pieceIndex = pieces.indexOf(matchingPieces[0]);
-                    }
+                let matchingIndexes = this.getFilteredIndexes(previousMove.pieces, pieceFilters);
+
+                if (!castlingSide) {
+                    matchingIndexes = matchingIndexes.filter(i => previousMove.legalMoves[i].includes(to));
                 }
-            } else {
-                console.log('Parsing algebraic move failed');
+
+                if (matchingIndexes.length) {
+                    from = matchingIndexes[0];
+                }
             }
 
             return ({
-                pieceIndex,
-                from: pieces[pieceIndex].square,
+                ...previousMove,
+                from,
                 to,
-                capturedIndex: _.findIndex(pieces, piece => !piece.captured && piece.color != color && piece.square == to),
+                color: pieceColor,
+                type: pieceType,
+                isCapture,
                 isCheck,
                 isCheckmate,
                 castlingSide,
                 promotionType,
                 algebraicNotation: algebraicMove,
-                fen,
-                sound,
-                mark: -1
+                fen: ''
             });
         }
-    }
-
-    /**
-     * Method returns FEN string based on given pieces
-     * 
-     * @param pieces 
-     * @param castlingRights 
-     * @param halfmoves 
-     * @param fullmoves 
-     * @param turnColor 
-     * @param lastMove 
-     * @returns 
-     */
-    public static getFen(pieces: Pieces, castlingRights: any, halfmoves: number, fullmoves: number, turnColor: PIECE_COLOR, lastMove: Move) {
-        let ranks = [];
-        for (let i = 1; i <= 8; i++) {
-            let rank = '';
-            let emptySquares = 0;
-            for (let j = 1; j <= 8; j++) {
-                const v = this.c2s(i, j);
-                const piece = this.p(pieces, v);
-                if (piece) {
-                    const { type, color } = piece;
-                    if (emptySquares > 0) {
-                        rank += `${emptySquares}`;
-                    }
-                    rank += color === PIECE_COLOR.BLACK ? type : type.toUpperCase();
-                    emptySquares = 0;
-                } else {
-                    emptySquares++;
-                }
-            }
-            if (emptySquares > 0) {
-                rank += `${emptySquares}`;
-            }
-            ranks.push(rank);
-        }
-        const position = ranks.join('/');
-
-        let castling = '';
-        if (castlingRights[PIECE_COLOR.WHITE].includes(CASTLING_SIDE.KINGSIDE)) {
-            castling += CASTLING_SIDE.KINGSIDE.toUpperCase();
-        }
-        if (castlingRights[PIECE_COLOR.WHITE].includes(CASTLING_SIDE.QUEENSIDE)) {
-            castling += CASTLING_SIDE.QUEENSIDE.toUpperCase();
-        }
-        if (castlingRights[PIECE_COLOR.BLACK].includes(CASTLING_SIDE.KINGSIDE)) {
-            castling += CASTLING_SIDE.KINGSIDE;
-        }
-        if (castlingRights[PIECE_COLOR.BLACK].includes(CASTLING_SIDE.QUEENSIDE)) {
-            castling += CASTLING_SIDE.QUEENSIDE;
-        }
-        if (!castling) {
-            castling = '-';
-        }
-
-        let enPassantTargetSquare = '-';
-        if (pieces[lastMove.pieceIndex].type === PIECE_TYPE.PAWN && Math.abs(this.s2c(lastMove.from)[0] - this.s2c(lastMove.to)[0]) === 2) {
-            const d = pieces[lastMove.pieceIndex].color === PIECE_COLOR.WHITE ? 1 : -1;
-            enPassantTargetSquare = this.s2a(lastMove.to);
-        }
-
-        const fen = [position, turnColor, castling, enPassantTargetSquare, halfmoves, fullmoves].join(' ');
-
-        return fen;
     }
 
     /**
@@ -590,7 +751,7 @@ export default class Chessboard {
      * 
      * @param tags 
      */
-    public static getPgnTags(tags: PgnTags) : string {
+    public static getPgnTags(tags: PgnTags) {
         let pgnTags = `[Event "${tags.event ?? '-'}"]\n`;
         pgnTags    += `[Site "${tags.site ?? 'Chess Trainer'}"]\n`;
         pgnTags    += `[Date "${tags.date ?? moment().format('YYYY.MM.DD')}"]\n`;
@@ -606,16 +767,15 @@ export default class Chessboard {
      * Method for converting PGN tags and moves history into PGN string
      * 
      * @param tags
-     * @param pieces
      * @param moves
      * @returns 
      */
-    public static getPGN(tags: PgnTags, pieces: Pieces, moves: Move[]) : string {
+    public static getPGN(tags: PgnTags, moves: Move[]) : string {
         let pgn = this.getPgnTags(tags) + '\n';
 
         for (let i = 0; i < moves.length; i++) {
-            const pieceType = pieces[moves[i].pieceIndex].type === PIECE_TYPE.PAWN || ['B', 'K', 'N', 'R', 'Q'].includes(moves[i].algebraicNotation[0]) ? '' : pieces[moves[i].pieceIndex].type.toUpperCase();
-            if (pieces[moves[i].pieceIndex].color === PIECE_COLOR.WHITE) {
+            const pieceType = moves[i].type === PIECE_TYPE.PAWN || ['B', 'K', 'N', 'R', 'Q'].includes(moves[i].algebraicNotation[0]) ? '' : moves[i].type.toUpperCase();
+            if (moves[i].color === PIECE_COLOR.WHITE) {
                 pgn += `${Math.floor(i / 2) + 1}. ${pieceType}${moves[i].algebraicNotation} `;
             } else {
                 pgn += `${pieceType}${moves[i].algebraicNotation} `;
@@ -625,30 +785,45 @@ export default class Chessboard {
     }
 
     /**
-     * Method for updating castling rights for given color
+     * Method for updating castling rights
      * 
      * @param pieces 
-     * @param color 
      * @param currentRights 
      * @returns 
      */
-    public static updateCastlingRights(pieces: Pieces, color: PIECE_COLOR, currentRights: CASTLING_SIDE[]) {
-        //Determine castling rank
-        const r = color === PIECE_COLOR.WHITE ? 8 : 1;
-
-        if (!this.p(pieces, [r, 5])) {
-            //King has moved, no castling rights
-            return [];
+    public static updateCastlingRights(pieces: Pieces, currentRights: string) {
+        if (!currentRights) {
+            return currentRights;
         }
 
-        if (!this.p(pieces, [r, 8])) {
-            //Kingside rook has moved, no kingside castling rights
-            _.pull(currentRights, CASTLING_SIDE.KINGSIDE);
+        if (!pieces[this.c2i(8, 5)]) {
+            // White king has moved, no castling rights for white
+            currentRights = currentRights.replace('K', '').replace('Q', '');
         }
 
-        if (!this.p(pieces, [r, 1])) {
-            //Queenside rook has moved, no queenside castling rights
-            _.pull(currentRights, CASTLING_SIDE.QUEENSIDE);
+        if (!pieces[this.c2i(8, 8)]) {
+            // Kingside white rook has moved or been captured, no kingside castling rights for white
+            currentRights = currentRights.replace('K', '');
+        }
+
+        if (!pieces[this.c2i(8, 1)]) {
+            // Queenside white rook has moved or been captured, no queenside castling rights for white
+            currentRights = currentRights.replace('Q', '');
+        }
+
+        if (!pieces[this.c2i(1, 5)]) {
+            // Black king has moved, no castling rights for black
+            currentRights = currentRights.replace('k', '').replace('k', '');
+        }
+
+        if (!pieces[this.c2i(1, 8)]) {
+            // Kingside black rook has moved or been captured, no kingside castling rights for black
+            currentRights = currentRights.replace('k', '');
+        }
+
+        if (!pieces[this.c2i(1, 1)]) {
+            // Queenside black rook has moved or been captured, no queenside castling rights for black
+            currentRights = currentRights.replace('q', '');
         }
 
         return currentRights;
@@ -663,29 +838,30 @@ export default class Chessboard {
      * @param side 
      * @returns 
      */
-    public static canCastle(pieces: Pieces, color: PIECE_COLOR, side: CASTLING_SIDE) {
-        //Determine castling rank
+    public static canCastle(pieces: Pieces, color: PIECE_COLOR, side: string) {
+        // Determine castling rank
         const r = color === PIECE_COLOR.WHITE ? 8 : 1;
         const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+        const queensideRight = color === PIECE_COLOR.WHITE ? 'Q' : 'q';
 
         /**
          * Squares that must be empty for given castling side in order 
          * to perform castling
          */
         let checks = [[r, 6], [r, 7]];
-        if (side === CASTLING_SIDE.QUEENSIDE) {
+        if (side === queensideRight) {
             checks = [[r, 2], [r, 3], [r, 4]];
         }
 
         for (const [i, j] of checks) {
-            if (this.p(pieces, [i, j])) {
-                //Square is not empty, can't castle
+            if (pieces[this.c2i(i, j)]) {
+                // Square is not empty, can't castle
                 return false;
             }
         }
 
         //Check if squares between are attacked
-        if (side === CASTLING_SIDE.QUEENSIDE) {
+        if (side === queensideRight) {
             if (this.isSquareAttacked(pieces, oppositeColor, [r, 4])) {
                 return false;
             }
@@ -707,8 +883,8 @@ export default class Chessboard {
      */
     public static detectCheck(pieces: Pieces, color: PIECE_COLOR) {
         const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-        const kingSquare = this.getKingSquare(pieces, color);
-        if (kingSquare && this.isSquareAttacked(pieces, oppositeColor, kingSquare)) {
+        const kingIndex = this.getKingIndex(pieces, color);
+        if (kingIndex && this.isSquareAttacked(pieces, oppositeColor, this.i2c(kingIndex))) {
             return true;
         } else {
             return false;
@@ -721,12 +897,12 @@ export default class Chessboard {
      * 
      * @param pieces 
      * @param color 
+     * @param legalMoves
      * @returns 
      */
-    public static detectCheckmate(pieces: Pieces, color: PIECE_COLOR) {
-        const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-        const hasOpponentLegalMoves = pieces.find(piece => piece.color === oppositeColor && piece.legalMoves.length) !== undefined;
-        const hasLegalMoves = pieces.find(piece => piece.color === color && piece.legalMoves.length) !== undefined;
+    public static detectCheckmate(pieces: Pieces, color: PIECE_COLOR, legalMoves: number[][]) {
+        const hasOpponentLegalMoves = pieces.find((piece, n) => piece && this.getColor(piece) === color && legalMoves[n]) !== undefined;
+        const hasLegalMoves = pieces.find((piece, n) => piece && this.getColor(piece) !== color && legalMoves[n]) !== undefined;
         return hasOpponentLegalMoves && !hasLegalMoves;
     }
 
@@ -737,40 +913,28 @@ export default class Chessboard {
      * @param color 
      * @returns 
      */
-    private static getKingSquare(pieces: Pieces, color: PIECE_COLOR) : Square | undefined {
-        try {
-            const filteredPieces = this.getFilteredPieces(pieces, { color, type: PIECE_TYPE.KING });
-
-            if (!filteredPieces) {
-                throw ERROR_TYPE.PIECE_MISSING;
-            }
-
-            const [rank, file] = this.s2c(filteredPieces[0].square);
-            return [rank, file];
-        } catch (errorType) {
-            Error.showMessage(errorType);
-        }
+    private static getKingIndex(pieces: Pieces, color: PIECE_COLOR) {
+        return pieces.indexOf(color === PIECE_COLOR.WHITE ? 'K' : 'k');
     }
 
     /**
      * Method for computing legal moves and captures of a piece
      * 
      * @param pieces 
-     * @param v 
+     * @param n 
      * @param castlingRights 
-     * @param lastMove 
+     * @param fen 
      * @returns 
      */
-    public static computeLegalMoves(pieces: Pieces, v: number, castlingRights: CASTLING_SIDE[], lastMove: Move) {
+    public static computeLegalMoves(pieces: Pieces, n: number, castlingRights: string, fen: string) {
         let legalMoves: number[] = [];
-        const piece = this.p(pieces, v);
 
-        if (!piece) {
+        if (!pieces[n]) {
             return legalMoves;
         }
-        const pseudoLegalMoves = this.computePseudoLegalMoves(pieces, v, castlingRights, lastMove);
+        const pseudoLegalMoves = this.computePseudoLegalMoves(pieces, n, castlingRights, fen);
 
-        const color = piece.color as PIECE_COLOR;
+        const color = this.getColor(pieces[n]);
         const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
         /**
@@ -778,12 +942,9 @@ export default class Chessboard {
          * king, if so, it is illegal, otherwise, we mark it as a legal move
          */
         for (const p of pseudoLegalMoves) {
-            let piecesCopy: Pieces = JSON.parse(JSON.stringify(pieces));
+            let piecesCopy = this.makeMove(pieces, n, p);
 
-            this.makeMove(piecesCopy, v, p);
-
-            const kingSquare = this.getKingSquare(piecesCopy, color);
-            if (kingSquare && !this.isSquareAttacked(piecesCopy, oppositeColor, kingSquare)) {
+            if (!this.isSquareAttacked(piecesCopy, oppositeColor, this.i2c(this.getKingIndex(piecesCopy, color)))) {
                 legalMoves.push(p);
             }
         }
@@ -792,68 +953,177 @@ export default class Chessboard {
     }
 
     /**
-     * Method for performing a move
+     * Method creates a new move based on given lastMove and 
+     * move coordinates.
      * 
-     * @param pieces 
-     * @param v 
-     * @param w 
+     * @param x 
+     * @param y 
+     * @param lastMove 
      */
-    //TODO This method has huge impact on overall performance, should be greatly optimized
-    public static makeMove(pieces: Pieces, x: number | Square, y: number | Square, castlingRights?: CASTLING_SIDE[]) {
-        const v = Array.isArray(x) ? this.c2s(...x) : x;
-        const w = Array.isArray(y) ? this.c2s(...y) : y;
+    public static createMove(x: Coordinates, y: Coordinates, lastMove: Move) {
+        const [n, m] = this.toIndex(x, y);
 
-        if (v !== w) {
-            const pieceIndex = _.findIndex(pieces, piece => !piece.captured && piece.square === v);
-            if (pieceIndex >= 0) {
-                const capturedIndex = _.findIndex(pieces, piece => !piece.captured && piece.square === w && piece.color !== pieces[pieceIndex].color);
-                if (capturedIndex >= 0) {
-                    pieces[capturedIndex].captured = true;
-                }
-                const [r, f] = this.s2c(w);
-                pieces[pieceIndex].square = w;
-                pieces[pieceIndex].rank = r;
-                pieces[pieceIndex].file = f;
+        const [i, j] = this.i2c(n);
+        const [r, f] = this.i2c(m);
+        
+        // Move variables
+        let pieces = [ ...lastMove.pieces ];
+        let castlingSide: Move["castlingSide"] = '';
+        let isCapture = false;
+        let promotionType = PIECE_TYPE.NONE;
+        let { fullmoves, halfmoves, fen, legalMoves, castlingRights } = lastMove;
+        let color = this.oppositeColor(lastMove.color);
+        let oppositeColor = this.oppositeColor(color);
+        const pieceType = this.getType(pieces[n]);
 
-                if (castlingRights) {
-                    const lastMove: Move = {
-                        pieceIndex,
-                        from: v,
-                        to: w,
-                        capturedIndex,
-                        isCheck: false,
-                        isCheckmate: false,
-                        castlingSide: false,
-                        promotionType: false,
-                        algebraicNotation: '',
-                        fen: '',
-                        sound: 0,
-                        mark: -1
-                    };
-                    pieces.forEach(piece => {
-                        if (!piece.captured) {
-                            piece.legalMoves = this.computeLegalMoves(pieces, piece.square, castlingRights, lastMove);
-                        }
-                    });
-                }
+        //Castling
+        if (pieceType === PIECE_TYPE.KING && i === r && [1, 8].includes(r) && j === 5 && (Math.abs(f - j) === 2)) {
+            // Only possible files for castled king are 7 and 3
+            const rookFileFrom = f === 7 ? 8 : 1;
+            const rookFileTo = f === 7 ? 6 : 4;
+
+            castlingSide = rookFileFrom === 8 ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
+            
+            // Move rook to castled square
+            pieces = this.makeMove(pieces, [i, rookFileFrom], [i, rookFileTo]);
+        }
+
+        if (pieces[m]) {
+            isCapture = true;
+        }
+
+        if (pieceType === PIECE_TYPE.PAWN) {
+            const enPassantTargetIndex = this.getEnPassantIndex(fen);
+            if (enPassantTargetIndex === (color === PIECE_COLOR.WHITE ? m + 8 : m - 8)) {
+                // En passant capture
+                isCapture = true;
+
+                // Remove captured pawn
+                pieces = this.makeMove(pieces, enPassantTargetIndex, enPassantTargetIndex);
             }
         }
+
+        // Increment fullmoves and halfmoves counters if white is moving
+        if (color === PIECE_COLOR.WHITE && pieceType !== PIECE_TYPE.NONE) {
+            fullmoves++;
+            halfmoves++;
+        }
+
+        // Reset halfmoves counter if pawn is moving or piece is being captured
+        if (pieceType === PIECE_TYPE.PAWN || pieces[m]) {
+            halfmoves = 0;
+        }
+
+        // Perform the move
+        pieces = this.makeMove(pieces, n, m);
+
+        // Prepare new move data
+        let move: Move = {
+            pieces: [ ...lastMove.pieces ],
+            fen,
+            from: n,
+            to: m,
+            fullmoves,
+            halfmoves,
+            color,
+            type: pieceType,
+            legalMoves,
+            isCapture,
+            isCheck: this.detectCheck(pieces, oppositeColor),
+            isCheckmate: false,
+            castlingSide,
+            castlingRights,
+            promotionType,
+            algebraicNotation: '',
+            algebraicMoves: '',
+            mark: -1
+        };
+
+        // Check wheter move triggers promotion
+        if (pieceType === PIECE_TYPE.PAWN && [1, 8].includes(i)) {
+            // Promote a pawn
+            pieces[m] = promotionType;
+
+            // Store promotion type into current move data
+            move.promotionType = promotionType;
+        }
+
+        // Update castling rights before switching turn
+        if (castlingRights) {
+            move.castlingRights = this.updateCastlingRights(pieces, castlingRights);
+        }
+
+        // Update FEN string for current move
+        move.fen = this.getFen(pieces, move.castlingRights, halfmoves, fullmoves, oppositeColor, lastMove);
+
+        // Compute legal moves for next move
+        move.legalMoves = pieces.map((p, i) => p.length ? this.computeLegalMoves(pieces, i, move.castlingRights, move.fen) : []);
+        
+        const hasOpponentLegalMoves = move.pieces.find((piece, n) => piece && this.getColor(piece) === oppositeColor && move.legalMoves[n]) !== undefined;
+        const hasLegalMoves = move.pieces.find((piece, n) => piece && this.getColor(piece) === color && move.legalMoves[n]) !== undefined;
+        move.isCheckmate = !hasOpponentLegalMoves && hasLegalMoves;
+        
+        move.algebraicNotation = this.moveToAlgebraic(move, lastMove.legalMoves);
+
+        move.pieces = pieces;
+        
+        return move;
     }
 
     /**
-     * Method for computing pseudo-legal moves and captures of a piece
+     * Method for performing a move
      * 
      * @param pieces 
-     * @param v 
+     * @param x 
+     * @param y 
+     */
+    public static makeMove(pieces: Pieces, x: Coordinates, y: Coordinates) {
+        const [n, m] = this.toIndex(x, y);
+
+        let newPieces = [ ...pieces ];
+
+        if (!newPieces[n]) {
+            return newPieces;
+        }
+
+        newPieces[m] = newPieces[n];
+        newPieces[n] = '';
+
+        return newPieces;
+    }
+
+    /**
+     * Method for converting en passant target square from given 
+     * FEN string into piece index
+     * 
+     * @param fen 
+     */
+    public static getEnPassantIndex(fen: string) {
+        const enPassantTargetSquare = fen.split(' ')[3];
+
+        if (enPassantTargetSquare != '-') {
+            return this.a2i(enPassantTargetSquare);
+        }
+
+        return -1;
+    }
+
+    /**
+     * Method for computing pseudo-legal moves and captures for 
+     * piece at index n
+     * 
+     * @param pieces 
+     * @param n 
      * @param castlingRights 
-     * @param lastMove 
+     * @param fen 
      * @returns 
      */
-    private static computePseudoLegalMoves(pieces: Pieces, v: number, castlingRights: CASTLING_SIDE[], lastMove: Move) : number[] {
-        const [i, j] = this.s2c(v);
-        const piece = this.getFilteredPieces(pieces, { square: v })[0];
-        const isWhite = piece.color === PIECE_COLOR.WHITE
-        const oppositeColor = piece.color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+    private static computePseudoLegalMoves(pieces: Pieces, n: number, castlingRights: string, fen: string) : number[] {
+        const [i, j] = this.i2c(n);
+        const color = this.getColor(pieces[n]);
+        const type = this.getType(pieces[n]);
+        const isWhite = color === PIECE_COLOR.WHITE
+        const oppositeColor = color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
 
         let pseudoLegalMoves: Square[] = [];
 
@@ -861,40 +1131,38 @@ export default class Chessboard {
          * Computing pseudo-legal moves and captures for pawns is done separately, 
          * because they distinct much from other pieces moves and captures
          */
-        if (piece.type == PIECE_TYPE.PAWN) {
+        if (type === PIECE_TYPE.PAWN) {
             let d = -1; //for white color
             if (!isWhite) {
                 d = 1; //for black color
             }
             if ((isWhite && i > 1) || (!isWhite && i < 8)) {
                 //Pseudo-legal moves for pawn
-                if (!this.p(pieces, [i + d, j])) {
+                if (!pieces[this.c2i(i + d, j)]) {
                     pseudoLegalMoves.push([i + d, j]);
-                    if (((isWhite && i === 7) || (!isWhite && i === 2)) && !this.p(pieces, [i + 2 * d, j])) {
+                    if (((isWhite && i === 7) || (!isWhite && i === 2)) && !pieces[this.c2i(i + 2 * d, j)]) {
                         pseudoLegalMoves.push([i + 2 * d, j]);
                     }
                 }
 
                 //Pseudo-legal captures for pawn
-                const p1 = this.p(pieces, [i + d, j - 1]);
-                const p2 = this.p(pieces, [i + d, j + 1]);
+                const p1 = pieces[this.c2i(i + d, j - 1)];
+                const p2 = pieces[this.c2i(i + d, j + 1)];
 
-                if (j > 1 && p1 && p1.color === oppositeColor) {
+                if (j > 1 && p1 && this.getColor(p1) === oppositeColor) {
                     pseudoLegalMoves.push([i + d, j - 1]);
                 }
-                if (j < 8 && p2 && p2.color === oppositeColor) {
+                if (j < 8 && p2 && this.getColor(p2) === oppositeColor) {
                     pseudoLegalMoves.push([i + d, j + 1]);
                 }
 
                 //Check if en passant is a pseudo-legal capture
-                const fromRank = isWhite ? 2 : 7;
-                const toRank = isWhite ? 4 : 5;
+                const enPassantIndex = this.getEnPassantIndex(fen);
+                if (enPassantIndex >= 0) {
+                    const [enPassantRank, enPassantFile] = this.i2c(enPassantIndex);
 
-                if (i === toRank && lastMove.pieceIndex && pieces[lastMove.pieceIndex].type === PIECE_TYPE.PAWN && pieces[lastMove.pieceIndex].color === oppositeColor) {
-                    const fx = this.s2c(lastMove.from)[0];
-                    const [tx, ty] = this.s2c(lastMove.to);
-                    if (fx === fromRank && tx === toRank && (ty === j + 1 || ty === j - 1)) {
-                        pseudoLegalMoves.push([i + d, ty]);
+                    if (i === enPassantRank && this.getType(pieces[enPassantIndex]) === PIECE_TYPE.PAWN && this.getColor(pieces[enPassantIndex]) === oppositeColor) {
+                        pseudoLegalMoves.push([i + d, enPassantFile]);
                     }
                 }
             }
@@ -905,7 +1173,7 @@ export default class Chessboard {
              * and king we distinguish 8 directions
              */
             let reachedEnd = new Array(4).fill(false);
-            if ([PIECE_TYPE.QUEEN, PIECE_TYPE.KING].includes(piece.type as PIECE_TYPE)) {
+            if ([PIECE_TYPE.QUEEN, PIECE_TYPE.KING].includes(type)) {
                 reachedEnd = new Array(8).fill(false);
             }
             
@@ -916,7 +1184,7 @@ export default class Chessboard {
              * length is always 1
              */
             let range = Math.max(Math.max(i, 8 - i), Math.max(j, 8 - j));
-            if ([PIECE_TYPE.KING, PIECE_TYPE.KNIGHT].includes(piece.type as PIECE_TYPE)) {
+            if ([PIECE_TYPE.KING, PIECE_TYPE.KNIGHT].includes(type)) {
                 range = 1;
             }
 
@@ -941,13 +1209,13 @@ export default class Chessboard {
                 * either on square [1, 5] or on square [8, 5]
                 */
                 if (castlingRights && (i === 8 || i === 1) && j === 5) {
-                    const sides = [CASTLING_SIDE.KINGSIDE, CASTLING_SIDE.QUEENSIDE];
+                    const sides = [color === PIECE_COLOR.WHITE ? 'K' : 'k', color === PIECE_COLOR.WHITE ? 'Q' : 'q'];
 
                     for (const side of sides) {
                         //Check if color has castling rights on current side
                         if (castlingRights.includes(side)) {
                             //Check if castling is possible
-                            if (this.canCastle(pieces, piece.color as PIECE_COLOR, side)) {
+                            if (this.canCastle(pieces, color, side)) {
                                 const d = side === CASTLING_SIDE.KINGSIDE ? 2 : -2;
                                 //Add additional king pseudo-legal move for kingside castling
                                 checks[PIECE_TYPE.KING].push([i, j + d]);
@@ -956,18 +1224,18 @@ export default class Chessboard {
                     }
                 }
 
-                checks[piece.type].forEach(([a, b]: [number, number], n: number) => {
+                checks[type].forEach(([a, b]: [number, number], c: number) => {
                     //First we check if we are still in our board
-                    if (!reachedEnd[n] && 1 <= a && a <= 8 && 1 <= b && b <= 8) {
-                        const occupyingPiece = this.p(pieces, [a, b]);
+                    if (!reachedEnd[c] && 1 <= a && a <= 8 && 1 <= b && b <= 8) {
+                        const occupyingPiece = pieces[this.c2i(a, b)];
                         if (occupyingPiece) {
                             /**
                              * Piece is in a way on current direction, we mark
                              * search in this direction as completed
                              */
-                            reachedEnd[n] = true;
+                            reachedEnd[c] = true;
 
-                            if (occupyingPiece.color == oppositeColor) {
+                            if (this.getColor(occupyingPiece) == oppositeColor) {
                                 //Piece is of opposite color, so we mark it as pseudo-legal capture
                                 pseudoLegalMoves.push([a, b]);
                             }
@@ -980,22 +1248,7 @@ export default class Chessboard {
             }
         }
 
-        return pseudoLegalMoves.map(coordinates => this.c2s(...coordinates));
-    }
-
-    /**
-     * Method for finding square marked as active
-     * 
-     * @param board 
-     * @returns 
-     */
-    public static getActiveSquare(board: Board) {
-        for (const square of board) {
-            if (square.active) {
-                return board.indexOf(square);
-            }
-        }
-        return -1;
+        return pseudoLegalMoves.map(coordinates => this.c2i(...coordinates));
     }
 
     /**
@@ -1017,15 +1270,18 @@ export default class Chessboard {
             for (let n = 0; n < shortRangeChecks[k].length; n++) {
                 const [a, b] = shortRangeChecks[k][n];
                 if (1 <= a && a <= 8 && 1 <= b && b <= 8) {
-                    const piece = this.p(pieces, [a, b]);
-                    if (piece && piece.color === color) {
-                        if (k === 0 && piece.type === PIECE_TYPE.PAWN) {
+                    const piece = pieces[this.c2i(a, b)];
+                    const pieceColor = this.getColor(piece);
+                    const pieceType = this.getType(piece);
+
+                    if (piece && pieceColor === color) {
+                        if (k === 0 && pieceType === PIECE_TYPE.PAWN) {
                             return true;
                         }
-                        if (k === 1 && piece.type === PIECE_TYPE.KNIGHT) {
+                        if (k === 1 && pieceType == PIECE_TYPE.KNIGHT) {
                             return true;
                         }
-                        if (k === 2 && piece.type === PIECE_TYPE.KING) {
+                        if (k === 2 && pieceType == PIECE_TYPE.KING) {
                             return true;
                         }
                     }
@@ -1049,13 +1305,16 @@ export default class Chessboard {
                 for (let n = 0; n < 4; n++) {
                     const [a, b] = longRangeChecks[k][n];
                     if (!reachedEnd[n] && 1 <= a && a <= 8 && 1 <= b && b <= 8) {
-                        const piece = this.p(pieces, [a, b]);
+                        const piece = pieces[this.c2i(a, b)];
+                        const pieceColor = this.getColor(piece);
+                        const pieceType = this.getType(piece);
+
                         if (piece) {
-                            if (piece.color === color) {
-                                if (k === 0 && [PIECE_TYPE.BISHOP, PIECE_TYPE.QUEEN].includes(piece.type as PIECE_TYPE)) {
+                            if (pieceColor === color) {
+                                if (k === 0 && [PIECE_TYPE.BISHOP, PIECE_TYPE.QUEEN].includes(pieceType)) {
                                     return true;
                                 }
-                                if (k === 1 && [PIECE_TYPE.ROOK, PIECE_TYPE.QUEEN].includes(piece.type as PIECE_TYPE)) {
+                                if (k === 1 && [PIECE_TYPE.ROOK, PIECE_TYPE.QUEEN].includes(pieceType)) {
                                     return true;
                                 }
                             }
@@ -1073,66 +1332,35 @@ export default class Chessboard {
      * Method for converting variation string returned from UCI into variation
      * display data
      * 
-     * @param pieces 
+     * @param lastMove 
      * @param variation 
+     * @param oneMoveLimit 
      * @returns 
      */
-    public static getVariationData(pieces: Pieces, variation: string, castlingRightsWhite: CASTLING_SIDE[], castlingRightsBlack: CASTLING_SIDE[], oneMoveLimit?: boolean) {
-        let piecesCopy: Pieces = JSON.parse(JSON.stringify(pieces));
+    public static getVariationData(lastMove: Move, variation: string, oneMoveLimit?: boolean) {
+        const variationMoves = variation.trim().split(/\s+/);
 
-        const algebraicMoves = oneMoveLimit ? variation.split(' ')[0] : variation.split(' ');
-        let variationData: Move[] = [];
+        if (!variationMoves.length) {
+            return [];
+        }
+
+        const algebraicMoves = oneMoveLimit ? variationMoves.slice(0, 1) : variationMoves;
+
+        let moves: Move[] = [ lastMove ];
 
         for (const algebraicMove of algebraicMoves) {
             const algebraicFrom = algebraicMove.substring(0, 2);
             const algebraicTo = algebraicMove.substring(2);
-            const v = this.a2s(algebraicFrom);
-            const w = this.a2s(algebraicTo);
-            
-            const pieceIndex = _.findIndex(piecesCopy, piece => !piece.captured && piece.square == v);
 
-            if (pieceIndex >= 0) {
-                const oppositeColor = piecesCopy[pieceIndex].color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-                const capturedIndex = _.findIndex(piecesCopy, piece => !piece.captured && piece.square == w);
+            const n = this.a2i(algebraicFrom);
+            const m = this.a2i(algebraicTo);
 
-                let move: Move = {
-                    pieceIndex,
-                    from: v,
-                    to: w,
-                    capturedIndex,
-                    isCheck: false,
-                    isCheckmate: false,
-                    castlingSide: false,
-                    promotionType: false,
-                    algebraicNotation: '',
-                    fen: '',
-                    sound: -1,
-                    mark: -1
-                };
+            const move = this.createMove(n, m, moves[moves.length - 1]);
 
-                if (piecesCopy[pieceIndex].color == PIECE_COLOR.WHITE) {
-                    this.makeMove(piecesCopy, v, w, castlingRightsWhite);
-                    castlingRightsWhite = this.updateCastlingRights(piecesCopy, PIECE_COLOR.WHITE, castlingRightsWhite);
-                } else {
-                    this.makeMove(piecesCopy, v, w, castlingRightsBlack);
-                    castlingRightsBlack = this.updateCastlingRights(piecesCopy, PIECE_COLOR.BLACK, castlingRightsBlack);
-                }
-
-                move.isCheck = this.detectCheck(piecesCopy, oppositeColor);
-                move.isCheckmate = this.detectCheckmate(piecesCopy, oppositeColor);
-    
-                move.algebraicNotation = this.moveToAlgebraic(move, piecesCopy);
-    
-                variationData.push(move);
-            } else {
-                //Error
-            }
+            moves.push(move);
         }
 
-        return ({
-            moves: variationData.splice(0, 8),
-            pieces: piecesCopy
-        });
+        return moves.slice(1, 7);
     }
 
     /**
@@ -1151,7 +1379,7 @@ export default class Chessboard {
         let moveslength = 0;
 
         for (const opening of eco) {
-            const openingMovesAlgebraic = opening.movesAlgebraic.slice(0, movesAlgebraic.length);
+            const openingMovesAlgebraic = opening.movesAlgebraic.slice(0, movesAlgebraic.length + 1);
             if (movesAlgebraic.startsWith(openingMovesAlgebraic) && openingMovesAlgebraic.length > moveslength) {
                 moveslength = openingMovesAlgebraic.length;
                 openingData = opening;
@@ -1162,112 +1390,47 @@ export default class Chessboard {
     }
 
     /**
-     * Updates pieces structure in accordance with one move
-     * forwards
-     * 
-     * @param pieces 
-     * @param moves 
-     * @param moveIndex 
-     */
-    public static moveForwards(pieces: Pieces, moves: Move[], moveIndex: number) {
-        if (moveIndex < moves.length - 1) {
-            const pieceIndex = moves[moveIndex + 1].pieceIndex;
-            if (pieceIndex >= 0) {
-                if (moves[moveIndex + 1].capturedIndex >= 0) {
-                    pieces[moves[moveIndex + 1].capturedIndex].captured = true;
-                }
-
-                const [ rank, file ] = this.s2c(moves[moveIndex + 1].to);
-                pieces[pieceIndex].square = moves[moveIndex + 1].to;
-                pieces[pieceIndex].rank = rank;
-                pieces[pieceIndex].file = file;
-
-                if (moves[moveIndex + 1].castlingSide) {
-                    const rookFileFrom = moves[moveIndex + 1].castlingSide == CASTLING_SIDE.KINGSIDE ? 8 : 1;
-                    const rookFileTo = moves[moveIndex + 1].castlingSide == CASTLING_SIDE.KINGSIDE ? 6 : 4;
-                    const rookIndex = _.findIndex(pieces, piece => !piece.captured && piece.type == PIECE_TYPE.ROOK && piece.rank == rank && piece.file == rookFileFrom);
-
-                    if (rookIndex >= 0) {
-                        pieces[rookIndex].square = this.c2s(rank, rookFileTo);
-                        pieces[rookIndex].file = rookFileTo;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Updates pieces structure in accordance with one move 
-     * backwards
-     * 
-     * @param pieces 
-     * @param moves 
-     * @param moveIndex 
-     */
-    public static moveBackwards(pieces: Pieces, moves: Move[], moveIndex: number) {
-        if (moveIndex > 0) {
-            const pieceIndex = moves[moveIndex].pieceIndex;
-            if (pieceIndex >= 0) {
-                const [ rank, file ] = this.s2c(moves[moveIndex].from);
-                pieces[pieceIndex].square = moves[moveIndex].from;
-                pieces[pieceIndex].rank = rank;
-                pieces[pieceIndex].file = file;
-
-                if (moves[moveIndex].capturedIndex >= 0) {
-                    pieces[moves[moveIndex].capturedIndex].captured = false;
-                }
-
-                if (moves[moveIndex].castlingSide) {
-                    const rookFileFrom = moves[moveIndex].castlingSide == CASTLING_SIDE.KINGSIDE ? 6 : 4;
-                    const rookFileTo = moves[moveIndex].castlingSide == CASTLING_SIDE.KINGSIDE ? 8 : 1;
-                    const rookIndex = _.findIndex(pieces, piece => !piece.captured && piece.type == PIECE_TYPE.ROOK && piece.rank == rank && piece.file == rookFileFrom);
-
-                    if (rookIndex >= 0) {
-                        pieces[rookIndex].square = this.c2s(rank, rookFileTo);
-                        pieces[rookIndex].file = rookFileTo;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Computes move feedback for given move
      * 
-     * @param moves 
-     * @param movesAlgebraic 
-     * @param openingData 
-     * @param currentMoveIndex 
-     * @param variations 
+     * @param currentMove 
+     * @param previousMove  
      * @returns 
      */
-    public static getMoveFeedback(moves: Move[], movesAlgebraic: string, openingData: OpeningData, currentMoveIndex: number, variations: Variation[]) : MOVE_MARK {
-        if (openingData.movesAlgebraic.includes(movesAlgebraic)) {
+    public static getMoveFeedback(currentMove: Move, previousMove?: Move) : MOVE_MARK {
+        if (eco.find(opening => opening.movesAlgebraic.includes(currentMove.algebraicMoves))) {
             return MOVE_MARK.BOOK;
-        } else if (moves.length > 1 && currentMoveIndex && moves[currentMoveIndex - 1].bestNextMove) {
-            const previousMove = moves[currentMoveIndex - 1].bestNextMove;
+        } else if (previousMove && previousMove.bestNextMove) {
+            const currentBestMove = previousMove.bestNextMove;
+            const nextBestMove = currentMove.bestNextMove;
 
-            if (previousMove && previousMove.move) {
-                const previousEval = previousMove.mate ? previousMove.eval + 100 : previousMove.eval;
-                const currentEval = variations[0].mate ? variations[0].eval + 100 : variations[0].eval;
+            if (!currentBestMove || !currentBestMove.move || !nextBestMove || !nextBestMove.move) {
+                return MOVE_MARK.NONE;
+            }
 
-                const evalDifference = Math.abs(currentEval - previousEval);
+            const previousEval = currentBestMove.mate ? currentBestMove.eval + 100 : currentBestMove.eval;
+            const currentEval = nextBestMove.mate ? nextBestMove.eval + 100 : nextBestMove.eval;
 
-                if (previousMove.move.from == moves[currentMoveIndex].from && previousMove.move.to == moves[currentMoveIndex].to) {
-                    return MOVE_MARK.BEST_MOVE;
-                } else if (evalDifference < 0.7) {
-                    return MOVE_MARK.EXCELLENT;
-                } else if (evalDifference < 1) {
-                    return MOVE_MARK.GOOD;
-                } else if (evalDifference < 1.5) {
-                    return MOVE_MARK.INACCURACY;
-                } else if (evalDifference < 2) {
-                    return MOVE_MARK.MISTAKE;
-                } else {
-                    return MOVE_MARK.BLUNDER;
-                }
+            const evalDifference = Math.abs(currentEval - previousEval);
+
+            const isPlayerAdvantage = (currentMove.color === PIECE_COLOR.WHITE && currentEval > 0) || (currentMove.color === PIECE_COLOR.BLACK && currentEval < 0);
+
+            //console.log(previousMove.eval, variations[0].eval);
+
+            if (currentBestMove.move.from === currentMove.from && currentBestMove.move.to === currentMove.to) {
+                return MOVE_MARK.BEST_MOVE;
+            } else if (evalDifference < 0.7) {
+                return MOVE_MARK.EXCELLENT;
+            } else if (evalDifference < 1) {
+                return MOVE_MARK.GOOD;
+            } else if (evalDifference < 1.5) {
+                return MOVE_MARK.INACCURACY;
+            } else if (evalDifference < 2) {
+                return MOVE_MARK.MISTAKE;
             } else {
-                console.log(`Error, moves[${currentMoveIndex - 1}].bestNextMove is undefined`);
+                if (isPlayerAdvantage && Math.abs(currentEval) >= 5) {
+                    return MOVE_MARK.MISTAKE;
+                }
+                return MOVE_MARK.BLUNDER;
             }
         }
 

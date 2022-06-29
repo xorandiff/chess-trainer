@@ -1,16 +1,16 @@
 {
   "resources/scripts/main.ts": {
-    "file": "assets/main.f95ae837.js",
+    "file": "assets/main.11fb7357.js",
     "src": "resources/scripts/main.ts",
     "isEntry": true,
     "imports": [
-      "_vendor.55f92e7b.js"
+      "_antd.6dc5eb23.js"
     ],
     "css": [
-      "assets/main.eef32938.css"
+      "assets/main.807b55fb.css"
     ]
   },
-  "_vendor.55f92e7b.js": {
-    "file": "assets/vendor.55f92e7b.js"
+  "_antd.6dc5eb23.js": {
+    "file": "assets/antd.6dc5eb23.js"
   }
 }

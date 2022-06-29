@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { PIECE_COLOR, PIECE_TYPE, GAME_RESULT } from "@/enums";
+import { PIECE_COLOR, PIECE_TYPE, GAME_RESULT, MOVE_MARK } from "@/enums";
 import { useBoardStore } from "@/stores/board";
 
 const store = useBoardStore();
 
-const { moves, currentMoveIndex, pieces, result } = storeToRefs(store);
+const { properMoves, currentMoveIndex, result } = storeToRefs(store);
 const { showMove } = store;
 </script>
 
@@ -13,16 +13,16 @@ const { showMove } = store;
     <a-descriptions :column="1" size="small" bordered>
         <a-descriptions-item>
             <a-row justify="start" :gutter="16">
-                <span v-for="(move, index) in moves">
-                    <span class="moveNumber" v-if="pieces[move.pieceIndex].color === PIECE_COLOR.WHITE">
+                <span v-for="(move, index) in properMoves">
+                    <span class="moveNumber" v-if="move.color === PIECE_COLOR.WHITE">
                         {{ Math.floor(index / 2) + 1 }}. 
                     </span>
-                    <a-button class="moveButton" :type="currentMoveIndex === index ? 'dashed' : 'text'" @click="showMove(index)" :style="{ borderColor: currentMoveIndex === index ? 'yellow' : '' }">
-                        <template #icon v-if="pieces[move.pieceIndex].type != PIECE_TYPE.PAWN && !move.algebraicNotation.includes('O') && !move.promotionType">
-                            <span :class="`chessFont f-${pieces[move.pieceIndex].type}${pieces[move.pieceIndex].color}`"></span>
+                    <a-button :class="['moveButton', { colorBlunder: move.mark === MOVE_MARK.BLUNDER, colorMistake: move.mark === MOVE_MARK.MISTAKE, colorInaccuracy: move.mark === MOVE_MARK.INACCURACY } ]" :type="(currentMoveIndex - 1) === index ? 'dashed' : 'text'" @click="showMove(index + 1)" :style="{ borderColor: (currentMoveIndex - 1) === index ? 'yellow' : '' }">
+                        <template #icon v-if="move.type !== PIECE_TYPE.PAWN && !move.algebraicNotation.includes('O') && !move.promotionType">
+                            <span :class="`chessFont f-${move.type}${move.color}`"></span>
                         </template>
                         {{ move.algebraicNotation.replace(/[QRKBN]/g, '') }}
-                        <span v-if="move.promotionType" :class="`chessFont f-${move.promotionType}${pieces[move.pieceIndex].color}`"></span>
+                        <span v-if="move.promotionType" :class="`chessFont f-${move.promotionType}${move.color}`"></span>
                     </a-button>
                 </span>
                 <span class="gameResult" v-if="result">

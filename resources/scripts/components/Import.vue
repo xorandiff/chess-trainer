@@ -9,20 +9,18 @@ const { loadPGN, addNewPuzzle } = store;
 
 interface FormState {
   code: string;
-  rating: number;
 };
 
 const formState: UnwrapRef<FormState> = reactive({
-    code: '',
-    rating: 1
+    code: ''
 });
 
 const visible = ref<boolean>(false);
 
 const onSubmit = async () => {
-    const { code, rating } = toRaw(formState);
-    await addNewPuzzle(code, rating);
-    //visible.value = false;
+    const { code } = toRaw(formState);
+    loadPGN(code);
+    visible.value = false;
 };
 
 </script>
@@ -36,9 +34,6 @@ const onSubmit = async () => {
     </a-button>
     <a-modal v-model:visible="visible" title="Import" :footer="null">
         <a-form layout="vertical" :model="formState">
-            <a-form-item  label="Rating">
-                <a-input-number v-model:value="formState.rating" :min="1" :max="5000" />
-            </a-form-item>
             <a-form-item  label="Paste FEN or PGN below">
                 <a-textarea :rows="10" v-model:value="formState.code" />
             </a-form-item>

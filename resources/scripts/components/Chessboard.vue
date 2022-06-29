@@ -2,11 +2,20 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from 'pinia';
 import { SettingOutlined, RetweetOutlined, ExpandAltOutlined } from '@ant-design/icons-vue';
-import { PIECE_TYPE } from "@/enums";
+import { PIECE_TYPE, HIGHLIGHT_COLOR, MOVE_MARK } from "@/enums";
 import { useBoardStore } from "@/stores/board";
-import BoardPiece from "./BoardPiece.vue";
-import BoardSquare from "./BoardSquare.vue";
 import Eval from "./Eval.vue";
+import _ from 'lodash';
+
+import BookIcon from "@/components/icons/BookIcon.vue";
+import BrilliantMoveIcon from "@/components/icons/BrilliantMoveIcon.vue";
+import GreatMoveIcon from "@/components/icons/GreatMoveIcon.vue";
+import BestMoveIcon from "@/components/icons/BestMoveIcon.vue";
+import ExcellentMoveIcon from "@/components/icons/ExcellentMoveIcon.vue";
+import GoodMoveIcon from "@/components/icons/GoodMoveIcon.vue";
+import InaccuracyIcon from "@/components/icons/InaccuracyIcon.vue";
+import MistakeIcon from "@/components/icons/MistakeIcon.vue";
+import BlunderIcon from "@/components/icons/BlunderIcon.vue";
 
 const boardScale = ref<number>(1);
 const flipped = ref<boolean>(false);
@@ -15,12 +24,13 @@ const pieceLeft = ref(0);
 const pieceTop = ref(0);
 
 const orderedRow = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
-
-const indexArray = computed(() => orderedRow.value.map(row => orderedRow.value.map(file => row*10+file)).flat());
+const indexArray = computed(() => flipped.value ? _.range(63, -1) : _.range(0, 64));
 
 const store = useBoardStore();
-const { showEvaluation, currentMoveIndex, arrows, pieces, promotionModalVisible, dragging, occupiedSquares } = storeToRefs(store);
-const { pieceMouseUp, setPromotionPiece, showMove, clearColoredHighlights } = store;
+const { currentMove, report, showEvaluation, currentMoveIndex, moves, arrows, promotionModalVisible, dragging, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
+const { pieceMouseUp, showMove, setPromotionPiece, clearColoredHighlights, pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
+
+const pieces = computed(() => moves.value[currentMoveIndex.value].pieces);
 
 function handleMousemove(event: MouseEvent) {
   pieceLeft.value = event.pageX - 55;
@@ -77,18 +87,30 @@ onUnmounted(() => {
     <Eval v-if="showEvaluation" />
     <div 
       id="chessboard" 
-      :class="{ dragging: dragging }" 
+      :class="{ dragging: dragging >= 0 }" 
       @mouseup.left="pieceMouseUp" 
       @mousedown.left="clearColoredHighlights" 
       :style="{ transform: `scale(${boardScale})` }"
     >
-      <BoardPiece 
-        v-for="(piece, i) in pieces" 
-        :key="i" 
-        :posLeft="dragging === piece.square ? pieceLeft : 0" 
-        :posTop="dragging === piece.square ? pieceTop : 0" 
-        :piece="piece" 
-      />
+      <template v-for="n in indexArray">
+        <div 
+          v-if="pieces[n] && dragging != n"
+          :class="`piece ${pieces[n] >= 'a' && pieces[n] <= 'z' ? 'b' : 'w'}${pieces[n].toLowerCase()}`"
+          :style="{ transform: `translateX(${((flipped ? 63 - n : n) % 8) * 100}%) translateY(${((flipped ? 63 - n : n) / 8 >> 0) * 100}%)` }"
+        >
+          <div class="pieceMarkIcon" v-if="report.enabled && currentMove.mark && currentMove.to === n">
+            <BookIcon v-if="currentMove.mark == MOVE_MARK.BOOK" :size="50" />
+            <BrilliantMoveIcon v-if="currentMove.mark == MOVE_MARK.BRILLIANT" :size="50" />
+            <GreatMoveIcon v-if="currentMove.mark == MOVE_MARK.GREAT_MOVE" :size="50" />
+            <BestMoveIcon v-if="currentMove.mark == MOVE_MARK.BEST_MOVE" :size="50" />
+            <ExcellentMoveIcon v-if="currentMove.mark == MOVE_MARK.EXCELLENT" :size="50" />
+            <GoodMoveIcon v-if="currentMove.mark == MOVE_MARK.GOOD" :size="50" />
+            <InaccuracyIcon v-if="currentMove.mark == MOVE_MARK.INACCURACY" :size="50" />
+            <MistakeIcon v-if="currentMove.mark == MOVE_MARK.MISTAKE" :size="50" />
+            <BlunderIcon v-if="currentMove.mark == MOVE_MARK.BLUNDER" :size="50" />
+          </div>
+        </div>
+      </template>
 
       <svg id="arrows" viewBox="0 0 100 100">
         <polygon 
@@ -99,12 +121,22 @@ onUnmounted(() => {
         ></polygon>
       </svg>
 
-      <BoardSquare 
-        v-for="square in indexArray" 
-        :index="square" 
-        :squareData="store.board[square]" 
-        :occupied="occupiedSquares.includes(square)" 
-      />
+      <div 
+        v-for="n in indexArray" 
+        :class="['square', { highlight: activeIndex === n }]"
+        :style="{ cursor: pieces[n] ? 'grab' : 'default' }"
+        @mousedown.left="pieceMouseDown(n)"
+        @mouseup.left="pieceMoveFromActive(n)"
+        @click.right.prevent
+        @mousedown.right="setArrowFrom(n)"
+        @mouseup.right.exact="setArrowTo(n, HIGHLIGHT_COLOR.RED)"
+        @mouseup.right.ctrl="setArrowTo(n, HIGHLIGHT_COLOR.ORANGE)"
+        @mouseup.right.shift="setArrowTo(n, HIGHLIGHT_COLOR.GREEN)"
+        @mouseup.right.alt="setArrowTo(n, HIGHLIGHT_COLOR.BLUE)"
+      >
+        <div v-show="highlights[n] !== HIGHLIGHT_COLOR.NONE" :class="['highlight', highlights[n]]"></div>
+        <div v-show="visibleLegalMoves.includes(n)" :class="pieces[n] ? 'capture' : 'move'"></div>
+      </div>
 
       <div id="labels">
         <div id="ranks">
@@ -148,6 +180,14 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <Teleport v-if="dragging >= 0" to="body">
+      <div
+        :class="`piece ${pieces[dragging] == pieces[dragging].toLowerCase() ? 'b' : 'w'}${pieces[dragging].toLowerCase()}`"
+        :style="{ left: `${pieceLeft}px`, top: `${pieceTop}px` }"
+      ></div>
+    </Teleport>
+
     <a-modal
       class="promotionModal"
       :visible="promotionModalVisible"
@@ -157,16 +197,16 @@ onUnmounted(() => {
     >
       <a-space>
         <a-button @click="setPromotionPiece(PIECE_TYPE.QUEEN)">
-          <img src="img/pieces/wq.png" width="75" height="75">
+          <div class="promotionPiece wq"></div>
         </a-button>
         <a-button @click="setPromotionPiece(PIECE_TYPE.ROOK)">
-          <img src="img/pieces/wr.png" width="75" height="75">
+          <div class="promotionPiece wr"></div>
         </a-button>
         <a-button @click="setPromotionPiece(PIECE_TYPE.KNIGHT)">
-          <img src="img/pieces/wn.png" width="75" height="75">
+          <div class="promotionPiece wn"></div>
         </a-button>
         <a-button @click="setPromotionPiece(PIECE_TYPE.BISHOP)">
-          <img src="img/pieces/wb.png" width="75" height="75">
+          <div class="promotionPiece wb"></div>
         </a-button>
       </a-space>
     </a-modal>

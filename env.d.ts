@@ -10,8 +10,12 @@ type King = "k";
 type Queen = "q";
 type Pawn = "p";
 
+type Square = [number, number];
+
+type Coordinates = number | Square | string;
+
 type Piece = {
-    type: Rook | Bishop | Knight | King | Queen | Pawn;
+    type: string;
     color: White | Black;
     square: number;
     rank: number;
@@ -20,22 +24,26 @@ type Piece = {
     captured: boolean;
 };
 
-type PiecePartial = Partial<Piece>;
-
-type Pieces = Piece[];
+type Pieces = string[];
 
 type Move = {
-    pieceIndex: number;
-    capturedIndex: number;
+    pieces: Pieces;
+    fen: string;
     from: number;
     to: number;
+    color: White | Black;
+    type: "" | Rook | Bishop | Knight | King | Queen | Pawn;
+    legalMoves: number[][];
+    isCapture: boolean;
     isCheck: boolean;
     isCheckmate: boolean;
-    castlingSide: boolean | "k" | "q";
-    promotionType: boolean | Piece["type"];
+    castlingSide: "" | "k" | "q";
+    castlingRights: string;
+    promotionType: string;
     algebraicNotation: string;
-    fen: string;
-    sound: number;
+    algebraicMoves: string;
+    fullmoves: number;
+    halfmoves: number;
     mark: number;
     bestNextMove?: {
         move: Move;
@@ -44,8 +52,6 @@ type Move = {
     };
 }
 
-type Square = [number, number];
-
 type Arrow = {
     color: string;
     from: number;
@@ -53,15 +59,6 @@ type Arrow = {
     transform: string;
     points: string;
 }
-
-type SquareData = {
-    active: boolean;
-    legalMove: boolean;
-    highlight: boolean;
-    highlightColor: string;
-};
-
-type Board = SquareData[];
 
 type EngineResponseVariation = {
     pv: string;
@@ -79,19 +76,19 @@ type EngineResponse = {
 
 interface EngineConfig {
     depth: number,
-    multipv: number
+    multipv: number,
+    movetime: number,
+    evaluation: boolean
 }
 
 interface StockfishConfig extends EngineConfig {
     elo: number,
-    skill: number
+    skill: number,
+    analyseMode: boolean
 }
-
-type StockfishConfigPartial = Partial<StockfishConfig>;
 
 type Variation = {
     moves: Move[];
-    pieces: Pieces;
     eval: number;
     mate: boolean;
 }

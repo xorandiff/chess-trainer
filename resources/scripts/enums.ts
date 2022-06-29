@@ -1,15 +1,17 @@
 export const enum SOUND_TYPE {
-    MOVE_SELF = 0,
-    MOVE_OPPONENT = 1,
-    MOVE_CHECK = 2,
-    CAPTURE = 3,
-    CASTLE = 4,
-    PROMOTE = 5,
-    GAME_START = 6,
-    GAME_END = 7,
+    NONE,
+    MOVE_SELF,
+    MOVE_OPPONENT,
+    MOVE_CHECK,
+    CAPTURE,
+    CASTLE,
+    PROMOTE,
+    GAME_START,
+    GAME_END,
 };
 
 export enum PIECE_TYPE {
+    NONE = "",
     ROOK = "r",
     KNIGHT = "n",
     BISHOP = "b",
@@ -56,4 +58,22 @@ export enum MOVE_MARK {
 
 export enum ERROR_TYPE {
     PIECE_MISSING
+};
+
+export const enum HIGHLIGHT_COLOR {
+    NONE = '',
+    YELLOW = 'yellow',
+    ORANGE = 'orange',
+    RED = 'red',
+    GREEN = 'green',
+    BLUE = 'blue',
+    BRILLIANT_MOVE = 'brilliantMove',
+    GREAT_MOVE = 'greatMove',
+    BEST_MOVE = 'bestMove',
+    EXCELLENT_MOVE = 'excellentMove',
+    GOOD_MOVE = 'goodMove',
+    INACCURACY = 'inaccuracy',
+    MISTAKE = 'mistake',
+    BLUNDER = 'blunder',
+    BOOK_MOVE = 'bookMove'
 };

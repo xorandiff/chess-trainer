@@ -12,15 +12,23 @@
 
 $light-square-color: #f0d9b5;
 $dark-square-color: #b58863;
-$light-square-active-color: #f7ec59;
-$dark-square-active-color: #dac431;
 $square-active-border-color: #fff;
 $white-eval-color: #fff;
 $black-eval-color: #403d39;
+$highlight-color-active: rgba(255, 234, 0, 0.5);
 $highlight-color-orange: rgba(255, 170, 0, 0.8);
 $highlight-color-red: rgba(248, 85, 63, 0.8);
 $highlight-color-green: rgba(159, 207, 63, 0.8);
 $highlight-color-blue: rgba(72, 193, 249, 0.8);
+$highlight-color-brilliant-move: rgba(27, 172, 166, 0.8);
+$highlight-color-great-move: rgba(92, 139, 176, 0.8);
+$highlight-color-best-move: rgba(149, 187, 74, 0.8);
+$highlight-color-excellent-move: rgba(150, 188, 75, 0.8);
+$highlight-color-good-move: rgba(150, 175, 139, 0.8);
+$highlight-color-inacuraccy: rgba(240, 193, 92, 0.8);
+$highlight-color-mistake: rgba(229, 143, 42, 0.8);
+$highlight-color-blunder: rgba(202, 52, 49, 0.8);
+$highlight-color-book-move: rgba(168, 136, 101, 0.8);
 
 body {
   overflow-x: hidden;
@@ -136,6 +144,10 @@ body {
   }
 }
 
+.highlight {
+  background-color: $highlight-color-active;
+}
+
 .square {
   width: 12.5%;
   height: 12.5%;
@@ -158,12 +170,17 @@ body {
     opacity: 0.6;
   }
 
+  .yellow {
+    background-color: $highlight-color-active !important;
+    opacity: 1 !important;
+  }
+
   .orange {
-    background-color: $highlight-color-red !important;
+    background-color: $highlight-color-orange !important;
   }
 
   .red {
-    background-color: $highlight-color-orange !important;
+    background-color: $highlight-color-red !important;
   }
 
   .green {
@@ -172,6 +189,42 @@ body {
 
   .blue {
     background-color: $highlight-color-blue !important;
+  }
+
+  .brilliantMove {
+    background-color: $highlight-color-brilliant-move !important;
+  }
+
+  .greatMove {
+    background-color: $highlight-color-great-move !important;
+  }
+
+  .bestMove {
+    background-color: $highlight-color-best-move !important;
+  }
+
+  .excellentMove {
+    background-color: $highlight-color-excellent-move !important;
+  }
+
+  .goodMove {
+    background-color: $highlight-color-good-move !important;
+  }
+
+  .inaccuracy {
+    background-color: $highlight-color-inacuraccy !important;
+  }
+
+  .mistake {
+    background-color: $highlight-color-mistake !important;
+  }
+
+  .blunder {
+    background-color: $highlight-color-blunder !important;
+  }
+
+  .bookMove {
+    background-color: $highlight-color-book-move !important;
   }
 }
 
@@ -216,6 +269,11 @@ body {
   opacity: 0.1;
   left: 0.37em;
   top: 0.37em;
+}
+
+.promotionPiece {
+  width: 75px;
+  height: 75px;
 }
 
 /* White pieces
@@ -447,4 +505,60 @@ body {
 
 .moveMarkDescription svg {
   margin-bottom: -8px;
+}
+
+/* Game report
+   ========================================================================== */
+
+.colorBrilliant {
+  color: rgb(27, 172, 166);
+}
+
+.colorGreatMove {
+  color: rgb(92, 139, 176);
+}
+
+.colorBestMove {
+  color: rgb(149, 187, 74);
+}
+
+.colorExcellent {
+  color: rgb(150, 188, 75);
+}
+
+.colorGood {
+  color: rgb(150, 175, 139);
+}
+
+.colorBook {
+  color: rgb(168, 136, 101);
+}
+
+.colorInaccuracy {
+  color: rgb(240, 193, 92);
+}
+
+.colorMistake {
+  color: rgb(229, 143, 42);
+}
+
+.colorBlunder {
+  color: rgb(202, 52, 49);
+}
+
+.colorMissedWin {
+  color: rgb(219, 172, 22);
+}
+
+.pieceMarkIcon {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  top: -25px;
+  right: -25px;
+  pointer-events: none;
+}
+
+#reportSummary {
+  font-weight: bold;
 }

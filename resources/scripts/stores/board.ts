@@ -1,7 +1,7 @@
 import { message } from 'ant-design-vue';
 import Chessboard from "@/chessboard";
 import { useEngineStore } from "@/stores/engine";
-import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, CASTLING_SIDE, GAME_RESULT, ERROR_TYPE } from '@/enums';
+import { ENGINE, SOUND_TYPE, PIECE_TYPE, PIECE_COLOR, GAME_RESULT, HIGHLIGHT_COLOR, MOVE_MARK } from '@/enums';
 import { defineStore } from "pinia";
 import { Howl } from "howler";
 import _ from "lodash";
@@ -21,148 +21,131 @@ effects[SOUND_TYPE.GAME_END] = new Howl({ src: ['sounds/game_end.mp3'], preload:
 
 export const useBoardStore = defineStore({
   id: "board",
-  state: () => {
-    const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-    const chessboard = Chessboard.create(fen);
-    const { pieces, castlingRights, halfmoves, fullmoves, color } = chessboard;
-
-    let board: Board = new Array(89).fill({});
-    for (let i = 1; i <= 8; i++) {
-      for (let j = 1; j <= 8; j++) {
-        const squareData = {
-          active: false,
-          legalMove: false,
-          highlight: false,
-          highlightColor: ''
-        };
-        board[i * 10 + j] = squareData;
+  state: () => ({
+    highlights: new Array(64).fill(HIGHLIGHT_COLOR.NONE) as HIGHLIGHT_COLOR[],
+    visibleLegalMoves: [] as number[],
+    activeIndex: -1,
+    dragging: -1,
+    arrowFrom: -1,
+    moves: Chessboard.create(),
+    variations: [] as Variation[],
+    result: GAME_RESULT.IN_PROGRESS,
+    currentMoveIndex: 0,
+    stockfish: false,
+    alwaysStockfish: false,
+    showFeedback: true,
+    showVariations: true,
+    showEvaluation: true,
+    report: {
+      enabled: false,
+      capscore: {
+        [PIECE_COLOR.WHITE]: 0,
+        [PIECE_COLOR.BLACK]: 0
+      },
+      generation: {
+        active: false,
+        progress: 0 //From 0 to 100, as percents
       }
-    }
-
-    return ({
-      board,
-      color,
-      currentTurnColor: color,
-      castlingRights,
-      pieces,
-      halfmoves,
-      fullmoves,
-      lastMove: {} as Move,
-      moves: [] as Move[],
-      movesAlgebraic: '',
-      variations: [] as Variation[],
-      result: GAME_RESULT.IN_PROGRESS,
-      promotionType: PIECE_TYPE.PAWN,
-      currentMoveIndex: -1,
-      stockfish: false,
-      alwaysStockfish: false,
-      showFeedback: true,
-      showVariations: true,
-      showEvaluation: true,
-      report: {
-        enabled: false,
-        generation: {
-          active: false,
-          progress: 0 //From 0 to 100, as percents
-        }
-      },
-      options: {
-        visibility: {
-          evaluation: true,
-          variations: true,
-          feedback: false
-        }
-      },
-      arrowFrom: -1,
-      arrows: [] as Arrow[],
-      fen,
-      pgn: {
-        current: '',
-        saved: '',
-        tags: {
-            event: '',
-            site: '',
-            date: '',
-            round: '',
-            white: '',
-            black: '',
-            result: ''
-          } as PgnTags
-      },
-      openingData: {
-        name: 'None',
-          eco: '',
-          fen: '',
-          movesAlgebraic: ''
-      } as OpeningData,
-      promotionModalVisible: false,
-      promotionMove: {
-        from: -1,
-        to: -1
-      },
-      dragging: 0,
-      engineWorking: false,
-      gameId: '',
-      savedAnalysis: [] as any[]
-    });
-  },
+    },
+    options: {
+      visibility: {
+        evaluation: true,
+        variations: true,
+        feedback: false
+      }
+    },
+    arrows: [] as Arrow[],
+    pgn: {
+      current: '',
+      saved: '',
+      tags: {
+          event: '',
+          site: '',
+          date: '',
+          round: '',
+          white: '',
+          black: '',
+          result: ''
+        } as PgnTags
+    },
+    openingData: {
+      name: 'None',
+        eco: '',
+        fen: '',
+        movesAlgebraic: ''
+    } as OpeningData,
+    promotionModalVisible: false,
+    promotionMove: {
+      from: -1,
+      to: -1
+    },
+    engineWorking: false,
+    gameId: '',
+    savedAnalysis: [] as any[]
+  }),
   getters: {
-    oppositeColor: (state) => state.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE,
-    movesLength: (state) => state.moves.length,
-    movesReversed: (state) => state.moves.slice().reverse(),
-    currentMove: (state) => state.currentMoveIndex ? state.moves[state.currentMoveIndex] : false,
-    occupiedSquares: (state) => state.pieces.map(piece => piece.square)
+    oppositeColor: (state) => state.moves[state.currentMoveIndex].color === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE,
+    currentTurnColor: (state) => state.moves[state.currentMoveIndex].color,
+    movesLength: (state) => state.moves.length - 1,
+    movesReversed: (state) => state.moves.slice(1).reverse(),
+    movesAlgebraic: (state) => state.moves.slice(1).map(x => x.algebraicNotation).reduce((p, c, i) => p + (i % 2 ? ` ${c} ` : `${i / 2 + 1}. ${c}`), '').trim(),
+    currentMove: (state) => state.moves[state.currentMoveIndex],
+    isPlayerTurn: (state) => state.moves[state.currentMoveIndex].color === state.moves[0].color,
+    pieces: (state) => state.moves[state.currentMoveIndex].pieces,
+    legalMoves: (state) => state.moves[state.currentMoveIndex].legalMoves,
+    fen: (state) => state.moves[state.currentMoveIndex].fen,
+    promotionType: (state) => state.moves[state.currentMoveIndex].promotionType,
+    isWhite: (state) => state.moves[state.currentMoveIndex].color === PIECE_COLOR.WHITE,
+    fullmoves: (state) => state.moves[state.currentMoveIndex].fullmoves,
+    halfmoves: (state) => state.moves[state.currentMoveIndex].halfmoves,
+    castlingRights: (state) => state.moves[state.currentMoveIndex].castlingRights,
+    color: (state) => state.moves[0].color,
+    properMoves: (state) => state.moves.slice(1),
+    pieceType: (state) => {
+      return (n: number) => state.moves[state.currentMoveIndex].pieces[n].toLowerCase() as PIECE_TYPE;
+    },
+    pieceColor: (state) => {
+      return (n: number) => state.moves[state.currentMoveIndex].pieces[n].toLowerCase() === state.moves[state.currentMoveIndex].pieces[n] ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
+    },
+    markTypeCount: (state) => {
+      return (markType: MOVE_MARK, color: PIECE_COLOR) => state.moves.reduce((p, c) => c.mark === markType && c.color === color ? p + 1 : p, 0)
+    }
   },
   actions: {
-    newGame(fen: string) {
-      const chessboard = Chessboard.create(fen);
-      const { pieces, castlingRights } = chessboard;
-      const color = PIECE_COLOR.WHITE;
+    newGame(fenOrPgn: string) {
+      this.moves = Chessboard.create(fenOrPgn);
 
-      for (let i = 11; i < 89; i++) {
-        this.board[i] = {
-          active: false,
-          legalMove: false,
-          highlight: false,
-          highlightColor: ''
-        };
-      }
-      this.color = PIECE_COLOR.WHITE;
-      this.castlingRights = castlingRights;
-      this.currentTurnColor = color;
-      this.pieces = pieces;
-      this.lastMove = {} as Move; //TODO set last move to en passant target square if present
-      this.halfmoves = 0;
-      this.fullmoves = 1;
-      this.moves = [] as Move[];
-      this.promotionType = PIECE_TYPE.PAWN;
+      this.activeIndex = -1;
+      this.highlights = new Array(64).fill(HIGHLIGHT_COLOR.NONE) as HIGHLIGHT_COLOR[];
       this.promotionModalVisible = false;
       this.promotionMove = {
         from: -1,
         to: -1
       };
-      this.fen = fen;
     },
     loadPgnTags(pgn: string) {
       for (const row of pgn.split("\n")) {
         const matches = row.match(/\[(\w+)\s+"(.+)"\]/i);
-        if (matches) {
-          const tagName = matches[1];
-          const tagValue = matches[2];
 
-          switch (tagName.toLowerCase()) {
-            case 'event': this.pgn.tags.event = tagValue; break;
-            case 'site': this.pgn.tags.site = tagValue; break;
-            case 'date': this.pgn.tags.date = tagValue; break;
-            case 'round': this.pgn.tags.round = tagValue; break;
-            case 'white': this.pgn.tags.white = tagValue; break;
-            case 'black': this.pgn.tags.black = tagValue; break;
-            case 'result': this.pgn.tags.result = tagValue; break;
-            case 'fen': this.pgn.tags.fen = tagValue; break;
-            case 'firstmove': this.pgn.tags.firstMove = tagValue; break;
-            case 'full': this.pgn.tags.solution = tagValue; break;
-            default: break;
-          }
+        if (!matches) {
+          continue;
+        }
+
+        const tagName = matches[1];
+        const tagValue = matches[2];
+
+        switch (tagName.toLowerCase()) {
+          case 'event': this.pgn.tags.event = tagValue; break;
+          case 'site': this.pgn.tags.site = tagValue; break;
+          case 'date': this.pgn.tags.date = tagValue; break;
+          case 'round': this.pgn.tags.round = tagValue; break;
+          case 'white': this.pgn.tags.white = tagValue; break;
+          case 'black': this.pgn.tags.black = tagValue; break;
+          case 'result': this.pgn.tags.result = tagValue; break;
+          case 'fen': this.pgn.tags.fen = tagValue; break;
+          case 'firstmove': this.pgn.tags.firstMove = tagValue; break;
+          case 'full': this.pgn.tags.solution = tagValue; break;
+          default: break;
         }
       }
     },
@@ -171,296 +154,173 @@ export const useBoardStore = defineStore({
       this.result = GAME_RESULT.IN_PROGRESS;
 
       this.loadPgnTags(pgn);
-      
-      const chessboard = Chessboard.create(pgn);
-      const { pieces, castlingRights, halfmoves, fullmoves, color, moves } = chessboard;
+      this.newGame(pgn);
+      this.showMove(this.moves.length - 1);
 
-      this.color = color;
-      this.castlingRights = castlingRights;
-      this.halfmoves = halfmoves;
-      this.fullmoves = fullmoves;
-      this.pieces = pieces;
-      this.moves = moves;
-      this.movesAlgebraic = pgn.slice(pgn.lastIndexOf(']') + 1).trim();
       this.openingData = Chessboard.getOpeningData(this.movesAlgebraic);
-      if (this.moves[this.moves.length - 1].isCheckmate) {
-        this.result = this.pieces[this.moves[this.moves.length - 1].pieceIndex].color === PIECE_COLOR.WHITE ? GAME_RESULT.WHITE_WON : GAME_RESULT.BLACK_WON;
-      }
-      this.currentMoveIndex = this.moves.length - 1;
 
-      if (moves.length) {
-        this.currentTurnColor = moves.length % 2 ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;
-        this.fen = moves[moves.length - 1].fen;
-        this.stockfishRun();
+      if (this.currentMove.isCheckmate) {
+        this.result = this.currentTurnColor == PIECE_COLOR.WHITE ? GAME_RESULT.WHITE_WON : GAME_RESULT.BLACK_WON;
       }
     },
-    setHighlightColor(v: number, color: string) {
-      if (!this.board[v].highlightColor || this.board[v].highlightColor !== color) {
-        this.board[v].highlightColor = color;
+    setHighlightColor(n: number, color: HIGHLIGHT_COLOR) {
+      if (!this.highlights[n] || this.highlights[n] !== color) {
+        this.highlights[n] = color;
       } else {
-        this.board[v].highlightColor = '';
+        this.highlights[n] = HIGHLIGHT_COLOR.NONE;
       }
     },
-    pieceMouseDown(v: number) {
+    pieceMouseDown(n: number) {
       if (this.result) {
         return;
       }
-
-      this.pieceMoveFromActive(v);
       
-      for (let i = 1; i <= 8; i++) {
-        for (let j = 1; j <= 8; j++) {
-          this.board[i*10 + j].active = false;
-          this.board[i*10 + j].legalMove = false;
-        }
+      if (!this.pieces[n] && !this.visibleLegalMoves.includes(n)) {
+        this.activeIndex = -1;
+        this.visibleLegalMoves = [];
       }
 
-      const piece = this.pieces.find(piece => !piece.captured && piece.square === v && piece.color === this.currentTurnColor);
-      if (piece && this.currentMoveIndex === this.movesLength - 1) {
+      this.clearHighlights();
+
+      this.pieceMoveFromActive(n);
+      
+      if (this.pieces[n] && this.currentMoveIndex === this.moves.length - 1) {
         //Set coordinates of current dragged piece
-        this.dragging = v;
+        this.dragging = n;
 
-        //Make square background in active yellow color
-        this.board[v].active = true;
-
-        //Display all legal moves for piece on chessboard
-        for (const w of piece.legalMoves) {
-          this.board[w].legalMove = true;
-        }
+        //Make square background in active orange color
+        this.highlights[n] = HIGHLIGHT_COLOR.ORANGE;
+        this.activeIndex = n;
+        
+        this.visibleLegalMoves = this.pieceColor(n) !== this.currentTurnColor ? [ ...this.legalMoves[n] ] : [];
       }
     },
     pieceMouseUp() {
       //Set non-existing dragging coordinates
-      this.dragging = 0;
+      this.dragging = -1;
     },
     clearHighlights() {
-      for (let i = 11; i < 89; i++) {
-        this.board[i].highlight = false;
-        this.board[i].highlightColor = '';
+      for (let i = 0; i < 64; i++) {
+        this.highlights[i] = HIGHLIGHT_COLOR.NONE;
       }
     },
     clearColoredHighlights() {
-      for (let i = 11; i < 89; i++) {
-        this.board[i].highlight = false;
-        this.board[i].highlightColor = '';
-      }
+      this.clearHighlights();
       this.arrows = [] as Arrow[];
     },
-    pieceMoveFromActive(w: number) {
-      const v = _.findIndex(this.board, square => square.active);
-      if (v >= 11 && v !== w) {
-        this.clearHighlights();
+    pieceMoveFromActive(m: number) {
+      if (this.activeIndex >= 0 && this.pieces[this.activeIndex] && this.activeIndex !== m) {
+        const color = this.pieceColor(this.activeIndex);
 
-        const piece = Chessboard.p(this.pieces, v);
+        const toRank = (m / 8) >> 0;
 
-        const toRank = Chessboard.s2c(w)[0];
-
-        if (this.promotionType === PIECE_TYPE.PAWN && piece && piece.type === PIECE_TYPE.PAWN && ((piece.color === PIECE_COLOR.WHITE && toRank === 1) || (piece.color === PIECE_COLOR.BLACK && toRank === 8))) {
+        if (this.promotionType === PIECE_TYPE.PAWN && this.pieceType(this.activeIndex) === PIECE_TYPE.PAWN && ((color === PIECE_COLOR.WHITE && !toRank) || (color === PIECE_COLOR.BLACK && toRank === 7))) {
           /**
            * Promotion move detected, instead of performing this move, first show
            * popover for user in order to select promotion piece
            */
-          this.promotionMove.from = v;
-          this.promotionMove.to = w;
+          this.promotionMove.from = this.activeIndex;
+          this.promotionMove.to = m;
           this.promotionModalVisible = true;
         } else {
-          this.pieceMove(v, w);
+          this.visibleLegalMoves = [];
+          this.pieceMove(this.activeIndex, m);
         }
       }
     },
-    pieceMove(v: number, w: number) {
-      const [r, f] = Chessboard.s2c(v);
-      const [i, j] = Chessboard.s2c(w);
-
-      const pieceIndex = _.findIndex(this.pieces, piece => !piece.captured && piece.square == v);
-      let capturedIndex = _.findIndex(this.pieces, piece => !piece.captured && piece.square == w);
-
-      if (pieceIndex >= 0 && this.pieces[pieceIndex].color === this.currentTurnColor && this.pieces[pieceIndex].legalMoves.includes(w)) {
-        for (let x = 11; x < 89; x++) {
-          this.board[x].active = false;
-          this.board[x].legalMove = false;
-        }
+    pieceMove(n: number, m: number) {
+      if (n !== m && this.pieces[n] && Chessboard.getColor(this.pieces[n]) !== this.currentTurnColor && this.legalMoves[n].includes(m)) {
+        this.clearHighlights();
+        this.activeIndex = -1;
         
-        let sound = SOUND_TYPE.MOVE_SELF;
+        // Highlight last move
+        this.highlights[n] = HIGHLIGHT_COLOR.YELLOW;
+        this.highlights[m] = HIGHLIGHT_COLOR.YELLOW;
+        
+        // Create a new move
+        const move = Chessboard.createMove(n, m, this.currentMove);
 
-        //Move variables
-        let castlingSide: boolean | CASTLING_SIDE = false;
-        let isCapture = false;
-        let promotionType: boolean | PIECE_TYPE = false;
-        let isCheck = false;
-
-        //Castling
-        if (i === r && [1, 8].includes(r) && f === 5 && (Math.abs(f - j) === 2)) {
-          //Only possible files for king are 7 and 3
-          const rookFileFrom = j === 7 ? 8 : 1;
-          const rookFileTo = j === 7 ? 6 : 4;
-
-          //Move rook to castled square
-          const rook = Chessboard.p(this.pieces, [i, rookFileFrom]);
-          if (rook) {
-            sound = SOUND_TYPE.CASTLE;
-            castlingSide = rookFileFrom === 8 ? CASTLING_SIDE.KINGSIDE : CASTLING_SIDE.QUEENSIDE;
-            
-            Chessboard.makeMove(this.pieces, [i, rookFileFrom], [i, rookFileTo]);
-          }
-        }
-
-        if (this.pieces[pieceIndex].type === PIECE_TYPE.PAWN && capturedIndex == -1 && j != f) {
-          //En passant capture
-          isCapture = true;
-          if (this.currentTurnColor === this.color) {
-            capturedIndex = _.findIndex(this.pieces, piece => !piece.captured && piece.square == Chessboard.c2s(i + 1, j));
-          } else {
-            capturedIndex = _.findIndex(this.pieces, piece => !piece.captured && piece.square == Chessboard.c2s(i - 1, j));
-          }
-          this.pieces[capturedIndex].captured = true;
-        }
-
-        //Increment fullmoves and halfmoves counters if black is moving
-        if (this.currentTurnColor === PIECE_COLOR.BLACK) {
-          this.fullmoves++;
-          this.halfmoves++;
-        }
-
-        //Reset halfmoves counter if pawn is moving or piece is being captured
-        if (this.pieces[pieceIndex].type === PIECE_TYPE.PAWN || capturedIndex >= 0) {
-          this.halfmoves = 0;
-        }
-
-        //Update last move
-        let move: Move = {
-          pieceIndex,
-          from: v,
-          to: w,
-          capturedIndex,
-          isCheck,
-          isCheckmate: false,
-          promotionType,
-          castlingSide,
-          algebraicNotation: '',
-          fen: '',
-          sound,
-          mark: -1
-        };
-
-        //Highlight last move
-        this.board[v].highlight = true;
-        this.board[w].highlight = true;
-
-        //Set proper sound type
-        if (sound === SOUND_TYPE.MOVE_SELF) {
-          if (capturedIndex >= 0) {
-            sound = SOUND_TYPE.CAPTURE;
-          } else {
-            sound = this.currentTurnColor === this.color ? SOUND_TYPE.MOVE_SELF : SOUND_TYPE.MOVE_OPPONENT;
-          } 
-        }
-
-        //Perform a move with computing legal moves
-        Chessboard.makeMove(this.pieces, v, w, this.castlingRights[this.currentTurnColor]);
-
-
-        //Check wheter move triggers promotion
-        if (this.pieces[pieceIndex].type === PIECE_TYPE.PAWN && [1, 8].includes(this.pieces[pieceIndex].rank)) {
-          this.pieces[pieceIndex].type = this.promotionType;
-          move.promotionType = this.promotionType;
-        }
-
-        //Update castling rights before switching turn
-        if (this.castlingRights[this.currentTurnColor]) {
-          this.castlingRights[this.currentTurnColor] = Chessboard.updateCastlingRights(this.pieces, this.currentTurnColor, this.castlingRights[this.currentTurnColor]);
-        }
-
-        //Switching turn for other color
-        this.currentTurnColor = this.currentTurnColor === PIECE_COLOR.WHITE ? PIECE_COLOR.BLACK : PIECE_COLOR.WHITE;        
+        // Update move history
+        this.moves.push(move);
 
         this.pieceMouseUp();
 
-        //Detect if check occured
-        if (Chessboard.detectCheck(this.pieces, this.currentTurnColor)) {
-          move.isCheck = true;
-          effects[SOUND_TYPE.MOVE_CHECK].play();
-        }
-
-        move.sound = sound;
-
-        const hasOpponentLegalMoves = this.pieces.find(piece => !piece.captured && piece.color === this.currentTurnColor && piece.legalMoves.length) !== undefined;
-        const hasLegalMoves = this.pieces.find(piece => !piece.captured && piece.color === this.oppositeColor && piece.legalMoves.length) !== undefined;
-        move.isCheckmate = !hasOpponentLegalMoves && hasLegalMoves;
-        const isStalemate = !hasOpponentLegalMoves && !hasLegalMoves;
-
-        move.algebraicNotation = Chessboard.moveToAlgebraic(move, this.pieces);
-
-        //Update algebraic move list
-        if (this.pieces[pieceIndex].color == PIECE_COLOR.WHITE) {
-          this.movesAlgebraic += `${Math.floor((this.currentMoveIndex + 1) / 2) + 1}. ${move.algebraicNotation}`;
-        } else {
-          this.movesAlgebraic += ` ${move.algebraicNotation}`;
-        }
-
-        //Update move history
-        this.moves.push(move);
-
-        //Update last move
-        this.lastMove = move;
-
-        //Update currently displayed move from history
+        // Update currently displayed move from history
         this.currentMoveIndex++;
 
-        //Update PGN
-        this.pgn.current = Chessboard.getPGN(this.pgn.tags, this.pieces, this.moves);
+        // Update PGN
+        this.pgn.current = Chessboard.getPGN(this.pgn.tags, this.moves);
 
-        //Update opening data
+        // Update opening data
         this.openingData = Chessboard.getOpeningData(this.movesAlgebraic);
 
-        //Detect if checkmate/stalemate/50 move rule occured
-        if (this.halfmoves >= 50 || move.isCheckmate || isStalemate) {
-          if (this.halfmoves >= 50) {
-            //50 move rule reached, draw
-            this.result = GAME_RESULT.DRAW;
-          } else if (isStalemate) {
-            //Stalemate
+        // Detect if checkmate/stalemate/50 move rule occured
+        const isStalemate = !move.legalMoves.flat().length;
+        if (this.halfmoves >= 50 || this.currentMove.isCheckmate || isStalemate) {
+          if (this.halfmoves >= 50 || isStalemate) {
             this.result = GAME_RESULT.DRAW;
           } else {
-            //Checkmate
             this.result = this.oppositeColor === PIECE_COLOR.WHITE ? GAME_RESULT.WHITE_WON : GAME_RESULT.BLACK_WON;
           }
-          effects[SOUND_TYPE.GAME_END].play();
+          this.playMoveSound(this.currentMoveIndex);
         } else {
-          effects[sound].play();
           this.stockfishRun();
         }
       } else {
         this.pieceMouseUp();
       }
     },
+    playMoveSound(index: number) {
+      let sounds: SOUND_TYPE[] = [];
+
+      if (this.moves[index].isCheck) {
+        sounds.push(SOUND_TYPE.MOVE_CHECK);
+      }
+
+      if (this.moves[index].isCheckmate) {
+        sounds.push(SOUND_TYPE.GAME_END);
+      }
+
+      if (this.moves[index].isCapture) {
+        sounds.push(SOUND_TYPE.CAPTURE);
+      } else if (this.moves[index].castlingSide) {
+        sounds.push(SOUND_TYPE.CASTLE);
+      } else {
+        sounds.push(this.moves[index].color === this.moves[0].color ? SOUND_TYPE.MOVE_SELF : SOUND_TYPE.MOVE_OPPONENT);
+      }
+
+      for (const sound of sounds) {
+        effects[sound].play();
+      }
+    },
     showMove(index: number) {
       if (index >= 0 && index < this.moves.length && index != this.currentMoveIndex) {
-        if (index < this.currentMoveIndex) {
-          while (this.currentMoveIndex > index) {
-            Chessboard.moveBackwards(this.pieces, this.moves, this.currentMoveIndex);
-            this.currentMoveIndex--;
-          }
-        } else {
-          while (this.currentMoveIndex < index) {
-            Chessboard.moveForwards(this.pieces, this.moves, this.currentMoveIndex);
-            this.currentMoveIndex++;
-          }
-        }
+        this.currentMoveIndex = index;
+        this.clearHighlights();
         
-        if (this.moves[index].isCheckmate) {
-          this.variations = [];
-        } else {
-          this.stockfishRun(this.moves[index].fen);
-        }
+        if (index) {
+          if (!this.currentMove.isCheckmate) {
+            this.stockfishRun(this.fen);
+          }
+          this.playMoveSound(index);
 
-        effects[this.moves[index].sound].play();
+          let highlightColor = HIGHLIGHT_COLOR.YELLOW;
+          if (this.report.enabled && !this.report.generation.active && this.currentMove.mark) {
+            switch (this.currentMove.mark) {
+              case MOVE_MARK.BRILLIANT: highlightColor = HIGHLIGHT_COLOR.BRILLIANT_MOVE; break;
+              case MOVE_MARK.GREAT_MOVE: highlightColor = HIGHLIGHT_COLOR.GREAT_MOVE; break;
+              case MOVE_MARK.BEST_MOVE: highlightColor = HIGHLIGHT_COLOR.BEST_MOVE; break;
+              case MOVE_MARK.EXCELLENT: highlightColor = HIGHLIGHT_COLOR.EXCELLENT_MOVE; break;
+              case MOVE_MARK.GOOD: highlightColor = HIGHLIGHT_COLOR.GOOD_MOVE; break;
+              case MOVE_MARK.INACCURACY: highlightColor = HIGHLIGHT_COLOR.INACCURACY; break;
+              case MOVE_MARK.MISTAKE: highlightColor = HIGHLIGHT_COLOR.MISTAKE; break;
+              case MOVE_MARK.BLUNDER: highlightColor = HIGHLIGHT_COLOR.BLUNDER; break;
+              case MOVE_MARK.BOOK: highlightColor = HIGHLIGHT_COLOR.BOOK_MOVE; break;
+            }
+          }
 
-        const v = this.moves[index].from;
-        const w = this.moves[index].to;
-        
-        for (let i = 11; i < 89; i++) {
-          this.board[i].highlight = (i === v || i === w);
+          this.highlights[this.currentMove.from] = highlightColor;
+          this.highlights[this.currentMove.to] = highlightColor;
         }
       }
     },
@@ -479,58 +339,61 @@ export const useBoardStore = defineStore({
       this.engineWorking = false;
       const engine = useEngineStore();
 
-      if (this.currentMoveIndex >= 0) {
-        //Update variations
-        for (let i = 0; i < engine.response.variations.length; i++) {
-          const { pv, score, mate } = engine.response.variations[i];
+      const variationCount = engine.response.variations.length;
 
-          const evaluation = mate ? score : (score / 100);
+      //Update variations
+      for (let i = 0; i < engine.response.variations.length; i++) {
+        const { pv, score, mate } = engine.response.variations[i];
 
-          this.variations[i] = {
-            ...Chessboard.getVariationData(this.pieces, pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK]),
-            eval: this.pieces[this.moves[this.currentMoveIndex].pieceIndex].color === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
-            mate
+        const evaluation = mate ? score : (score / 100);
+
+        this.variations[i] = {
+          moves: Chessboard.getVariationData(this.currentMove, pv),
+          eval: this.currentMove.color === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
+          mate
+        };
+      }
+
+      if (!variationsOnly) {
+        if (!this.report.enabled && variationCount) {
+          const bestMove = {
+            move: this.variations[0].moves[0],
+            eval: this.variations[0].eval,
+            mate: this.variations[0].mate
           };
-
-          if (!variationsOnly && !this.report.enabled && this.moves.length > 0 && !i) {
-            const bestMove = {
-              move: this.variations[i].moves[0],
-              eval: this.variations[i].eval,
-              mate
-            };
-
-            //Update best next move
-            this.moves[this.currentMoveIndex].bestNextMove = bestMove;
-
-            //Update move mark
-            if (this.showFeedback) {
-              this.moves[this.currentMoveIndex].mark = Chessboard.getMoveFeedback(this.moves, this.movesAlgebraic, this.openingData, this.currentMoveIndex, this.variations);
-            } 
+  
+          //Update best next move
+          this.moves[this.currentMoveIndex].bestNextMove = bestMove;
+  
+          //Update move mark
+          if (this.showFeedback) {
+            this.moves[this.currentMoveIndex].mark = this.currentMoveIndex ? Chessboard.getMoveFeedback(this.currentMove, this.moves[this.currentMoveIndex - 1]) : Chessboard.getMoveFeedback(this.currentMove);
+          } 
+        }
+  
+        if ((!this.isPlayerTurn && this.stockfish) || this.alwaysStockfish) {
+          const n = Chessboard.a2i(engine.response.bestmove.substring(0, 2));
+          const m = Chessboard.a2i(engine.response.bestmove.substring(2, 4));
+  
+          if (engine.response.bestmove.length > 4) {
+            this.moves[this.currentMoveIndex].promotionType = engine.response.bestmove[4] as PIECE_TYPE;
           }
+          
+          this.clearHighlights();
+  
+          this.pieceMove(n, m);
         }
       }
 
-      if (!variationsOnly && (this.currentTurnColor != this.color && this.stockfish) || this.alwaysStockfish) {
-        const from = engine.response.bestmove.substring(0, 2);
-        const to = engine.response.bestmove.substring(2, 4);
-
-        const v = Chessboard.a2s(from);
-        const w = Chessboard.a2s(to);
-
-        if (engine.response.bestmove.length > 4) {
-          this.promotionType = engine.response.bestmove[4] as PIECE_TYPE;
-        }
-        
-        this.clearHighlights();
-
-        this.pieceMove(v, w);
-      }
+      
     },
-    setPromotionPiece(pieceType : PIECE_TYPE) {
-      this.promotionType = pieceType;
+    setPromotionPiece(pieceType: PIECE_TYPE) {
+      this.moves[this.currentMoveIndex].promotionType = pieceType;
+
       this.promotionModalVisible = false;
       this.pieceMove(this.promotionMove.from, this.promotionMove.to);
-      this.promotionType = PIECE_TYPE.PAWN;
+
+      this.moves[this.currentMoveIndex].promotionType = PIECE_TYPE.NONE;
     },
     switchAlwaysStockfish() {
       this.alwaysStockfish = !this.alwaysStockfish;
@@ -544,91 +407,83 @@ export const useBoardStore = defineStore({
         this.stockfishRun();
       }
     },
-    setArrowFrom(v: number) {
-      this.arrowFrom = v;
+    setArrowFrom(n: number) {
+      this.arrowFrom = n;
     },
-    setArrowTo(w: number, color: string) {
-      if (this.arrowFrom && this.arrowFrom !== w) {
-        const arrow = this.arrows.find(arrow => arrow.from === this.arrowFrom && arrow.to === w);
+    setArrowTo(m: number, color: HIGHLIGHT_COLOR) {
+      if (this.arrowFrom && this.arrowFrom !== m) {
+        const arrow = this.arrows.find(arrow => arrow.from === this.arrowFrom && arrow.to === m);
         if (arrow) {
           //Remove an arrow, because it exist
-          this.arrows = this.arrows.filter(arrow => arrow.from !== this.arrowFrom || arrow.to !== w);
+          this.arrows = this.arrows.filter(arrow => arrow.from !== this.arrowFrom || arrow.to !== m);
         }
         if (!arrow || arrow.color !== color) {
-          const { transform, points } = Chessboard.getArrowCoordinates(this.arrowFrom, w);
+          const { transform, points } = Chessboard.getArrowCoordinates(this.arrowFrom, m);
           //Add an arrow
           this.arrows.push({
             color,
             from: this.arrowFrom,
-            to: w,
+            to: m,
             transform,
             points
           });
         }
       } else {
-        this.setHighlightColor(w, color);
+        this.setHighlightColor(m, color);
       }
     },
     async generateReport() {
       const engine = useEngineStore();
 
-      //Set report generation to true
+      //Set report generation and report enabled flag to true
+      this.report.enabled = true;
       this.report.generation.active = true;
 
       //Store current Stockfish configuration
       let stockfishConfig: StockfishConfig = engine.stockfish.config;
 
       //Set Stockfish config for report generation
-      engine.setStockfishConfig({ depth: 12 });
+      engine.setStockfishConfig({ 
+        depth: 15,
+        evaluation: false
+      });
 
       //Prepare game data for report computations
-      let pieces: Pieces = JSON.parse(JSON.stringify(this.pieces));
       let movesLength = this.moves.length;
       let variations: Variation[] = [];
-      let movesAlgebraic = '';
       let openingData: OpeningData = {
         name: 'None',
           eco: '',
           fen: '',
           movesAlgebraic: ''
       };
-      let currentMoveIndex = this.currentMoveIndex;
 
-      //Set pieces structure as in first move
-      while (currentMoveIndex > 0) {
-        Chessboard.moveBackwards(pieces, this.moves, currentMoveIndex);
-        currentMoveIndex--;
-      }
+      this.report.capscore[PIECE_COLOR.WHITE] = 0;
+      this.report.capscore[PIECE_COLOR.BLACK] = 0;
+
+      let capscoreTotalWhite = 0;
+      let capscoreTotalBlack = 0;
 
       //Do report computations for each move
-      for (let i = 0; i < movesLength; i++) {
-        const currentColor = pieces[this.moves[i].pieceIndex].color as PIECE_COLOR;
+      for (let i = 1; i < movesLength; i++) {
+        const currentColor = this.moves[i].color;
         
         this.report.generation.progress = Math.floor(i / movesLength * 100);
 
+        console.log(`Running Stockfish for FEN ${this.moves[i].fen}...`);
         await this.stockfishRunAsync(this.moves[i].fen);
 
         variations = [];
 
-        //Update algebraic move list
-        if (currentColor == PIECE_COLOR.WHITE) {
-          if (i > 0) {
-            movesAlgebraic += ` `;
-          }
-          movesAlgebraic += `${Math.floor(i / 2) + 1}. ${this.moves[i].algebraicNotation}`;
-        } else {
-          movesAlgebraic += ` ${this.moves[i].algebraicNotation}`;
-        }
-
-        openingData = Chessboard.getOpeningData(movesAlgebraic);
+        openingData = Chessboard.getOpeningData(this.moves[i].algebraicMoves);
 
         for (let j = 0; j < engine.response.variations.length; j++) {
           const { pv, score, mate } = engine.response.variations[j];
           const evaluation = mate ? score : (score / 100);
 
           variations[j] = {
-            ...Chessboard.getVariationData(pieces, pv, this.castlingRights[PIECE_COLOR.WHITE], this.castlingRights[PIECE_COLOR.BLACK], true),
-            eval: currentColor === PIECE_COLOR.WHITE ? evaluation * (-1) : evaluation,
+            moves: Chessboard.getVariationData(this.moves[i], pv, true),
+            eval: currentColor === PIECE_COLOR.BLACK ? evaluation * (-1) : evaluation,
             mate
           };
 
@@ -638,19 +493,44 @@ export const useBoardStore = defineStore({
               eval: variations[j].eval,
               mate
             };
-            this.moves[i].mark = Chessboard.getMoveFeedback(this.moves, movesAlgebraic, openingData, i, variations);
+            this.moves[i].mark = Chessboard.getMoveFeedback(this.moves[i], this.moves[i - 1]);
+            if (this.moves[i].mark) {
+              if (currentColor == PIECE_COLOR.WHITE) {
+                capscoreTotalWhite++;
+                if ([MOVE_MARK.BRILLIANT, MOVE_MARK.GREAT_MOVE, MOVE_MARK.BOOK, MOVE_MARK.BEST_MOVE].includes(this.moves[i].mark)) {
+                  this.report.capscore[PIECE_COLOR.WHITE]++;
+                } else if (this.moves[i].mark === MOVE_MARK.EXCELLENT) {
+                  this.report.capscore[PIECE_COLOR.WHITE] += 0.9;
+                } else if (this.moves[i].mark === MOVE_MARK.GOOD) {
+                  this.report.capscore[PIECE_COLOR.WHITE] += 0.7;
+                } else if (this.moves[i].mark === MOVE_MARK.INACCURACY) {
+                  this.report.capscore[PIECE_COLOR.WHITE] += 0.5;
+                } else if (this.moves[i].mark === MOVE_MARK.MISTAKE) {
+                  this.report.capscore[PIECE_COLOR.WHITE] += 0.2;
+                }
+              } else {
+                capscoreTotalBlack++;
+                if ([MOVE_MARK.BRILLIANT, MOVE_MARK.GREAT_MOVE, MOVE_MARK.BOOK, MOVE_MARK.BEST_MOVE].includes(this.moves[i].mark)) {
+                  this.report.capscore[PIECE_COLOR.BLACK]++;
+                } else if (this.moves[i].mark === MOVE_MARK.EXCELLENT) {
+                  this.report.capscore[PIECE_COLOR.BLACK] += 0.9;
+                } else if (this.moves[i].mark === MOVE_MARK.GOOD) {
+                  this.report.capscore[PIECE_COLOR.BLACK] += 0.7;
+                } else if (this.moves[i].mark === MOVE_MARK.INACCURACY) {
+                  this.report.capscore[PIECE_COLOR.BLACK] += 0.5;
+                } else if (this.moves[i].mark === MOVE_MARK.MISTAKE) {
+                  this.report.capscore[PIECE_COLOR.BLACK] += 0.2;
+                }
+              }
+            }
           }
         }
-
-        if (i < movesLength - 1) {
-          Chessboard.moveForwards(pieces, this.moves, i);
-        }
       }
-      this.report.enabled = true;
 
-      this.pieces = pieces;
+      this.report.capscore[PIECE_COLOR.WHITE] = this.report.capscore[PIECE_COLOR.WHITE] / capscoreTotalWhite * 100;
+      this.report.capscore[PIECE_COLOR.BLACK] = this.report.capscore[PIECE_COLOR.BLACK] / capscoreTotalBlack * 100;
+
       this.variations = variations;
-      this.movesAlgebraic = movesAlgebraic;
       this.openingData = openingData;
 
       //Restore Stockfish configuration
@@ -676,7 +556,7 @@ export const useBoardStore = defineStore({
     },
     async saveAnalysis() {
       try {
-        this.pgn.current = Chessboard.getPGN(this.pgn.tags, this.pieces, this.moves);
+        this.pgn.current = Chessboard.getPGN(this.pgn.tags, this.moves);
         
         await axios.get('/sanctum/csrf-cookie');
         const response = await axios.post('/api/games', { pgn: this.pgn.current });
@@ -708,7 +588,7 @@ export const useBoardStore = defineStore({
     },
     async updateAnalysis() {
       try {
-        this.pgn.current = Chessboard.getPGN(this.pgn.tags, this.pieces, this.moves);
+        this.pgn.current = Chessboard.getPGN(this.pgn.tags, this.moves);
 
         await axios.get('/sanctum/csrf-cookie');
         const response = await axios.patch(`/api/games/${this.gameId}`, { pgn: this.pgn.current, ...this.pgn.tags });
@@ -748,6 +628,7 @@ export const useBoardStore = defineStore({
         this.loadPGN(pgn);
       } catch (error) {
           console.log(error);
+          message.error('An error occured during loading of your analysis');
       }               
     },
     async loadAnalysisList() {
@@ -773,6 +654,7 @@ export const useBoardStore = defineStore({
         }
       } catch (error) {
           console.log(error);
+          message.error('An error occured during loading your saved analysis list');
       }               
     }
   },
