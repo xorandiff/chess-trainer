@@ -1083,7 +1083,7 @@ export default class Chessboard {
         let newPieces = [ ...pieces ];
 
         if (!newPieces[n]) {
-            throw 'Cannot perform move from unoccupied square';
+            return newPieces;
         }
 
         newPieces[m] = newPieces[n];

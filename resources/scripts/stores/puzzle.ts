@@ -103,7 +103,11 @@ export const usePuzzleStore = defineStore({
             });
         },
         async start(time?: number) {
-            await this.loadRandomPuzzle(this.ratingBounds.lower, this.ratingBounds.upper);
+            try {
+                await this.loadRandomPuzzle(this.ratingBounds.lower, this.ratingBounds.upper);
+            } catch (error) {
+                console.log(error);
+            }
 
             this.time = time ?? 0;
             this.solvedCount = 0;

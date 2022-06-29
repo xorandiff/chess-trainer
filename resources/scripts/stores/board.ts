@@ -192,7 +192,7 @@ export const useBoardStore = defineStore({
         this.highlights[n] = HIGHLIGHT_COLOR.ORANGE;
         this.activeIndex = n;
         
-        this.visibleLegalMoves = this.pieceColor(n) === this.currentTurnColor ? [ ...this.legalMoves[n] ] : [];
+        this.visibleLegalMoves = this.pieceColor(n) !== this.currentTurnColor ? [ ...this.legalMoves[n] ] : [];
       }
     },
     pieceMouseUp() {
@@ -229,7 +229,7 @@ export const useBoardStore = defineStore({
       }
     },
     pieceMove(n: number, m: number) {
-      if (n !== m && this.pieces[n] && Chessboard.getColor(this.pieces[n]) === this.currentTurnColor && this.legalMoves[n].includes(m)) {
+      if (n !== m && this.pieces[n] && Chessboard.getColor(this.pieces[n]) !== this.currentTurnColor && this.legalMoves[n].includes(m)) {
         this.clearHighlights();
         this.activeIndex = -1;
         
