@@ -36,6 +36,7 @@ export const useBoardStore = defineStore({
     showFeedback: true,
     showVariations: true,
     showEvaluation: true,
+    flipped: false,
     report: {
       enabled: false,
       capscore: {
@@ -113,6 +114,7 @@ export const useBoardStore = defineStore({
   },
   actions: {
     newGame(fenOrPgn: string) {
+      this.$reset();
       this.moves = Chessboard.create(fenOrPgn);
 
       this.activeIndex = -1;
@@ -208,8 +210,11 @@ export const useBoardStore = defineStore({
       this.clearHighlights();
       this.arrows = [] as Arrow[];
     },
+    playerMoved() {
+
+    },
     pieceMoveFromActive(m: number) {
-      if (this.activeIndex >= 0 && this.pieces[this.activeIndex] && this.activeIndex !== m) {
+      if (this.activeIndex >= 0 && this.pieces[this.activeIndex] && this.activeIndex != m) {
         const color = this.pieceColor(this.activeIndex);
 
         const toRank = (m / 8) >> 0;
@@ -266,6 +271,7 @@ export const useBoardStore = defineStore({
         } else {
           this.stockfishRun();
         }
+        this.playerMoved();
       } else {
         this.pieceMouseUp();
       }

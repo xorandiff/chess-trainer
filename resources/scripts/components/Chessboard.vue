@@ -18,17 +18,17 @@ import MistakeIcon from "@/components/icons/MistakeIcon.vue";
 import BlunderIcon from "@/components/icons/BlunderIcon.vue";
 
 const boardScale = ref<number>(1);
-const flipped = ref<boolean>(false);
 
 const pieceLeft = ref(0);
 const pieceTop = ref(0);
 
-const orderedRow = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
-const indexArray = computed(() => flipped.value ? _.range(63, -1) : _.range(0, 64));
 
 const store = useBoardStore();
-const { currentMove, report, showEvaluation, currentMoveIndex, moves, arrows, promotionModalVisible, dragging, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
+const { flipped, currentMove, report, showEvaluation, currentMoveIndex, moves, arrows, promotionModalVisible, dragging, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
 const { pieceMouseUp, showMove, setPromotionPiece, clearColoredHighlights, pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
+
+const orderedRow = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
+const indexArray = computed(() => flipped.value ? _.range(63, -1) : _.range(0, 64));
 
 const pieces = computed(() => moves.value[currentMoveIndex.value].pieces);
 

@@ -118,3 +118,8 @@ type PgnTags = {
     solution?: string;
 }
 
+type PuzzleInfo = {
+    rating: number;
+    solved: boolean;
+}
+
