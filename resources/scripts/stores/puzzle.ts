@@ -16,7 +16,7 @@ export const usePuzzleStore = defineStore({
         mistakesCount: 0,
         ratingBounds: {
             lower: 0,
-            upper: 1000
+            upper: 3000
         },
         color: PIECE_COLOR.WHITE,
         rating: 0,

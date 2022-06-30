@@ -155,7 +155,6 @@ onMounted(async () => {
                     <template v-else>
                         <a-space direction="vertical" :style="{ width: '100%' }">
                             <Import />
-                            <AddPuzzle />
                             <a-button 
                                 @click="handleLoadPreviousAnalysis" 
                                 :loading="loadingPreviousAnalysis" 
