@@ -16,6 +16,7 @@ import EngineVariations from "@/components/EngineVariations.vue";
 import BoardOptions from "@/components/BoardOptions.vue";
 import PgnTags from "@/components/PgnTags.vue";
 import Import from "@/components/Import.vue";
+import AddPuzzle from "@/components/AddPuzzle.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -154,6 +155,7 @@ onMounted(async () => {
                     <template v-else>
                         <a-space direction="vertical" :style="{ width: '100%' }">
                             <Import />
+                            <AddPuzzle />
                             <a-button 
                                 @click="handleLoadPreviousAnalysis" 
                                 :loading="loadingPreviousAnalysis" 

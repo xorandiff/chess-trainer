@@ -213,6 +213,9 @@ export const useBoardStore = defineStore({
     playerMoved() {
 
     },
+    flipBoard() {
+      this.flipped = !this.flipped;
+    },
     pieceMoveFromActive(m: number) {
       if (this.activeIndex >= 0 && this.pieces[this.activeIndex] && this.activeIndex != m) {
         const color = this.pieceColor(this.activeIndex);
@@ -390,8 +393,6 @@ export const useBoardStore = defineStore({
           this.pieceMove(n, m);
         }
       }
-
-      
     },
     setPromotionPiece(pieceType: PIECE_TYPE) {
       this.moves[this.currentMoveIndex].promotionType = pieceType;

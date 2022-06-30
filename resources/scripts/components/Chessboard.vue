@@ -22,10 +22,9 @@ const boardScale = ref<number>(1);
 const pieceLeft = ref(0);
 const pieceTop = ref(0);
 
-
 const store = useBoardStore();
 const { flipped, currentMove, report, showEvaluation, currentMoveIndex, moves, arrows, promotionModalVisible, dragging, highlights, activeIndex, visibleLegalMoves } = storeToRefs(store);
-const { pieceMouseUp, showMove, setPromotionPiece, clearColoredHighlights, pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
+const { flipBoard, pieceMouseUp, showMove, setPromotionPiece, clearColoredHighlights, pieceMoveFromActive, pieceMouseDown, setArrowFrom, setArrowTo } = store;
 
 const orderedRow = computed(() => flipped.value ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8]);
 const indexArray = computed(() => flipped.value ? _.range(63, -1) : _.range(0, 64));
@@ -165,7 +164,7 @@ onUnmounted(() => {
       </div>
       <div id="hiddenButtons">
         <div id="flip">
-          <a-button size="small" type="dashed" @click="flipped = !flipped">
+          <a-button size="small" type="dashed" @click="flipBoard">
               <template #icon>
                   <RetweetOutlined />
               </template>

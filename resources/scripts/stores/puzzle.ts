@@ -10,6 +10,7 @@ export const usePuzzleStore = defineStore({
     id: 'puzzle',
     state: () => ({
         active: false,
+        completed: false,
         time: 0,
         solvedCount: 0,
         mistakesCount: 0,
@@ -22,6 +23,30 @@ export const usePuzzleStore = defineStore({
         solution: [] as string[],
         finished: [] as PuzzleInfo[]
     }),
+    getters: {
+        longestStreak: (state) => {
+            let longestCount = 0;
+            let streakCount = 0;
+
+            for (const puzzleInfo of state.finished) {
+                if (puzzleInfo.solved) {
+                    streakCount++;
+                } else {
+                    if (streakCount > longestCount) {
+                        longestCount = streakCount;
+                    }
+                    streakCount = 0;
+                }
+            }
+
+            if (streakCount > longestCount) {
+                longestCount = streakCount;
+            }
+
+            return longestCount;
+        },
+        highestSolved: state => state.finished.filter(x => x.solved).sort().pop()
+    },
     actions: {
         async loadRandomPuzzle(from: number, to: number) {
             // Fetch random puzzle from database
@@ -39,6 +64,7 @@ export const usePuzzleStore = defineStore({
 
             // Check if required extra tags are present
             if (!fen || !firstMove || !solution) {
+                console.log(boardStore.pgn.tags);
                 throw `Puzzle PGN doesn't have required tags`;
             }
 
@@ -93,7 +119,7 @@ export const usePuzzleStore = defineStore({
                 after(result => {
                     if (name === 'playerMoved' && (boardStore.moves.length % 2) ) {
                         // We check if player made a correct move
-                        if (this.solution[0] === boardStore.currentMove.algebraicNotation) {
+                        if (this.solution[0].replace(/[\+#]/, '') === boardStore.currentMove.algebraicNotation.replace(/[\+#]/, '')) {
                             // Remove player's correct move from solution moves list
                             this.solution = this.solution.slice(1);
 
@@ -115,7 +141,7 @@ export const usePuzzleStore = defineStore({
                                 this.puzzleDone();
                             }
                         } else {
-                            console.log(`Wrong move, player move is ${boardStore.currentMove.algebraicNotation}, but correct should be ${this.solution[0]}`);
+                            console.log(`Wrong move, player move is ${boardStore.currentMove.algebraicNotation.replace(/[\+#]/, '')}, but correct should be ${this.solution[0].replace(/[\+#]/, '')}`);
                             // Player made a wrong move, mark puzzle as done
                             unsubscribe();
                             this.puzzleDone();
@@ -125,15 +151,12 @@ export const usePuzzleStore = defineStore({
             });
         },
         async start(time?: number) {
+            this.$reset;
             try {
                 await this.loadRandomPuzzle(this.ratingBounds.lower, this.ratingBounds.upper);
             } catch (error) {
                 console.log(error);
             }
-
-            this.time = time ?? 0;
-            this.solvedCount = 0;
-            this.mistakesCount = 0;
         },
         async puzzleDone() {
             let puzzleInfo: PuzzleInfo = {
@@ -157,6 +180,8 @@ export const usePuzzleStore = defineStore({
                 } catch (error) {
                     console.log(error);
                 }
+            } else {
+                this.completed = true;
             }
         }
     }

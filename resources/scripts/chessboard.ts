@@ -250,6 +250,7 @@ export default class Chessboard {
      * @returns 
      */
     public static createMoves(algebraicMoves: string, previousMove: Move) {
+        console.log(algebraicMoves);
         let { halfmoves, fullmoves } = previousMove;
         let moves = [ previousMove ];
 
