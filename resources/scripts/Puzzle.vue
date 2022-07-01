@@ -23,5 +23,4 @@ onMounted(() => {
             <router-view></router-view>
         </a-col>
     </a-row>
-    
 </template>

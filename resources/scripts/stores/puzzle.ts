@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import axios from 'axios';
 import { useBoardStore } from "@/stores/board";
 import Chessboard from "@/chessboard";
-import { PIECE_COLOR } from "@/enums";
+import { HIGHLIGHT_COLOR, PIECE_COLOR } from "@/enums";
 
 axios.defaults.withCredentials = true;
 
@@ -117,9 +117,15 @@ export const usePuzzleStore = defineStore({
              */
             const unsubscribe = boardStore.$onAction(({ name, after }) => {
                 after(result => {
-                    if (name === 'playerMoved' && (boardStore.moves.length % 2) ) {
+                    if (name === 'loadPGN') {
+                        // Detach the listener function after loading PGN in board store
+                        unsubscribe();
+                    } else if (name === 'playerMoved' && (boardStore.moves.length % 2) ) {
                         // We check if player made a correct move
                         if (this.solution[0].replace(/[\+#]/, '') === boardStore.currentMove.algebraicNotation.replace(/[\+#]/, '')) {
+                            // Highlight player's move coordinates in green color
+                            boardStore.setHighlightColor(boardStore.currentMove, HIGHLIGHT_COLOR.EXCELLENT_MOVE);
+
                             // Remove player's correct move from solution moves list
                             this.solution = this.solution.slice(1);
 
@@ -137,13 +143,14 @@ export const usePuzzleStore = defineStore({
                                 }
                             } else {
                                 // There are no more solution moves, mark puzzle as done
-                                unsubscribe();
                                 this.puzzleDone();
                             }
                         } else {
                             console.log(`Wrong move, player move is ${boardStore.currentMove.algebraicNotation.replace(/[\+#]/, '')}, but correct should be ${this.solution[0].replace(/[\+#]/, '')}`);
+                            // Highlight player's move coordinates in red color
+                            boardStore.setHighlightColor(boardStore.currentMove, HIGHLIGHT_COLOR.BLUNDER);
+
                             // Player made a wrong move, mark puzzle as done
-                            unsubscribe();
                             this.puzzleDone();
                         }
                     }

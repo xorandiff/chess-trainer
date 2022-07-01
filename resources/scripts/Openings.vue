@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { SettingOutlined, EditOutlined, EllipsisOutlined } from '@ant-design/icons-vue';
+import { onMounted } from "vue";
+import Chessboard from "@/components/Chessboard.vue";
+import { useBoardStore } from "@/stores/board";
+
+const boardStore = useBoardStore();
+
+onMounted(() => {
+    boardStore.$reset();
+});
 </script>
 
 <template>
-    <a-card hoverable style="width: 300px">
-        <template #actions>
-            <setting-outlined key="setting" />
-            <edit-outlined key="edit" />
-            <ellipsis-outlined key="ellipsis" />
-        </template>
-        <a-card-meta title="Vienna Game" description="This is the description">
-        </a-card-meta>
-    </a-card>
+    <a-row :gutter="10">
+        <a-col>
+            <Chessboard />
+        </a-col>
+        <a-col id="analysisColumn">
+            
+        </a-col>
+    </a-row>
 </template>

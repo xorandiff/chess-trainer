@@ -165,11 +165,16 @@ export const useBoardStore = defineStore({
         this.result = this.currentTurnColor == PIECE_COLOR.WHITE ? GAME_RESULT.WHITE_WON : GAME_RESULT.BLACK_WON;
       }
     },
-    setHighlightColor(n: number, color: HIGHLIGHT_COLOR) {
-      if (!this.highlights[n] || this.highlights[n] !== color) {
-        this.highlights[n] = color;
+    setHighlightColor(x: number | Move, highlightColor: HIGHLIGHT_COLOR) {
+      if (typeof x === "number") {
+        if (!this.highlights[x] || this.highlights[x] !== highlightColor) {
+          this.highlights[x] = highlightColor;
+        } else {
+          this.highlights[x] = HIGHLIGHT_COLOR.NONE;
+        }
       } else {
-        this.highlights[n] = HIGHLIGHT_COLOR.NONE;
+        this.highlights[x.from] = highlightColor;
+        this.highlights[x.to] = highlightColor;
       }
     },
     pieceMouseDown(n: number) {
