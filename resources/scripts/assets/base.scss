@@ -13,8 +13,8 @@
 $light-square-color: #f0d9b5;
 $dark-square-color: #b58863;
 $square-active-border-color: #fff;
-$white-eval-color: #fff;
-$black-eval-color: #403d39;
+$white-player-color: #fff;
+$black-player-color: #403d39;
 $highlight-color-active: rgba(255, 234, 0, 0.5);
 $highlight-color-orange: rgba(255, 170, 0, 0.8);
 $highlight-color-red: rgba(248, 85, 63, 0.8);
@@ -63,11 +63,11 @@ body {
     #eval {
       width: 100%;
       height: 100%;
-      background-color: $white-eval-color;
+      background-color: $white-player-color;
 
       #bar {
         width: 100%;
-        background-color: $black-eval-color;
+        background-color: $black-player-color;
         transition: height 0.5s ease-in-out;
       }
     }
@@ -567,8 +567,50 @@ body {
    Puzzles
    ========================================================================== */
 
-.puzzleInfo {
-  .icon {
+#puzzleDashboard {
+  height: 100%;
+
+  .ant-card-actions {
+    position: absolute;
+    width: 100%;
+    bottom: 0;
+  }
+
+  .playingColor {
+    width: 100%;
+    text-align: center;
     font-size: 1.5rem;
+    font-weight: bold;
+    padding: 1rem 1rem;
+    
+    .icon {
+      font-size: 2rem;
+      vertical-align: -0.45rem;
+    }
+
+    .title {
+      padding-left: 0.5rem
+    }
+  }
+
+  .white {
+    color: #312e2b;
+    background-color: #efeff0;
+  }
+
+  .black {
+    color: #fff;
+    background-color: #4b4847;
+  }
+
+  .solvedCount {
+    font-size: 3rem;
+    font-weight: 800;
+  }
+  
+  .puzzleInfo {
+    .icon {
+      font-size: 2rem;
+    }
   }
 }
